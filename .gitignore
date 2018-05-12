@@ -1,0 +1,9 @@
+.DS_Store
+.idea
+errors.txt
+log.txt
+traceback.txt
+game/cache
+game/saves
+game/unpacked
+*.rpyc
