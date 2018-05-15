@@ -1,4 +1,6 @@
-﻿init python:
+﻿define debug_events = False
+
+init python:
     import json
 
     for ix in range(0, 16 + 1):
@@ -8,19 +10,42 @@
         def __init__(self):
             self.switch_values = {}
 
+        def value(self, key):
+            return self.switch_values.get(key, None)
+
         def set_value(self, key, value):
             if value:
                 self.switch_values[key] = value
             else:
                 del self.switch_values[key]
 
+        def print_values(self):
+            for key, value in self.switch_values.iteritems():
+                print "%s: %s" % (key ,value)
+
     class GameSwitches:
         def __init__(self, switch_names):
             self.switch_names = switch_names
             self.switch_values = [0] * len(switch_names)
 
+        def value(self, switch_id):
+            return self.switch_values[switch_id]
+
         def set_value(self, switch_id, value):
             self.switch_values[switch_id] = value
+
+        def print_values(self):
+            longest_string = len(max(self.switch_names, key=len))
+
+            print "ACTIVE SWITCHES:"
+            for i in xrange(0, len(self.switch_names)):
+                if self.switch_values[i]:
+                    print ("%3s: - '%s'") % (i, self.switch_names[i])
+
+            print "INACTIVE SWITCHES:"
+            for i in xrange(0, len(self.switch_names)):
+                if not self.switch_values[i]:
+                    print ("%3s: - '%s'") % (i, self.switch_names[i])
 
     class GameVariables:
         def __init__(self, variable_names):
@@ -48,10 +73,51 @@
             elif operation_type == 5:
                 self.set_value(variable_id, old_value % value)
 
+        def print_values(self):
+            longest_string = len(max(self.variable_names, key=len))
+
+            for i in xrange(0, len(self.variable_names)):
+                print ("%3s: '%" + str(longest_string) + "s' = %s") % (i, self.variable_names[i], self.variable_values[i])
+
+    class GameItems:
+        def __init__(self):
+            with renpy.file('unpacked/www/data/Items.json') as f:
+                self.data = [item for item in json.load(f) if item]
+
+        def by_id(self, id):
+            for item in self.data:
+                if item['id'] == id:
+                    return item
+            return None
+
+    class GameActors:
+        def __init__(self):
+            with renpy.file('unpacked/www/data/Actors.json') as f:
+                self.data = [actor for actor in json.load(f) if actor]
+
+            self.data[1]['name'] = "MCName"
+
+        def by_index(self, index):
+            return self.data[index]
+
+    class GameParty:
+        def __init__(self):
+            self.members = []
+
+        def has_item(self, item):
+            False
+
+        def members(self):
+            self.members
+
+        def has_actor(self, actor):
+            False
+
     class GameEvent:
-        def __init__(self, state, event_data):
+        def __init__(self, state, event_data, page):
             self.state = state
             self.event_data = event_data
+            self.page = page
             self.list_index = 0
             self.new_map_id = None
             self.x = None
@@ -59,15 +125,24 @@
 
         def do_next_thing(self):
             if not self.done():
-                list_item = self.event_data['pages'][0]['list'][self.list_index]
+                list_item = self.page['list'][self.list_index]
 
-                # Show Text
-                if list_item['code'] == 401 and len(list_item['parameters']) > 0 and list_item['parameters'][0][0] != "\\":
-                    renpy.say(None, list_item['parameters'][0])
+                # Show text
+                if list_item['code'] == 101:
+                    accumulated_text = []
+                    while len(self.page['list']) > self.list_index + 1 and self.page['list'][self.list_index + 1]['code'] == 401:
+                        self.list_index += 1
+                        list_item = self.page['list'][self.list_index]
+                        text = list_item['parameters'][0]
+                        text = text.replace("\\N[1]", self.state.actors.by_index(1)['name'])
+                        accumulated_text.append(text)
+
+                    renpy.say(None, "\n".join(accumulated_text))
                 # Transfer maps
                 elif list_item['code'] == 201:
                     method, self.new_map_id, self.new_x, self.new_y = list_item['parameters'][0:4]
-                    renpy.say(None, "Map %d" % self.new_map_id)
+                    if debug_events:
+                        renpy.say(None, "Map %d" % self.new_map_id)
                     if method != 0:
                         renpy.say(None, "Method on transfer was nonzero (%d), plz implement!" % method)
 
@@ -114,7 +189,7 @@
                 self.list_index += 1
 
         def done(self):
-            return self.list_index == len(self.event_data['pages'][0]['list'])
+            return self.list_index == len(self.page['list'])
 
     class GameMap:
         def __init__(self, state, map_id, x, y):
@@ -122,33 +197,72 @@
             self.map_id = map_id
             self.x = x
             self.y = y
-            with renpy.file("unpacked/www/data/Map0%d.json" % map_id) as f:
+            with renpy.file("unpacked/www/data/Map%03d.json" % map_id) as f:
                 self.data = json.load(f)
 
         def find_event_for_location(self, x, y):
             for e in self.data['events']:
                 if e and e['x'] == x and e['y'] == y:
-                    return GameEvent(self.state, e)
+                    for index, page in enumerate(reversed(e['pages'])):
+                        if self.meets_conditions(e, page['conditions']) and page['trigger'] != 3:
+                            if debug_events:
+                                renpy.say(None, "page -%s" % index)
+                            return GameEvent(self.state, e, page)
             return None
 
         def find_auto_trigger_event(self):
             for e in self.data['events']:
-                if e and e['pages'][0]['trigger'] == 3:
-                    return GameEvent(self.state, e)
+                if e:
+                    for page in reversed(e['pages']):
+                        if page['trigger'] == 3:
+                            return GameEvent(self.state, e, page)
             return None
 
-        def page_matches_conditions(self, conditions):
-            if conditions['variableId'] == 1:
-                return True
+        def meets_conditions(self, event_data, conditions):
+            if conditions['switch1Valid']:
+                if not self.state.switches.value(conditions['switch1Id']):
+                    return False
 
+            if conditions['switch2Valid']:
+                if not self.state.switches.value(conditions['switch2Id']):
+                    return False
+
+            if conditions['variableValid']:
+                if self.state.variables.value(conditions['variableId']) < conditions['variableValue']:
+                    return False
+
+            if conditions['selfSwitchValid']:
+                key = (self.state.map.map_id, event_data['id'], conditions['selfSwitchCh'])
+                if self.state.self_switches.value(key) != True:
+                    return False
+
+            if conditions['itemValid']:
+                item = self.state.items.by_id(conditions['itemId'])
+                if not self.state.party.has_item(item):
+                    return False
+
+            if conditions['actorValid']:
+                actor = self.state.actors.by_id(conditions['actorId'])
+                if not self.state.party.has_actor(actor):
+                    return False
+
+            return True
+
+        def has_commands(self, page):
+            for list_item in page['list']:
+                if list_item['code'] != 0:
+                    return True
             return False
 
         def map_options(self):
             coords = []
             for e in self.data['events']:
-                if e and self.page_matches_conditions(e['pages'][0]['conditions']):
-                    if e['pages'][0]['trigger'] != 3:
-                        coords.append((e['x'], e['y']))
+                if e:
+                    for page in reversed(e['pages']):
+                        if page['trigger'] != 3 and self.meets_conditions(e, page['conditions']):
+                            if self.has_commands(page):
+                                coords.append((e['x'], e['y']))
+                            break
 
             return coords
 
@@ -157,6 +271,10 @@
             with renpy.file('unpacked/www/data/System.json') as f:
                 self.system_data = json.load(f)
 
+            with renpy.file('unpacked/www/data/CommonEvents.json') as f:
+                self.common_events_data = json.load(f)
+
+            self.common_events_index = 1
             self.event = None
             self.starting_map_id = self.system_data['startMapId']
             self.ran_auto_trigger_events = False
@@ -164,6 +282,9 @@
             self.switches = GameSwitches(self.system_data['switches'])
             self.self_switches = GameSelfSwitches()
             self.variables = GameVariables(self.system_data['variables'])
+            self.party = GameParty()
+            self.actors = GameActors()
+            self.items = GameItems()
 
         def do_next_thing(self, mapdest):
             if self.event:
@@ -179,9 +300,18 @@
                 self.ran_auto_trigger_events = True
                 return True
 
+            if self.common_events_index < len(self.common_events_data):
+                for event in xrange(self.common_events_index, len(self.common_events_data)):
+                    common_event = self.common_events_data[self.common_events_index]
+                    self.common_events_index += 1
+                    if common_event['trigger'] == 2:
+                        self.event = GameEvent(self, common_event, common_event)
+                        return True
+
             if mapdest:
                 self.event = self.map.find_event_for_location(mapdest[0], mapdest[1])
-                renpy.say(None, "%d,%d" % mapdest)
+                if debug_events:
+                    renpy.say(None, "%d,%d" % mapdest)
                 return True
 
             coordinates = self.map.map_options()
