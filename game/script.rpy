@@ -1,10 +1,23 @@
-﻿define debug_events = False
+﻿# TODOS:
+
+# read and show map names out of MapInfos.json
+# try to draw impassible areas to get some idea of map shape
+# show characters on the map
+# probably CommonEvents isn't really working. this controls the time system
+# can't return from far-left screen
+
+define debug_events = False
 
 init python:
     import json
 
-    for ix in range(0, 16 + 1):
-        renpy.image("Intro %i" % ix, "unpacked/www/img/pictures/Intro %i.png" % ix)
+    for filename in renpy.list_files():
+        if filename.startswith("unpacked/www/img/pictures/"):
+            image_name = filename.replace("unpacked/www/img/pictures/", "").split(".")[0]
+            if renpy.has_image(image_name, exact=True):
+                continue
+
+            renpy.image(image_name, filename)
 
     class GameSelfSwitches:
         def __init__(self):
@@ -73,6 +86,18 @@ init python:
             elif operation_type == 5:
                 self.set_value(variable_id, old_value % value)
 
+        def operate_value(self, operation, operand_type, operand):
+            value = None
+            if operand_type == 0:
+                value = operand
+            else:
+                value = self.value(operand)
+
+            if operation == 0:
+                return value
+            else:
+                return -1 * value
+
         def print_values(self):
             longest_string = len(max(self.variable_names, key=len))
 
@@ -102,10 +127,18 @@ init python:
 
     class GameParty:
         def __init__(self):
+            # TODO: doesn't account for weapons and armor items
             self.members = []
+            self.items = {}
 
         def has_item(self, item):
-            False
+            return self.items.get(item['id'], 0) > 0
+
+        def gain_item(self, item, amount):
+            existing_value = self.items.get(item['id'], 0)
+            self.items[item['id']] = max(0, min(existing_value + amount, 99))
+            if self.items[item['id']] == 0:
+                del self.items[item['id']]
 
         def members(self):
             self.members
@@ -123,12 +156,177 @@ init python:
             self.x = None
             self.y = None
 
+        def conditional_branch_result(self, params):
+            operation = params[0]
+            # Switches
+            if operation == 0:
+                return self.state.switches.value(params[1]) == (params[2] == 0)
+            # Variable
+            elif operation == 1:
+                value1 = self.state.variables.value(params[1]);
+                value2 = None
+                if params[2] == 0:
+                    value2 = params[3];
+                else:
+                    value2 = self.state.variables.value(params[3]);
+
+                if params[4] == 0:
+                    return value1 == value2
+                elif params[4] == 1:
+                    return value1 >= value2
+                elif params[4] == 2:
+                    return value1 <= value2
+                elif params[4] == 3:
+                    return value1 > value2
+                elif params[4] == 4:
+                    return value1 < value2
+                elif params[4] == 5:
+                    return value1 != value2
+
+            # Self Switches
+            elif operation == 2:
+                if this.state.event:
+                    key = (self.state.map.map_id, event_data['id'], params[1])
+                    return self.state.self_switches.value(key) == (params[2] == 0)
+            # Timer
+            elif operation == 3:
+                renpy.say(None, "Conditional statements for Timer not implemented")
+                return False
+                #if ($gameTimer.isWorking()) {
+                #    if (this._params[2] === 0) {
+                #        result = ($gameTimer.seconds() >= this._params[1]);
+                #    } else {
+                #        result = ($gameTimer.seconds() <= this._params[1]);
+                #    }
+                #}
+            # Actor
+            elif operation == 4:
+                renpy.say(None, "Conditional statements for Actor not implemented")
+                return False
+                #var actor = $gameActors.actor(this._params[1]);
+                #if (actor) {
+                #    var n = this._params[3];
+                #    switch (this._params[2]) {
+                #    case 0:  // In the Party
+                #        result = $gameParty.members().contains(actor);
+                #        break;
+                #    case 1:  // Name
+                #        result = (actor.name() === n);
+                #        break;
+                #    case 2:  // Class
+                #        result = actor.isClass($dataClasses[n]);
+                #        break;
+                #    case 3:  // Skill
+                #        result = actor.isLearnedSkill(n);
+                #        break;
+                #    case 4:  // Weapon
+                #        result = actor.hasWeapon($dataWeapons[n]);
+                #        break;
+                #    case 5:  // Armor
+                #        result = actor.hasArmor($dataArmors[n]);
+                #        break;
+                #    case 6:  // State
+                #        result = actor.isStateAffected(n);
+                #        break;
+                #    }
+                #}
+            # Enemy
+            elif operation == 5:
+                renpy.say(None, "Conditional statements for Enemy not implemented")
+                return False
+                #var enemy = $gameTroop.members()[this._params[1]];
+                #if (enemy) {
+                #    switch (this._params[2]) {
+                #    case 0:  // Appeared
+                #        result = enemy.isAlive();
+                #        break;
+                #    case 1:  // State
+                #        result = enemy.isStateAffected(this._params[3]);
+                #        break;
+                #    }
+                #}
+            # Character
+            elif operation == 6:
+                renpy.say(None, "Conditional statements for Character not implemented")
+                return False
+                #var character = this.character(this._params[1]);
+                #if (character) {
+                #    result = (character.direction() === this._params[2]);
+                #}
+            # Gold
+            elif operation == 7:
+                renpy.say(None, "Conditional statements for Gold not implemented")
+                return False
+                #switch (this._params[2]) {
+                #case 0:  // Greater than or equal to
+                #    result = ($gameParty.gold() >= this._params[1]);
+                #    break;
+                #case 1:  // Less than or equal to
+                #    result = ($gameParty.gold() <= this._params[1]);
+                #    break;
+                #case 2:  // Less than
+                #    result = ($gameParty.gold() < this._params[1]);
+                #    break;
+                #}
+            # Item
+            elif operation == 8:
+                return self.state.party.has_item(self.state.items.by_id(params[1]))
+            # Weapon
+            elif operation == 9:
+                renpy.say(None, "Conditional statements for Weapon not implemented")
+                return False
+                #result = $gameParty.hasItem($dataWeapons[this._params[1]], this._params[2]);
+            # Armor
+            elif operation == 10:
+                renpy.say(None, "Conditional statements for Armor not implemented")
+                return False
+                #result = $gameParty.hasItem($dataArmors[this._params[1]], this._params[2]);
+            # Button
+            elif operation == 11:
+                renpy.say(None, "Conditional statements for Button not implemented")
+                return False
+                #result = Input.isPressed(this._params[1]);
+            # Script
+            elif operation == 12:
+                renpy.say(None, "Conditional statements for Script not implemented")
+                return False
+                #result = !!eval(this._params[1]);
+            # Vehicle
+            elif operation == 13:
+                renpy.say(None, "Conditional statements for Vehicle not implemented")
+                return False
+                #result = ($gamePlayer.vehicle() === $gameMap.vehicle(this._params[1]));
+            else:
+                renpy.say(None, "Unknown operation %s" % operation)
+                return False
+
+        def skip_branch(self, current_indent):
+            while self.page['list'][self.list_index + 1]['indent'] > current_indent:
+                self.list_index += 1
+
+        def jump_to(self, index, current_indent):
+            current_index = self.list_index
+            start_index = min(index, current_index)
+            end_index = max(index, current_index)
+            indent = current_indent
+            for i in xrange(start_index, end_index + 1):
+                new_indent = self.page['list'][i]['indent'];
+                if new_indent != indent:
+                    self.state.branch[indent] = None
+                    indent = new_indent
+            self.list_index = index
+
+
         def do_next_thing(self):
             if not self.done():
                 list_item = self.page['list'][self.list_index]
 
+                # Do nothing
+                if list_item['code'] == 0:
+                    pass
+
                 # Show text
-                if list_item['code'] == 101:
+                elif list_item['code'] == 101:
                     accumulated_text = []
                     while len(self.page['list']) > self.list_index + 1 and self.page['list'][self.list_index + 1]['code'] == 401:
                         self.list_index += 1
@@ -138,13 +336,37 @@ init python:
                         accumulated_text.append(text)
 
                     renpy.say(None, "\n".join(accumulated_text))
-                # Transfer maps
-                elif list_item['code'] == 201:
-                    method, self.new_map_id, self.new_x, self.new_y = list_item['parameters'][0:4]
-                    if debug_events:
-                        renpy.say(None, "Map %d" % self.new_map_id)
-                    if method != 0:
-                        renpy.say(None, "Method on transfer was nonzero (%d), plz implement!" % method)
+
+                # Show choices
+                elif list_item['code'] == 102:
+                    choice_texts = list_item['parameters'][0]
+                    cancel_type = list_item['parameters'][1]
+                    if cancel_type >= len(choice_texts):
+                        cancel_type = -2
+                    result = renpy.display_menu([(text, index) for index, text in enumerate(choice_texts)])
+                    self.state.branch[list_item['indent']] = result
+
+                # Comment
+                elif list_item['code'] == 108:
+                    pass
+
+                # Conditional branch
+                elif list_item['code'] == 111:
+                    branch_result = self.conditional_branch_result(list_item['parameters'])
+                    self.state.branch[list_item['indent']] = branch_result
+                    if not branch_result:
+                        self.skip_branch(list_item['indent'])
+
+                # Label
+                elif list_item['code'] == 118:
+                    pass
+
+                # Jump to Label
+                elif list_item['code'] == 119:
+                    label_name = list_item['parameters'][0]
+                    for index, other_list_item in enumerate(self.page['list']):
+                        if other_list_item['code'] == 118 and other_list_item['parameters'][0] == label_name:
+                            self.jump_to(index, current_indent = list_item['indent']);
 
                 # Control Switches
                 elif list_item['code'] == 121:
@@ -159,8 +381,7 @@ init python:
                     if operand == 0:
                         value = list_item['parameters'][4]
                     elif operand == 1:
-                        #    value = $gameVariables.value(this._params[4]);
-                        renpy.say(None, "Variable control operand 1, plz implement")
+                        value = this.state.variables.value(list_item['parameters'][4])
                     elif operand == 2:
                         #    value = this._params[4] + Math.randomInt(this._params[5] - this._params[4] + 1);
                         renpy.say(None, "Variable control operand 2, plz implement")
@@ -180,11 +401,102 @@ init python:
                     key = (self.state.map.map_id, self.state.event.event_data['id'], switch_id)
                     self.state.self_switches.set_value(key, value == 0)
 
+                # Change items
+                elif list_item['code'] == 126:
+                    item_id, operation, operand_type, operand = list_item['parameters']
+                    value = self.state.variables.operate_value(operation, operand_type, operand)
+                    self.state.party.gain_item(self.state.items.by_id(item_id), value)
+
+                # Toggle menu access
+                elif list_item['code'] == 135:
+                    pass
+
+                # Transfer maps
+                elif list_item['code'] == 201:
+                    method, self.new_map_id, self.new_x, self.new_y = list_item['parameters'][0:4]
+                    if debug_events:
+                        renpy.say(None, "Map %d" % self.new_map_id)
+                    if method != 0:
+                        renpy.say(None, "Method on transfer was nonzero (%d), plz implement!" % method)
+
+                # Set movement route
+                elif list_item['code'] == 205:
+                    pass
+
+                # Fade in/out/shake/etc
+                elif list_item['code'] in [221, 222, 223, 224, 225]:
+                    pass
+
+                # Pause
+                elif list_item['code'] == 230:
+                    renpy.pause()
+
                 # Show picture
                 elif list_item['code'] == 231:
                     renpy.scene()
                     renpy.show(list_item['parameters'][1])
-                    renpy.pause()
+
+                # Erase picture
+                elif list_item['code'] == 235:
+                    renpy.scene()
+
+                # Audio
+                elif list_item['code'] in [241, 242, 243, 244, 245, 246, 249, 250, 251]:
+                    pass
+
+                # Get actor name
+                elif list_item['code'] == 303:
+                    actor_index = list_item['parameters'][0]
+                    actor = self.state.actors.by_index(actor_index)
+                    actor['name'] = renpy.input("What name should actor %d have?" % actor_index)
+
+                # Change actor image
+                elif list_item['code'] == 322:
+                    pass
+
+                # 'Script'
+                elif list_item['code'] == 355:
+                    if len(list_item['parameters']) == 1 and 'ImageManager' in list_item['parameters'][0]:
+                        pass
+                    else:
+                        renpy.say(None, "Code 355 not implemented to eval '%s'" % list_item['parameters'][0])
+                # Additional lines for script
+                elif list_item['code'] == 655:
+                    pass
+
+                # 'Plugin'
+                elif list_item['code'] == 356:
+                    pass
+
+
+                # When [**]
+                elif list_item['code'] == 402:
+                    if self.state.branch[list_item['indent']] != list_item['parameters'][0]:
+                        self.skip_branch(list_item['indent'])
+
+                # When Cancel
+                elif list_item['code'] == 403:
+                    if self.state.branch[list_item['indent']] >= 0:
+                        self.skip_branch(list_item['indent'])
+
+                # TODO: unknown
+                elif list_item['code'] == 404:
+                    pass
+
+                # Some mouse hover thingie
+                elif list_item['code'] == 408:
+                    pass
+
+                # Seems unimplemented?
+                elif list_item['code'] == 412:
+                    pass
+
+                # TODO: Unknown
+                elif list_item['code'] == 505:
+                    pass
+
+                else:
+                    renpy.say(None, "Code %d not implemented, plz fix." % list_item['code'])
 
                 self.list_index += 1
 
@@ -242,7 +554,7 @@ init python:
                     return False
 
             if conditions['actorValid']:
-                actor = self.state.actors.by_id(conditions['actorId'])
+                actor = self.state.actors.by_index(conditions['actorId'])
                 if not self.state.party.has_actor(actor):
                     return False
 
@@ -285,6 +597,7 @@ init python:
             self.party = GameParty()
             self.actors = GameActors()
             self.items = GameItems()
+            self.branch = {}
 
         def do_next_thing(self, mapdest):
             if self.event:
