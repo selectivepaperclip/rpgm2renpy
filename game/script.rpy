@@ -512,6 +512,22 @@ init python:
             with renpy.file("unpacked/www/data/Map%03d.json" % map_id) as f:
                 self.data = json.load(f)
 
+        def impassible_tiles(self):
+            result = []
+            direction_bits = [1, 2, 4, 8]
+            width = self.data['width']
+            height = self.data['height']
+            for x in xrange(0, width):
+                for y in xrange(0, height):
+                    tile_ids = [self.data['data'][(z * height + y) * width + x] for z in xrange(0, 4)]
+                    for tile_id in tile_ids:
+                        flag = self.state.tilesets[self.data['tilesetId']]['flags'][tile_id]
+                        if any([(flag & direction_bit) == direction_bit for direction_bit in direction_bits]):
+                            result.append((x, y))
+                            break
+
+            return result
+
         def find_event_for_location(self, x, y):
             for e in self.data['events']:
                 if e and e['x'] == x and e['y'] == y:
@@ -586,6 +602,9 @@ init python:
             with renpy.file('unpacked/www/data/CommonEvents.json') as f:
                 self.common_events_data = json.load(f)
 
+            with renpy.file('unpacked/www/data/Tilesets.json') as f:
+                self.tilesets = json.load(f)
+
             self.common_events_index = 1
             self.event = None
             self.starting_map_id = self.system_data['startMapId']
@@ -628,17 +647,33 @@ init python:
                 return True
 
             coordinates = self.map.map_options()
-            renpy.call_screen("mapscreen", coords=coordinates)
+            renpy.call_screen(
+                "mapscreen",
+                coords=coordinates,
+                impassible_tiles=self.map.impassible_tiles(),
+                width=float(self.map.data['width']),
+                height=float(self.map.data['height']),
+                tile_width_px=int(config.screen_width / float(self.map.data['width'])),
+                tile_height_px=int(config.screen_height / float(self.map.data['height']))
+            )
 
 define mapdest = None
 
 screen mapscreen:
+    for coord in impassible_tiles:
+        button:
+            xpos (coord[0] / width)
+            xsize tile_width_px
+            ypos (coord[1] / height)
+            ysize tile_height_px
+            background "#0f0"
+
     for i, coord in enumerate(coords):
         button:
-            xpos (coord[0] / 80.0)
-            xsize 10
-            ypos (coord[1] / 64.0)
-            ysize 10
+            xpos (coord[0] / width)
+            xsize tile_width_px
+            ypos (coord[1] / height)
+            ysize tile_height_px
             background "#f00"
             hover_background "#00f"
             action SetVariable("mapdest", coord), Jump("game")
