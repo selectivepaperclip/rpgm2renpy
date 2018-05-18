@@ -5,6 +5,9 @@
 # show characters on the map
 # probably CommonEvents isn't really working. this controls the time system
 # can't return from far-left screen
+# figure out what to do with the trigger 4 events on maps (parallel process)
+#   -- maybe they are just cars, who cares
+# sleeping does not transition to next day
 
 define debug_events = False
 
@@ -18,6 +21,12 @@ init python:
                 continue
 
             renpy.image(image_name, filename)
+        if filename.startswith("unpacked/www/movies/"):
+            image_name = filename.replace("unpacked/www/movies/", "").split(".")[0]
+            if renpy.has_image(image_name, exact=True):
+                continue
+
+            renpy.image(image_name, Movie(play=filename))
 
     class GameSelfSwitches:
         def __init__(self):
@@ -459,12 +468,23 @@ init python:
 
                 # Pause
                 elif list_item['code'] == 230:
+                    # Skip to the final pause if there's a series of pauses and audio
+                    fast_forwarded = False
+                    while self.page['list'][self.list_index + 1]['code'] in [230, 250]:
+                        fast_forwarded = True
+                        self.list_index += 1
+                    if fast_forwarded:
+                        self.list_index -= 1
                     renpy.pause()
 
                 # Show picture
                 elif list_item['code'] == 231:
                     renpy.scene()
                     renpy.show(list_item['parameters'][1])
+
+                # Move picture - TODO - like the first scene in the cafe in ics2
+                elif list_item['code'] == 232:
+                    pass
 
                 # Erase picture
                 elif list_item['code'] == 235:
@@ -473,6 +493,11 @@ init python:
                 # Audio
                 elif list_item['code'] in [241, 242, 243, 244, 245, 246, 249, 250, 251]:
                     pass
+
+                # Play Movie
+                elif list_item['code'] == 261:
+                    renpy.scene()
+                    renpy.show(list_item['parameters'][0])
 
                 # Get actor name
                 elif list_item['code'] == 303:
@@ -572,8 +597,11 @@ init python:
             for e in self.data['events']:
                 if e:
                     for page in reversed(e['pages']):
-                        if page['trigger'] == 3:
-                            return GameEvent(self.state, e, page)
+                        if self.meets_conditions(e, page['conditions']):
+                            if page['trigger'] == 3:
+                                return GameEvent(self.state, e, page)
+                            else:
+                                break
             return None
 
         def meets_conditions(self, event_data, conditions):
@@ -617,7 +645,7 @@ init python:
             for e in self.data['events']:
                 if e:
                     for page in reversed(e['pages']):
-                        if page['trigger'] != 3 and self.meets_conditions(e, page['conditions']):
+                        if page['trigger'] < 3 and self.meets_conditions(e, page['conditions']):
                             if self.has_commands(page):
                                 coords.append((e['x'], e['y']))
                             break
@@ -638,7 +666,6 @@ init python:
             self.common_events_index = None
             self.event = None
             self.starting_map_id = self.system_data['startMapId']
-            self.ran_auto_trigger_events = False
             self.map = GameMap(self, self.starting_map_id, self.system_data['startX'], self.system_data['startY'])
             self.switches = GameSwitches(self.system_data['switches'])
             self.self_switches = GameSelfSwitches()
@@ -659,11 +686,6 @@ init python:
                     self.event = None
                 return True
 
-            if not self.ran_auto_trigger_events:
-                self.event = self.map.find_auto_trigger_event()
-                self.ran_auto_trigger_events = True
-                return True
-
             if self.common_events_index != None and self.common_events_index < len(self.common_events_data):
                 for event in xrange(self.common_events_index, len(self.common_events_data)):
                     common_event = self.common_events_data[self.common_events_index]
@@ -671,6 +693,10 @@ init python:
                     if common_event['trigger'] == 2 and self.switches.value(common_event['switchId']) == True:
                         self.event = GameEvent(self, common_event, common_event)
                         return True
+
+            self.event = self.map.find_auto_trigger_event()
+            if self.event:
+                return True
 
             if mapdest:
                 self.event = self.map.find_event_for_location(mapdest[0], mapdest[1])
@@ -681,7 +707,7 @@ init python:
             coordinates = self.map.map_options()
             tile_pixel_options = [
                 config.screen_width / float(self.map.data['width']),
-                config.screen_height / float(self.map.data['height'])
+                (config.screen_height - 20) / float(self.map.data['height'])
             ]
             tile_pixels = int(min(tile_pixel_options))
 
