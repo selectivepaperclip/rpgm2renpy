@@ -156,6 +156,9 @@ init python:
             self.x = None
             self.y = None
 
+        def common(self):
+            return self.event_data.has_key('switchId')
+
         def conditional_branch_result(self, params):
             operation = params[0]
             # Switches
@@ -357,6 +360,25 @@ init python:
                     if not branch_result:
                         self.skip_branch(list_item['indent'])
 
+                # Loop -- TODO: this is not good enough
+                elif list_item['code'] == 112:
+                    pass
+
+                # Repeat Above
+                elif list_item['code'] == 413:
+                    while self.list_index > 0:
+                        self.list_index -= 1
+                        if self.page['list'][self.list_index]['indent'] == list_item['indent']:
+                            break
+
+                # Break Loop
+                elif list_item['code'] == 113:
+                    while self.list_index < len(self.page['list']) - 1:
+                        self.list_index += 1
+                        command = self.page['list'][self.list_index]
+                        if command['code'] == 413 and command['indent'] < list_item['indent']:
+                            break
+
                 # Label
                 elif list_item['code'] == 118:
                     pass
@@ -419,8 +441,16 @@ init python:
                     if method != 0:
                         renpy.say(None, "Method on transfer was nonzero (%d), plz implement!" % method)
 
+                # Set event location - TODO
+                elif list_item['code'] == 203:
+                    pass
+
                 # Set movement route
                 elif list_item['code'] == 205:
+                    pass
+
+                # "Show baloon icon"
+                elif list_item['code'] == 213:
                     pass
 
                 # Fade in/out/shake/etc
@@ -605,7 +635,7 @@ init python:
             with renpy.file('unpacked/www/data/Tilesets.json') as f:
                 self.tilesets = json.load(f)
 
-            self.common_events_index = 1
+            self.common_events_index = None
             self.event = None
             self.starting_map_id = self.system_data['startMapId']
             self.ran_auto_trigger_events = False
@@ -624,6 +654,8 @@ init python:
                 if self.event.done():
                     if self.event.new_map_id:
                         self.map = GameMap(self, self.event.new_map_id, self.event.new_x, self.event.new_y)
+                    if self.event.common() == False:
+                        self.common_events_index = 1
                     self.event = None
                 return True
 
@@ -632,11 +664,11 @@ init python:
                 self.ran_auto_trigger_events = True
                 return True
 
-            if self.common_events_index < len(self.common_events_data):
+            if self.common_events_index != None and self.common_events_index < len(self.common_events_data):
                 for event in xrange(self.common_events_index, len(self.common_events_data)):
                     common_event = self.common_events_data[self.common_events_index]
                     self.common_events_index += 1
-                    if common_event['trigger'] == 2:
+                    if common_event['trigger'] == 2 and self.switches.value(common_event['switchId']) == True:
                         self.event = GameEvent(self, common_event, common_event)
                         return True
 
@@ -647,14 +679,21 @@ init python:
                 return True
 
             coordinates = self.map.map_options()
+            tile_pixel_options = [
+                config.screen_width / float(self.map.data['width']),
+                config.screen_height / float(self.map.data['height'])
+            ]
+            tile_pixels = int(min(tile_pixel_options))
+
             renpy.call_screen(
                 "mapscreen",
                 coords=coordinates,
                 impassible_tiles=self.map.impassible_tiles(),
                 width=float(self.map.data['width']),
                 height=float(self.map.data['height']),
-                tile_width_px=int(config.screen_width / float(self.map.data['width'])),
-                tile_height_px=int(config.screen_height / float(self.map.data['height']))
+                x_offset=int((config.screen_width - tile_pixels * self.map.data['width']) / 2.0),
+                y_offset=int((config.screen_height - tile_pixels * self.map.data['height']) / 2.0),
+                tile_pixels=tile_pixels
             )
 
 define mapdest = None
@@ -662,18 +701,18 @@ define mapdest = None
 screen mapscreen:
     for coord in impassible_tiles:
         button:
-            xpos (coord[0] / width)
-            xsize tile_width_px
-            ypos (coord[1] / height)
-            ysize tile_height_px
+            xpos x_offset + int(coord[0] * tile_pixels)
+            xsize tile_pixels
+            ypos y_offset + int(coord[1] * tile_pixels)
+            ysize tile_pixels
             background "#0f0"
 
     for i, coord in enumerate(coords):
         button:
-            xpos (coord[0] / width)
-            xsize tile_width_px
-            ypos (coord[1] / height)
-            ysize tile_height_px
+            xpos x_offset + int(coord[0] * tile_pixels)
+            xsize tile_pixels
+            ypos y_offset + int(coord[1] * tile_pixels)
+            ysize tile_pixels
             background "#f00"
             hover_background "#00f"
             action SetVariable("mapdest", coord), Jump("game")
