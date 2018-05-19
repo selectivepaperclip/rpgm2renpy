@@ -5,9 +5,7 @@
 # show characters on the map
 # probably CommonEvents isn't really working. this controls the time system
 # can't return from far-left screen
-# figure out what to do with the trigger 4 events on maps (parallel process)
-#   -- maybe they are just cars, who cares
-# sleeping does not transition to next day
+# figure out how to stop the infinite loop for the trigger 4 events on map 22 and others
 
 define debug_events = False
 
@@ -438,6 +436,10 @@ init python:
                     value = self.state.variables.operate_value(operation, operand_type, operand)
                     self.state.party.gain_item(self.state.items.by_id(item_id), value)
 
+                # Change party members -- TODO
+                elif list_item['code'] == 129:
+                    pass
+
                 # Toggle menu access
                 elif list_item['code'] == 135:
                     pass
@@ -505,6 +507,10 @@ init python:
                     actor = self.state.actors.by_index(actor_index)
                     actor['name'] = renpy.input("What name should actor %d have?" % actor_index)
 
+                # Recover all
+                elif list_item['code'] == 314:
+                    pass
+
                 # Change actor image
                 elif list_item['code'] == 322:
                     pass
@@ -541,6 +547,11 @@ init python:
                 # Some mouse hover thingie
                 elif list_item['code'] == 408:
                     pass
+
+                # Else
+                elif list_item['code'] == 411:
+                    if self.state.branch[list_item['indent']] != False:
+                        self.skip_branch(list_item['indent'])
 
                 # Seems unimplemented?
                 elif list_item['code'] == 412:
@@ -604,6 +615,17 @@ init python:
                                 break
             return None
 
+        def parallel_event_at_index(self, event_index):
+            e = self.data['events'][event_index]
+            if e:
+                for page in reversed(e['pages']):
+                    if self.meets_conditions(e, page['conditions']):
+                        if page['trigger'] == 4:
+                            return GameEvent(self.state, e, page)
+                        else:
+                            break
+            return None
+
         def meets_conditions(self, event_data, conditions):
             if conditions['switch1Valid']:
                 if not self.state.switches.value(conditions['switch1Id']):
@@ -664,6 +686,7 @@ init python:
                 self.tilesets = json.load(f)
 
             self.common_events_index = None
+            self.parallel_events_index = None
             self.event = None
             self.starting_map_id = self.system_data['startMapId']
             self.map = GameMap(self, self.starting_map_id, self.system_data['startX'], self.system_data['startY'])
@@ -675,14 +698,22 @@ init python:
             self.items = GameItems()
             self.branch = {}
 
+        def queue_common_and_parallel_events(self):
+            if len(self.common_events_data) > 0:
+                self.common_events_index = 1
+            # TODO: parallel events on map 22 cause the game to hang
+            if self.map.map_id != 22 and len(self.map.data['events']) > 0:
+                self.parallel_events_index = 1
+
         def do_next_thing(self, mapdest):
             if self.event:
                 self.event.do_next_thing()
                 if self.event.done():
                     if self.event.new_map_id:
                         self.map = GameMap(self, self.event.new_map_id, self.event.new_x, self.event.new_y)
+                        self.queue_common_and_parallel_events()
                     if self.event.common() == False:
-                        self.common_events_index = 1
+                        self.queue_common_and_parallel_events()
                     self.event = None
                 return True
 
@@ -690,8 +721,16 @@ init python:
                 for event in xrange(self.common_events_index, len(self.common_events_data)):
                     common_event = self.common_events_data[self.common_events_index]
                     self.common_events_index += 1
-                    if common_event['trigger'] == 2 and self.switches.value(common_event['switchId']) == True:
+                    if common_event['trigger'] > 0 and self.switches.value(common_event['switchId']) == True:
                         self.event = GameEvent(self, common_event, common_event)
+                        return True
+
+            if self.parallel_events_index != None and self.parallel_events_index < len(self.map.data['events']):
+                for event in xrange(self.parallel_events_index, len(self.map.data['events'])):
+                    possible_parallel_event = self.map.parallel_event_at_index(self.parallel_events_index)
+                    self.parallel_events_index += 1
+                    if possible_parallel_event:
+                        self.event = possible_parallel_event
                         return True
 
             self.event = self.map.find_auto_trigger_event()
