@@ -5,7 +5,6 @@
 # show characters on the map
 # probably CommonEvents isn't really working. this controls the time system
 # can't return from far-left screen
-# figure out how to stop the infinite loop for the trigger 4 events on map 22 and others
 
 define debug_events = False
 
@@ -458,7 +457,15 @@ init python:
 
                 # Set movement route
                 elif list_item['code'] == 205:
-                    pass
+                    # If a movement route is set on 'wait' mode, and this is
+                    # a parallel (background) command, finish the current
+                    # event so that nothing else afterward will run.
+
+                    # This has the effect that the character stays at the spawn
+                    # point, but ensures that if the movement is in an infinite loop
+                    # Renpy doesn't loop forever.
+                    if self.page['trigger'] == 4 and list_item['parameters'][1]['wait']:
+                        self.list_index = len(self.page['list']) - 1
 
                 # "Show baloon icon"
                 elif list_item['code'] == 213:
@@ -701,8 +708,7 @@ init python:
         def queue_common_and_parallel_events(self):
             if len(self.common_events_data) > 0:
                 self.common_events_index = 1
-            # TODO: parallel events on map 22 cause the game to hang
-            if self.map.map_id != 22 and len(self.map.data['events']) > 0:
+            if len(self.map.data['events']) > 0:
                 self.parallel_events_index = 1
 
         def do_next_thing(self, mapdest):
@@ -712,7 +718,7 @@ init python:
                     if self.event.new_map_id:
                         self.map = GameMap(self, self.event.new_map_id, self.event.new_x, self.event.new_y)
                         self.queue_common_and_parallel_events()
-                    if self.event.common() == False:
+                    if self.common_events_index == None and self.parallel_events_index == None:
                         self.queue_common_and_parallel_events()
                     self.event = None
                 return True
@@ -724,6 +730,7 @@ init python:
                     if common_event['trigger'] > 0 and self.switches.value(common_event['switchId']) == True:
                         self.event = GameEvent(self, common_event, common_event)
                         return True
+            self.common_events_index = None
 
             if self.parallel_events_index != None and self.parallel_events_index < len(self.map.data['events']):
                 for event in xrange(self.parallel_events_index, len(self.map.data['events'])):
@@ -732,6 +739,7 @@ init python:
                     if possible_parallel_event:
                         self.event = possible_parallel_event
                         return True
+            self.parallel_events_index = None
 
             self.event = self.map.find_auto_trigger_event()
             if self.event:
