@@ -1,10 +1,11 @@
 ﻿# TODOS:
 
 # read and show map names out of MapInfos.json
-# try to draw impassible areas to get some idea of map shape
+# show tiles on the map
 # show characters on the map
-# probably CommonEvents isn't really working. this controls the time system
-# can't return from far-left screen
+# combine lines better ('needed her the most')
+# reloading is losing MC name
+# implement the phone?!
 
 define debug_events = False
 
