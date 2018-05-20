@@ -549,7 +549,6 @@ init python:
 
                 # Play Movie
                 elif list_item['code'] == 261:
-                    renpy.scene()
                     renpy.show(list_item['parameters'][0])
 
                 # Get actor name
