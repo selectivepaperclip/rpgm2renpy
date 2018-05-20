@@ -25,6 +25,10 @@ init python:
 
             renpy.image(image_name, Movie(play=filename))
 
+    class ObjectWithJson:
+        def __getstate__(self):
+            return dict((k, v) for k, v in self.__dict__.iteritems() if not k.startswith('_'))
+
     class GameSelfSwitches:
         def __init__(self):
             self.switch_values = {}
@@ -110,28 +114,53 @@ init python:
             for i in xrange(0, len(self.variable_names)):
                 print ("%3s: '%" + str(longest_string) + "s' = %s") % (i, self.variable_names[i], self.variable_values[i])
 
-    class GameItems:
+    class GameItems(ObjectWithJson):
         def __init__(self):
-            with renpy.file('unpacked/www/data/Items.json') as f:
-                self.data = [item for item in json.load(f) if item]
+            pass
+
+        def data(self):
+            if not hasattr(self, '_data'):
+                with renpy.file('unpacked/www/data/Items.json') as f:
+                    self._data = json.load(f)
+
+            return self._data
 
         def by_id(self, id):
-            for item in self.data:
-                if item['id'] == id:
+            for item in self.data():
+                if item and item['id'] == id:
                     return item
             return None
 
-    class GameActors:
+    class GameActors(ObjectWithJson):
         def __init__(self):
-            with renpy.file('unpacked/www/data/Actors.json') as f:
-                self.data = json.load(f)
+            self.overrides = {
+                1: {
+                    "name": "MCName"
+                }
+            }
 
-            self.data[1]['name'] = "MCName"
+        def __setstate__(self, d):
+            self.__dict__.update(d)
+            self.overrides = {}
+
+        def data(self):
+            if not hasattr(self, '_data'):
+                with renpy.file('unpacked/www/data/Actors.json') as f:
+                    self._data = json.load(f)
+
+            return self._data;
+
+        def set_property(self, index, property_name, property_value):
+            if not self.overrides.has_key(index):
+                self.overrides[index] = {}
+            self.overrides[index][property_name] = property_value
 
         def by_index(self, index):
-            return self.data[index]
+            actor_data = self.data()[index]
+            actor_data.update(self.overrides.get(index, {}))
+            return actor_data
 
-    class GameParty:
+    class GameParty(ObjectWithJson):
         def __init__(self):
             # TODO: doesn't account for weapons and armor items
             self.members = [1]
@@ -525,8 +554,8 @@ init python:
                 # Get actor name
                 elif list_item['code'] == 303:
                     actor_index = list_item['parameters'][0]
-                    actor = self.state.actors.by_index(actor_index)
-                    actor['name'] = renpy.input("What name should actor %d have?" % actor_index)
+                    actor_name = renpy.input("What name should actor %d have?" % actor_index)
+                    self.state.actors.set_property(actor_index, 'name', actor_name)
 
                 # Recover all
                 elif list_item['code'] == 314:
@@ -596,19 +625,24 @@ init python:
             self.map_id = map_id
             self.x = x
             self.y = y
-            with renpy.file("unpacked/www/data/Map%03d.json" % map_id) as f:
-                self.data = json.load(f)
+
+        def data(self):
+            if not hasattr(self, '_data'):
+                with renpy.file("unpacked/www/data/Map%03d.json" % self.map_id) as f:
+                    self._data = json.load(f)
+
+            return self._data;
 
         def impassible_tiles(self):
             result = []
             direction_bits = [1, 2, 4, 8]
-            width = self.data['width']
-            height = self.data['height']
+            width = self.data()['width']
+            height = self.data()['height']
             for x in xrange(0, width):
                 for y in xrange(0, height):
-                    tile_ids = [self.data['data'][(z * height + y) * width + x] for z in xrange(0, 4)]
+                    tile_ids = [self.data()['data'][(z * height + y) * width + x] for z in xrange(0, 4)]
                     for tile_id in tile_ids:
-                        flag = self.state.tilesets[self.data['tilesetId']]['flags'][tile_id]
+                        flag = self.state.tilesets()[self.data()['tilesetId']]['flags'][tile_id]
                         if any([(flag & direction_bit) == direction_bit for direction_bit in direction_bits]):
                             result.append((x, y))
                             break
@@ -616,7 +650,7 @@ init python:
             return result
 
         def find_event_for_location(self, x, y):
-            for e in self.data['events']:
+            for e in self.data()['events']:
                 if e and e['x'] == x and e['y'] == y:
                     for index, page in enumerate(reversed(e['pages'])):
                         if self.meets_conditions(e, page['conditions']) and page['trigger'] != 3:
@@ -626,7 +660,7 @@ init python:
             return None
 
         def find_auto_trigger_event(self):
-            for e in self.data['events']:
+            for e in self.data()['events']:
                 if e:
                     for page in reversed(e['pages']):
                         if self.meets_conditions(e, page['conditions']):
@@ -637,7 +671,7 @@ init python:
             return None
 
         def parallel_event_at_index(self, event_index):
-            e = self.data['events'][event_index]
+            e = self.data()['events'][event_index]
             if e:
                 for page in reversed(e['pages']):
                     if self.meets_conditions(e, page['conditions']):
@@ -685,7 +719,7 @@ init python:
 
         def map_options(self):
             coords = []
-            for e in self.data['events']:
+            for e in self.data()['events']:
                 if e:
                     for page in reversed(e['pages']):
                         if page['trigger'] < 3 and self.meets_conditions(e, page['conditions']):
@@ -695,34 +729,46 @@ init python:
 
             return coords
 
-    class GameState:
+    class GameState(ObjectWithJson):
         def __init__(self):
-            with renpy.file('unpacked/www/data/System.json') as f:
-                self.system_data = json.load(f)
-
-            with renpy.file('unpacked/www/data/CommonEvents.json') as f:
-                self.common_events_data = json.load(f)
-
-            with renpy.file('unpacked/www/data/Tilesets.json') as f:
-                self.tilesets = json.load(f)
-
             self.common_events_index = None
             self.parallel_events_index = None
             self.event = None
-            self.starting_map_id = self.system_data['startMapId']
-            self.map = GameMap(self, self.starting_map_id, self.system_data['startX'], self.system_data['startY'])
-            self.switches = GameSwitches(self.system_data['switches'])
+            self.starting_map_id = self.system_data()['startMapId']
+            self.map = GameMap(self, self.starting_map_id, self.system_data()['startX'], self.system_data()['startY'])
+            self.switches = GameSwitches(self.system_data()['switches'])
             self.self_switches = GameSelfSwitches()
-            self.variables = GameVariables(self.system_data['variables'])
+            self.variables = GameVariables(self.system_data()['variables'])
             self.party = GameParty()
             self.actors = GameActors()
             self.items = GameItems()
             self.branch = {}
 
+        def system_data(self):
+            if not hasattr(self, '_system_data'):
+                with renpy.file('unpacked/www/data/System.json') as f:
+                    self._system_data = json.load(f)
+
+            return self._system_data
+
+        def common_events_data(self):
+            if not hasattr(self, '_common_events_data'):
+                with renpy.file('unpacked/www/data/CommonEvents.json') as f:
+                    self._common_events_data = json.load(f)
+
+            return self._common_events_data
+
+        def tilesets(self):
+            if not hasattr(self, '_tilesets'):
+                with renpy.file('unpacked/www/data/Tilesets.json') as f:
+                    self._tilesets = json.load(f)
+
+            return self._tilesets
+
         def queue_common_and_parallel_events(self):
-            if len(self.common_events_data) > 0:
+            if len(self.common_events_data()) > 0:
                 self.common_events_index = 1
-            if len(self.map.data['events']) > 0:
+            if len(self.map.data()['events']) > 0:
                 self.parallel_events_index = 1
 
         def do_next_thing(self, mapdest):
@@ -737,17 +783,17 @@ init python:
                     self.event = None
                 return True
 
-            if self.common_events_index != None and self.common_events_index < len(self.common_events_data):
-                for event in xrange(self.common_events_index, len(self.common_events_data)):
-                    common_event = self.common_events_data[self.common_events_index]
+            if self.common_events_index != None and self.common_events_index < len(self.common_events_data()):
+                for event in xrange(self.common_events_index, len(self.common_events_data())):
+                    common_event = self.common_events_data()[self.common_events_index]
                     self.common_events_index += 1
                     if common_event['trigger'] > 0 and self.switches.value(common_event['switchId']) == True:
                         self.event = GameEvent(self, common_event, common_event)
                         return True
             self.common_events_index = None
 
-            if self.parallel_events_index != None and self.parallel_events_index < len(self.map.data['events']):
-                for event in xrange(self.parallel_events_index, len(self.map.data['events'])):
+            if self.parallel_events_index != None and self.parallel_events_index < len(self.map.data()['events']):
+                for event in xrange(self.parallel_events_index, len(self.map.data()['events'])):
                     possible_parallel_event = self.map.parallel_event_at_index(self.parallel_events_index)
                     self.parallel_events_index += 1
                     if possible_parallel_event:
@@ -767,8 +813,8 @@ init python:
 
             coordinates = self.map.map_options()
             tile_pixel_options = [
-                config.screen_width / float(self.map.data['width']),
-                (config.screen_height - 20) / float(self.map.data['height'])
+                config.screen_width / float(self.map.data()['width']),
+                (config.screen_height - 20) / float(self.map.data()['height'])
             ]
             tile_pixels = int(min(tile_pixel_options))
 
@@ -776,10 +822,10 @@ init python:
                 "mapscreen",
                 coords=coordinates,
                 impassible_tiles=self.map.impassible_tiles(),
-                width=float(self.map.data['width']),
-                height=float(self.map.data['height']),
-                x_offset=int((config.screen_width - tile_pixels * self.map.data['width']) / 2.0),
-                y_offset=int((config.screen_height - tile_pixels * self.map.data['height']) / 2.0),
+                width=float(self.map.data()['width']),
+                height=float(self.map.data()['height']),
+                x_offset=int((config.screen_width - tile_pixels * self.map.data()['width']) / 2.0),
+                y_offset=int((config.screen_height - tile_pixels * self.map.data()['height']) / 2.0),
                 tile_pixels=tile_pixels
             )
 
