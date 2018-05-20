@@ -124,7 +124,7 @@ init python:
     class GameActors:
         def __init__(self):
             with renpy.file('unpacked/www/data/Actors.json') as f:
-                self.data = [actor for actor in json.load(f) if actor]
+                self.data = json.load(f)
 
             self.data[1]['name'] = "MCName"
 
@@ -134,7 +134,7 @@ init python:
     class GameParty:
         def __init__(self):
             # TODO: doesn't account for weapons and armor items
-            self.members = []
+            self.members = [1]
             self.items = {}
 
         def has_item(self, item):
@@ -146,11 +146,16 @@ init python:
             if self.items[item['id']] == 0:
                 del self.items[item['id']]
 
-        def members(self):
-            self.members
+        def add_actor(self, actor_index):
+            if actor_index not in self.members:
+                self.members.append(actor_index)
+
+        def remove_actor(self, actor_index):
+            if actor_index in self.members:
+                self.members.remove(actor_index)
 
         def has_actor(self, actor):
-            False
+            return actor['id'] in self.members
 
     class GameEvent:
         def __init__(self, state, event_data, page):
@@ -437,7 +442,16 @@ init python:
 
                 # Change party members -- TODO
                 elif list_item['code'] == 129:
-                    pass
+                    actor_index = list_item['parameters'][0]
+                    actor = self.state.actors.by_index(actor_index)
+                    if actor:
+                        if list_item['parameters'][1] == 0:
+                            # Initialize actor - I don't think this is needed outside of combat, mostly
+                            if list_item['parameters'][2]:
+                                pass
+                            self.state.party.add_actor(actor_index)
+                        else:
+                            self.state.party.remove_actor(actor_index)
 
                 # Toggle menu access
                 elif list_item['code'] == 135:
