@@ -19,12 +19,20 @@ init python:
                 continue
 
             renpy.image(image_name, filename)
+
         if filename.startswith("unpacked/www/movies/"):
             image_name = filename.replace("unpacked/www/movies/", "").split(".")[0]
             if renpy.has_image(image_name, exact=True):
                 continue
 
             renpy.image(image_name, Movie(play=filename))
+
+        if filename.startswith("unpacked/www/img/tilesets/"):
+            image_name = filename.replace("unpacked/www/img/tilesets/", "").split(".")[0]
+            if renpy.has_image(image_name, exact=True):
+                continue
+
+            renpy.image(image_name, filename)
 
     class ObjectWithJson:
         def __getstate__(self):
@@ -619,7 +627,26 @@ init python:
         def done(self):
             return self.list_index == len(self.page['list'])
 
+    class GameTile:
+        def __init__(self, x, y, sx, sy, tileset_name):
+            self.x = x
+            self.y = y
+            self.sx = sx
+            self.sy = sy
+            self.tileset_name = tileset_name
+
     class GameMap:
+        TILE_ID_B      = 0
+        TILE_ID_C      = 256
+        TILE_ID_D      = 512
+        TILE_ID_E      = 768
+        TILE_ID_A5     = 1536
+        TILE_ID_A1     = 2048
+        TILE_ID_A2     = 2816
+        TILE_ID_A3     = 4352
+        TILE_ID_A4     = 5888
+        TILE_ID_MAX    = 8192
+
         def __init__(self, state, map_id, x, y):
             self.state = state
             self.map_id = map_id
@@ -632,6 +659,9 @@ init python:
                     self._data = json.load(f)
 
             return self._data;
+
+        def is_tile_a5(self, tile_id):
+            return tile_id >= GameMap.TILE_ID_A5 and tile_id < GameMap.TILE_ID_A1;
 
         def impassible_tiles(self):
             result = []
@@ -647,6 +677,33 @@ init python:
                             result.append((x, y))
                             break
 
+            return result
+
+        def tiles(self):
+            result = []
+            width = self.data()['width']
+            height = self.data()['height']
+            for x in xrange(0, width):
+                for y in xrange(0, height):
+                    tile_ids = [self.data()['data'][(z * height + y) * width + x] for z in xrange(0, 4)]
+                    tile_id = tile_ids[0]
+                    set_number = 0
+                    if self.is_tile_a5(tile_id):
+                        set_number = 4
+                    else:
+                        set_number = 5 + tile_id // 256
+
+                    tile_width = 48;
+                    tile_height = 48;
+                    sx = ((tile_id // 128) % 2 * 8 + tile_id % 8) * tile_width;
+                    sy = ((tile_id % 256 // 8) % 16) * tile_height;
+
+                    # Need to implmenet _drawAutotile
+                    if set_number > 4:
+                        set_number = 4
+                    tileset_name = self.state.tilesets()[self.data()['tilesetId']]['tilesetNames'][set_number]
+
+                    result.append(GameTile(x, y, sx, sy, tileset_name))
             return result
 
         def find_event_for_location(self, x, y):
@@ -821,7 +878,7 @@ init python:
             renpy.call_screen(
                 "mapscreen",
                 coords=coordinates,
-                impassible_tiles=self.map.impassible_tiles(),
+                tiles=self.map.tiles(),
                 width=float(self.map.data()['width']),
                 height=float(self.map.data()['height']),
                 x_offset=int((config.screen_width - tile_pixels * self.map.data()['width']) / 2.0),
@@ -832,13 +889,14 @@ init python:
 define mapdest = None
 
 screen mapscreen:
-    for coord in impassible_tiles:
+    for tile in tiles:
         button:
-            xpos x_offset + int(coord[0] * tile_pixels)
+            image tile.tileset_name:
+                crop (tile.sx, tile.sy, 48, 48)
+            xpos x_offset + int(tile.x * tile_pixels)
             xsize tile_pixels
-            ypos y_offset + int(coord[1] * tile_pixels)
+            ypos y_offset + int(tile.y * tile_pixels)
             ysize tile_pixels
-            background "#0f0"
 
     for i, coord in enumerate(coords):
         button:
