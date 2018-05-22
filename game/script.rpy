@@ -4,7 +4,7 @@
 # show tiles on the map
 # show characters on the map
 # combine lines better ('needed her the most')
-# reloading is losing MC name
+# reloading immediately after start is re-asking name ... some checkpointing problem seemingly
 # implement the phone?!
 
 define debug_events = False
@@ -867,6 +867,8 @@ init python:
                 if debug_events:
                     renpy.say(None, "%d,%d" % mapdest)
                 return True
+
+            renpy.checkpoint()
 
             coordinates = self.map.map_options()
             tile_pixel_options = [
