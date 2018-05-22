@@ -6,29 +6,32 @@
 # combine lines better ('needed her the most')
 # reloading immediately after start is re-asking name ... some checkpointing problem seemingly
 # implement the phone?!
+# tile questions: why is it the slowest
+# tile questions: is there a way to use fractional pixels
 
 define debug_events = False
 
 init python:
     import json
+    import math
 
     for filename in renpy.list_files():
         if filename.startswith("unpacked/www/img/pictures/"):
-            image_name = filename.replace("unpacked/www/img/pictures/", "").split(".")[0]
+            image_name = os.path.splitext(filename.replace("unpacked/www/img/pictures/", ""))[0]
             if renpy.has_image(image_name, exact=True):
                 continue
 
             renpy.image(image_name, filename)
 
         if filename.startswith("unpacked/www/movies/"):
-            image_name = filename.replace("unpacked/www/movies/", "").split(".")[0]
+            image_name = os.path.splitext(filename.replace("unpacked/www/movies/", ""))[0]
             if renpy.has_image(image_name, exact=True):
                 continue
 
             renpy.image(image_name, Movie(play=filename))
 
         if filename.startswith("unpacked/www/img/tilesets/"):
-            image_name = filename.replace("unpacked/www/img/tilesets/", "").split(".")[0]
+            image_name = os.path.splitext(filename.replace("unpacked/www/img/tilesets/", ""))[0].replace(".", "_")
             if renpy.has_image(image_name, exact=True):
                 continue
 
@@ -628,11 +631,15 @@ init python:
             return self.list_index == len(self.page['list'])
 
     class GameTile:
-        def __init__(self, x, y, sx, sy, tileset_name):
+        def __init__(self, x, y, sx, sy, dx, dy, w, h, tileset_name):
             self.x = x
             self.y = y
             self.sx = sx
             self.sy = sy
+            self.dx = dx
+            self.dy = dy
+            self.w = w
+            self.h = h
             self.tileset_name = tileset_name
 
     class GameMap:
@@ -647,6 +654,52 @@ init python:
         TILE_ID_A4     = 5888
         TILE_ID_MAX    = 8192
 
+        FLOOR_AUTOTILE_TABLE = [
+            [[2,4],[1,4],[2,3],[1,3]],[[2,0],[1,4],[2,3],[1,3]],
+            [[2,4],[3,0],[2,3],[1,3]],[[2,0],[3,0],[2,3],[1,3]],
+            [[2,4],[1,4],[2,3],[3,1]],[[2,0],[1,4],[2,3],[3,1]],
+            [[2,4],[3,0],[2,3],[3,1]],[[2,0],[3,0],[2,3],[3,1]],
+            [[2,4],[1,4],[2,1],[1,3]],[[2,0],[1,4],[2,1],[1,3]],
+            [[2,4],[3,0],[2,1],[1,3]],[[2,0],[3,0],[2,1],[1,3]],
+            [[2,4],[1,4],[2,1],[3,1]],[[2,0],[1,4],[2,1],[3,1]],
+            [[2,4],[3,0],[2,1],[3,1]],[[2,0],[3,0],[2,1],[3,1]],
+            [[0,4],[1,4],[0,3],[1,3]],[[0,4],[3,0],[0,3],[1,3]],
+            [[0,4],[1,4],[0,3],[3,1]],[[0,4],[3,0],[0,3],[3,1]],
+            [[2,2],[1,2],[2,3],[1,3]],[[2,2],[1,2],[2,3],[3,1]],
+            [[2,2],[1,2],[2,1],[1,3]],[[2,2],[1,2],[2,1],[3,1]],
+            [[2,4],[3,4],[2,3],[3,3]],[[2,4],[3,4],[2,1],[3,3]],
+            [[2,0],[3,4],[2,3],[3,3]],[[2,0],[3,4],[2,1],[3,3]],
+            [[2,4],[1,4],[2,5],[1,5]],[[2,0],[1,4],[2,5],[1,5]],
+            [[2,4],[3,0],[2,5],[1,5]],[[2,0],[3,0],[2,5],[1,5]],
+            [[0,4],[3,4],[0,3],[3,3]],[[2,2],[1,2],[2,5],[1,5]],
+            [[0,2],[1,2],[0,3],[1,3]],[[0,2],[1,2],[0,3],[3,1]],
+            [[2,2],[3,2],[2,3],[3,3]],[[2,2],[3,2],[2,1],[3,3]],
+            [[2,4],[3,4],[2,5],[3,5]],[[2,0],[3,4],[2,5],[3,5]],
+            [[0,4],[1,4],[0,5],[1,5]],[[0,4],[3,0],[0,5],[1,5]],
+            [[0,2],[3,2],[0,3],[3,3]],[[0,2],[1,2],[0,5],[1,5]],
+            [[0,4],[3,4],[0,5],[3,5]],[[2,2],[3,2],[2,5],[3,5]],
+            [[0,2],[3,2],[0,5],[3,5]],[[0,0],[1,0],[0,1],[1,1]]
+        ]
+
+        WALL_AUTOTILE_TABLE = [
+            [[2,2],[1,2],[2,1],[1,1]],[[0,2],[1,2],[0,1],[1,1]],
+            [[2,0],[1,0],[2,1],[1,1]],[[0,0],[1,0],[0,1],[1,1]],
+            [[2,2],[3,2],[2,1],[3,1]],[[0,2],[3,2],[0,1],[3,1]],
+            [[2,0],[3,0],[2,1],[3,1]],[[0,0],[3,0],[0,1],[3,1]],
+            [[2,2],[1,2],[2,3],[1,3]],[[0,2],[1,2],[0,3],[1,3]],
+            [[2,0],[1,0],[2,3],[1,3]],[[0,0],[1,0],[0,3],[1,3]],
+            [[2,2],[3,2],[2,3],[3,3]],[[0,2],[3,2],[0,3],[3,3]],
+            [[2,0],[3,0],[2,3],[3,3]],[[0,0],[3,0],[0,3],[3,3]]
+        ]
+
+        WATERFALL_AUTOTILE_TABLE = [
+            [[2,0],[1,0],[2,1],[1,1]],[[0,0],[1,0],[0,1],[1,1]],
+            [[2,0],[3,0],[2,1],[3,1]],[[0,0],[3,0],[0,1],[3,1]]
+        ]
+
+        TILE_WIDTH = 48
+        TILE_HEIGHT = 48
+
         def __init__(self, state, map_id, x, y):
             self.state = state
             self.map_id = map_id
@@ -658,10 +711,126 @@ init python:
                 with renpy.file("unpacked/www/data/Map%03d.json" % self.map_id) as f:
                     self._data = json.load(f)
 
-            return self._data;
+            return self._data
+
+        def is_tile_a1(self, tile_id):
+            return tile_id >= GameMap.TILE_ID_A1 and tile_id < GameMap.TILE_ID_A2
+
+        def is_tile_a2(self, tile_id):
+            return tile_id >= GameMap.TILE_ID_A2 and tile_id < GameMap.TILE_ID_A3
+
+        def is_tile_a3(self, tile_id):
+            return tile_id >= GameMap.TILE_ID_A3 and tile_id < GameMap.TILE_ID_A4
+
+        def is_tile_a4(self, tile_id):
+            return tile_id >= GameMap.TILE_ID_A4 and tile_id < GameMap.TILE_ID_MAX
 
         def is_tile_a5(self, tile_id):
-            return tile_id >= GameMap.TILE_ID_A5 and tile_id < GameMap.TILE_ID_A1;
+            return tile_id >= GameMap.TILE_ID_A5 and tile_id < GameMap.TILE_ID_A1
+
+        def flags(self, tile_id):
+            return self.state.tilesets()[self.data()['tilesetId']]['flags'][tile_id]
+
+        def is_table_tile(self, tile_id):
+            return self.is_tile_a2(tile_id) and (self.flags(tile_id) & 0x80)
+
+        def normal_tile_data(self, tile_id):
+            if self.is_tile_a5(tile_id):
+                set_number = 4
+            else:
+                set_number = 5 + tile_id // 256
+
+            sx = ((tile_id // 128) % 2 * 8 + tile_id % 8) * GameMap.TILE_WIDTH
+            sy = ((tile_id % 256 // 8) % 16) * GameMap.TILE_HEIGHT
+
+            return (sx, sy, 0, 0, GameMap.TILE_WIDTH, GameMap.TILE_HEIGHT, set_number)
+
+        def auto_tile_data(self, tile_id):
+            result = []
+            autotile_table = GameMap.FLOOR_AUTOTILE_TABLE
+            kind = (tile_id - GameMap.TILE_ID_A1) // 48
+            shape = (tile_id - GameMap.TILE_ID_A1) % 48
+            tx = kind % 8
+            ty = kind // 8
+            bx = 0
+            by = 0
+            set_number = 0
+            is_table = False
+
+            if self.is_tile_a1(tile_id):
+                renpy.say(None, "Tile A1 not yet implemented!")
+                #var waterSurfaceIndex = [0, 1, 2, 1][this._animationFrame % 4];
+                #setNumber = 0;
+                #if (kind === 0) {
+                #    bx = waterSurfaceIndex * 2;
+                #    by = 0;
+                #} else if (kind === 1) {
+                #    bx = waterSurfaceIndex * 2;
+                #    by = 3;
+                #} else if (kind === 2) {
+                #    bx = 6;
+                #    by = 0;
+                #} else if (kind === 3) {
+                #    bx = 6;
+                #    by = 3;
+                #} else {
+                #    bx = Math.floor(tx / 4) * 8;
+                #    by = ty * 6 + Math.floor(tx / 2) % 2 * 3;
+                #    if (kind % 2 === 0) {
+                #        bx += waterSurfaceIndex * 2;
+                #    }
+                #    else {
+                #        bx += 6;
+                #        autotileTable = Tilemap.WATERFALL_AUTOTILE_TABLE;
+                #        by += this._animationFrame % 3;
+                #    }
+                #}
+            elif self.is_tile_a2(tile_id):
+                set_number = 1
+                bx = tx * 2
+                by = (ty - 2) * 3
+                is_table = self.is_table_tile(tile_id)
+            elif self.is_tile_a3(tile_id):
+                set_number = 2
+                bx = tx * 2
+                by = (ty - 6) * 2
+                autotile_table = GameMap.WALL_AUTOTILE_TABLE
+            elif self.is_tile_a4(tile_id):
+                set_number = 3
+                bx = tx * 2
+                by = math.floor((ty - 10) * 2.5 + (0.5 if ty % 2 == 1 else 0))
+                if ty % 2 == 1:
+                    autotile_table = GameMap.WALL_AUTOTILE_TABLE
+
+            table = autotile_table[shape]
+
+            if table:
+                w1 = GameMap.TILE_WIDTH / 2
+                h1 = GameMap.TILE_HEIGHT / 2
+                for i in xrange(0, 4):
+                    qsx = table[i][0]
+                    qsy = table[i][1]
+                    sx1 = (bx * 2 + qsx) * w1
+                    sy1 = (by * 2 + qsy) * h1
+                    dx1 = (i % 2) * w1
+                    dy1 = (i // 2) * h1
+                    if is_table and (qsy == 1 or qsy == 5):
+                        qsx2 = qsx
+                        qsy2 = 3
+                        if qsy == 1:
+                            qsx2 = [0,3,2,1][qsx]
+                        sx2 = (bx * 2 + qsx2) * w1
+                        sy2 = (by * 2 + qsy2) * h1
+                        result.append((sx2, sy2, dx1, dy1, w1, h1, set_number))
+                        dy1 += h1 / 2
+                        result.append((sx1, sy2, dx1, dy1, w1, h1/2.0, set_number))
+                    else:
+                        result.append((sx1, sy1, 0, 0, w1, h1, set_number))
+
+            return result
+
+        def is_visible_tile(self, tile_id):
+            return tile_id > 0 and tile_id < GameMap.TILE_ID_MAX
 
         def impassible_tiles(self):
             result = []
@@ -672,7 +841,7 @@ init python:
                 for y in xrange(0, height):
                     tile_ids = [self.data()['data'][(z * height + y) * width + x] for z in xrange(0, 4)]
                     for tile_id in tile_ids:
-                        flag = self.state.tilesets()[self.data()['tilesetId']]['flags'][tile_id]
+                        flag = self.flags(tile_id)
                         if any([(flag & direction_bit) == direction_bit for direction_bit in direction_bits]):
                             result.append((x, y))
                             break
@@ -686,24 +855,28 @@ init python:
             for x in xrange(0, width):
                 for y in xrange(0, height):
                     tile_ids = [self.data()['data'][(z * height + y) * width + x] for z in xrange(0, 4)]
-                    tile_id = tile_ids[0]
-                    set_number = 0
-                    if self.is_tile_a5(tile_id):
-                        set_number = 4
-                    else:
-                        set_number = 5 + tile_id // 256
+                    for tile_id in tile_ids:
+                        if not self.is_visible_tile(tile_id):
+                            continue
 
-                    tile_width = 48;
-                    tile_height = 48;
-                    sx = ((tile_id // 128) % 2 * 8 + tile_id % 8) * tile_width;
-                    sy = ((tile_id % 256 // 8) % 16) * tile_height;
+                        set_number = 0
 
-                    # Need to implmenet _drawAutotile
-                    if set_number > 4:
-                        set_number = 4
-                    tileset_name = self.state.tilesets()[self.data()['tilesetId']]['tilesetNames'][set_number]
+                        all_tile_data = []
 
-                    result.append(GameTile(x, y, sx, sy, tileset_name))
+                        # "autotiles"
+                        if tile_id > GameMap.TILE_ID_A1:
+                            all_tile_data = self.auto_tile_data(tile_id)
+
+                        # "normal tiles"
+                        else:
+                            all_tile_data = [self.normal_tile_data(tile_id)]
+
+                        for tile_data in all_tile_data:
+                            sx, sy, dx, dy, w, h, set_number = tile_data
+
+                            tileset_name = self.state.tilesets()[self.data()['tilesetId']]['tilesetNames'][set_number]
+
+                            result.append(GameTile(x, y, sx, sy, dx, dy, w, h, tileset_name))
             return result
 
         def find_event_for_location(self, x, y):
@@ -893,12 +1066,12 @@ define mapdest = None
 screen mapscreen:
     for tile in tiles:
         button:
-            image tile.tileset_name:
-                crop (tile.sx, tile.sy, 48, 48)
-            xpos x_offset + int(tile.x * tile_pixels)
-            xsize tile_pixels
-            ypos y_offset + int(tile.y * tile_pixels)
-            ysize tile_pixels
+            image tile.tileset_name.replace(".", "_"):
+                crop (tile.sx, tile.sy, tile.w, tile.h)
+            xpos x_offset + tile.dx + int(tile.x * tile_pixels)
+            xsize tile_pixels / (GameMap.TILE_WIDTH / tile.w)
+            ypos y_offset + tile.dy + int(tile.y * tile_pixels)
+            ysize tile_pixels / (GameMap.TILE_HEIGHT / tile.h)
 
     for i, coord in enumerate(coords):
         button:
