@@ -91,7 +91,7 @@ init python:
             self.variable_values[variable_id] = value
 
         def operate_variable(self, variable_id, operation_type, value):
-            old_value = self.value(variable_id);
+            old_value = self.value(variable_id)
             if operation_type == 0:
                 self.set_value(variable_id, value)
             elif operation_type == 1:
@@ -157,7 +157,7 @@ init python:
                 with renpy.file('unpacked/www/data/Actors.json') as f:
                     self._data = json.load(f)
 
-            return self._data;
+            return self._data
 
         def set_property(self, index, property_name, property_value):
             if not self.overrides.has_key(index):
@@ -215,12 +215,12 @@ init python:
                 return self.state.switches.value(params[1]) == (params[2] == 0)
             # Variable
             elif operation == 1:
-                value1 = self.state.variables.value(params[1]);
+                value1 = self.state.variables.value(params[1])
                 value2 = None
                 if params[2] == 0:
-                    value2 = params[3];
+                    value2 = params[3]
                 else:
-                    value2 = self.state.variables.value(params[3]);
+                    value2 = self.state.variables.value(params[3])
 
                 if params[4] == 0:
                     return value1 == value2
@@ -362,7 +362,7 @@ init python:
             end_index = max(index, current_index)
             indent = current_indent
             for i in xrange(start_index, end_index + 1):
-                new_indent = self.page['list'][i]['indent'];
+                new_indent = self.page['list'][i]['indent']
                 if new_indent != indent:
                     self.state.branch[indent] = None
                     indent = new_indent
@@ -437,7 +437,7 @@ init python:
                     label_name = list_item['parameters'][0]
                     for index, other_list_item in enumerate(self.page['list']):
                         if other_list_item['code'] == 118 and other_list_item['parameters'][0] == label_name:
-                            self.jump_to(index, current_indent = list_item['indent']);
+                            self.jump_to(index, current_indent = list_item['indent'])
 
                 # Control Switches
                 elif list_item['code'] == 121:
@@ -448,7 +448,7 @@ init python:
                 # Control Variables
                 elif list_item['code'] == 122:
                     start, end, operation_type, operand = list_item['parameters'][0:4]
-                    value = 0;
+                    value = 0
                     if operand == 0:
                         value = list_item['parameters'][4]
                     elif operand == 1:
