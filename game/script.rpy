@@ -631,16 +631,15 @@ init python:
             return self.list_index == len(self.page['list'])
 
     class GameTile:
-        def __init__(self, x, y, sx, sy, dx, dy, w, h, tileset_name):
-            self.x = x
-            self.y = y
+        def __init__(self, tile_id = None, sx = None, sy = None, dx = None, dy = None, w = None, h = None, set_number = None):
+            self.tile_id = tile_id
             self.sx = sx
             self.sy = sy
             self.dx = dx
             self.dy = dy
             self.w = w
             self.h = h
-            self.tileset_name = tileset_name
+            self.set_number = set_number
 
     class GameMap:
         TILE_ID_B      = 0
@@ -743,7 +742,7 @@ init python:
             sx = ((tile_id // 128) % 2 * 8 + tile_id % 8) * GameMap.TILE_WIDTH
             sy = ((tile_id % 256 // 8) % 16) * GameMap.TILE_HEIGHT
 
-            return (sx, sy, 0, 0, GameMap.TILE_WIDTH, GameMap.TILE_HEIGHT, set_number)
+            return GameTile(tile_id = tile_id, sx = sx, sy = sy, dx = 0, dy = 0, w = GameMap.TILE_WIDTH, h = GameMap.TILE_HEIGHT, set_number = set_number)
 
         def auto_tile_data(self, tile_id):
             result = []
@@ -798,15 +797,15 @@ init python:
             elif self.is_tile_a4(tile_id):
                 set_number = 3
                 bx = tx * 2
-                by = math.floor((ty - 10) * 2.5 + (0.5 if ty % 2 == 1 else 0))
+                by = int(math.floor((ty - 10) * 2.5 + (0.5 if ty % 2 == 1 else 0)))
                 if ty % 2 == 1:
                     autotile_table = GameMap.WALL_AUTOTILE_TABLE
 
             table = autotile_table[shape]
 
             if table:
-                w1 = GameMap.TILE_WIDTH / 2
-                h1 = GameMap.TILE_HEIGHT / 2
+                w1 = GameMap.TILE_WIDTH // 2
+                h1 = GameMap.TILE_HEIGHT // 2
                 for i in xrange(0, 4):
                     qsx = table[i][0]
                     qsy = table[i][1]
@@ -821,11 +820,11 @@ init python:
                             qsx2 = [0,3,2,1][qsx]
                         sx2 = (bx * 2 + qsx2) * w1
                         sy2 = (by * 2 + qsy2) * h1
-                        result.append((sx2, sy2, dx1, dy1, w1, h1, set_number))
-                        dy1 += h1 / 2
-                        result.append((sx1, sy2, dx1, dy1, w1, h1/2.0, set_number))
+                        result.append(GameTile(tile_id = tile_id, sx = sx2, sy = sy2, dx = dx1, dy = dy1, w = w1, h = h1, set_number = set_number))
+                        dy1 += h1 // 2
+                        result.append(GameTile(tile_id = tile_id, sx = sx1, sy = sy2, dx = dx1, dy = dy1, w = w1, h = h1/2, set_number = set_number))
                     else:
-                        result.append((sx1, sy1, 0, 0, w1, h1, set_number))
+                        result.append(GameTile(tile_id = tile_id, sx = sx1, sy = sy1, dx = dx1, dy = dy1, w = w1, h = h1, set_number = set_number))
 
             return result
 
@@ -854,29 +853,30 @@ init python:
             height = self.data()['height']
             for x in xrange(0, width):
                 for y in xrange(0, height):
-                    tile_ids = [self.data()['data'][(z * height + y) * width + x] for z in xrange(0, 4)]
-                    for tile_id in tile_ids:
+                    for z in xrange(0, 4):
+                        tile_id = self.data()['data'][(z * height + y) * width + x]
+
                         if not self.is_visible_tile(tile_id):
                             continue
 
                         set_number = 0
 
-                        all_tile_data = []
+                        all_tiles = []
 
                         # "autotiles"
                         if tile_id > GameMap.TILE_ID_A1:
-                            all_tile_data = self.auto_tile_data(tile_id)
+                            all_tiles = self.auto_tile_data(tile_id)
 
                         # "normal tiles"
                         else:
-                            all_tile_data = [self.normal_tile_data(tile_id)]
+                            all_tiles = [self.normal_tile_data(tile_id)]
 
-                        for tile_data in all_tile_data:
-                            sx, sy, dx, dy, w, h, set_number = tile_data
+                        for tile in all_tiles:
+                            tile.x = x
+                            tile.y = y
+                            tile.tileset_name = self.state.tilesets()[self.data()['tilesetId']]['tilesetNames'][tile.set_number]
 
-                            tileset_name = self.state.tilesets()[self.data()['tilesetId']]['tilesetNames'][set_number]
-
-                            result.append(GameTile(x, y, sx, sy, dx, dy, w, h, tileset_name))
+                            result.append(tile)
             return result
 
         def find_event_for_location(self, x, y):
@@ -1046,12 +1046,13 @@ init python:
             coordinates = self.map.map_options()
             tile_pixel_options = [
                 config.screen_width / float(self.map.data()['width']),
-                (config.screen_height - 20) / float(self.map.data()['height'])
+                config.screen_height / float(self.map.data()['height'])
             ]
             tile_pixels = int(min(tile_pixel_options))
 
             renpy.call_screen(
                 "mapscreen",
+                mapfactor = 0.5,
                 coords=coordinates,
                 tiles=self.map.tiles(),
                 width=float(self.map.data()['width']),
@@ -1062,26 +1063,36 @@ init python:
             )
 
 define mapdest = None
+define mapfactor = 0.5
 
-screen mapscreen:
-    for tile in tiles:
-        button:
-            image tile.tileset_name.replace(".", "_"):
-                crop (tile.sx, tile.sy, tile.w, tile.h)
-            xpos x_offset + tile.dx + int(tile.x * tile_pixels)
-            xsize tile_pixels / (GameMap.TILE_WIDTH / tile.w)
-            ypos y_offset + tile.dy + int(tile.y * tile_pixels)
-            ysize tile_pixels / (GameMap.TILE_HEIGHT / tile.h)
+transform mapzoom(mapfactor):
+    zoom mapfactor
 
-    for i, coord in enumerate(coords):
-        button:
-            xpos x_offset + int(coord[0] * tile_pixels)
-            xsize tile_pixels
-            ypos y_offset + int(coord[1] * tile_pixels)
-            ysize tile_pixels
-            background "#f00"
-            hover_background "#00f"
-            action SetVariable("mapdest", coord), Jump("game")
+screen mapscreen(coords = None, mapfactor = None, tiles = None, width = None, height = None, x_offset = None, y_offset = None, tile_pixels = None):
+    viewport:
+        child_size (width * 48 + 100, height * 48 + 100)
+        mousewheel True
+        draggable True
+        scrollbars True
+        fixed at mapzoom(mapfactor):
+            for tile in tiles:
+                fixed:
+                    image tile.tileset_name.replace(".", "_"):
+                        crop (tile.sx, tile.sy, tile.w, tile.h)
+                    xpos x_offset + tile.dx + int(tile.x * 48)
+                    xsize tile.w
+                    ypos y_offset + tile.dy + int(tile.y * 48)
+                    ysize tile.h
+
+            for i, coord in enumerate(coords):
+                button:
+                    xpos x_offset + int(coord[0] * 48)
+                    xsize 48
+                    ypos y_offset + int(coord[1] * 48)
+                    ysize 48
+                    background "#f00"
+                    hover_background "#00f"
+                    action SetVariable("mapdest", coord), Jump("game")
 
 label start:
     python:
