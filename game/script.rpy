@@ -10,6 +10,8 @@
 # tile questions: is there a way to use fractional pixels
 
 define debug_events = False
+define tile_images = {}
+define mapdest = None
 
 init python:
     import json
@@ -35,9 +37,10 @@ init python:
             if renpy.has_image(image_name, exact=True):
                 continue
 
+            tile_images[image_name] = filename
             renpy.image(image_name, filename)
 
-    class ObjectWithJson:
+    class SelectivelyPickle:
         def __getstate__(self):
             return dict((k, v) for k, v in self.__dict__.iteritems() if not k.startswith('_'))
 
@@ -126,7 +129,7 @@ init python:
             for i in xrange(0, len(self.variable_names)):
                 print ("%3s: '%" + str(longest_string) + "s' = %s") % (i, self.variable_names[i], self.variable_values[i])
 
-    class GameItems(ObjectWithJson):
+    class GameItems(SelectivelyPickle):
         def __init__(self):
             pass
 
@@ -143,7 +146,7 @@ init python:
                     return item
             return None
 
-    class GameActors(ObjectWithJson):
+    class GameActors(SelectivelyPickle):
         def __init__(self):
             self.overrides = {
                 1: {
@@ -153,7 +156,8 @@ init python:
 
         def __setstate__(self, d):
             self.__dict__.update(d)
-            self.overrides = {}
+            if not hasattr(self, 'overrides'):
+                self.overrides = {}
 
         def data(self):
             if not hasattr(self, '_data'):
@@ -172,7 +176,7 @@ init python:
             actor_data.update(self.overrides.get(index, {}))
             return actor_data
 
-    class GameParty(ObjectWithJson):
+    class GameParty(SelectivelyPickle):
         def __init__(self):
             # TODO: doesn't account for weapons and armor items
             self.members = [1]
@@ -641,7 +645,30 @@ init python:
             self.h = h
             self.set_number = set_number
 
-    class GameMap:
+    class GameMapBackground(renpy.Displayable):
+        def __init__(self, tiles, **kwargs):
+            super(GameMapBackground, self).__init__(**kwargs)
+
+            largest_x = 0
+            largest_y = 0
+            for tile in tiles:
+                if tile.x > largest_x:
+                    largest_x = tile.x
+                if tile.y > largest_y:
+                    largest_y = tile.y
+
+            self.width = (largest_x + 1) * GameMap.TILE_WIDTH
+            self.height = (largest_y + 1) * GameMap.TILE_HEIGHT
+            self.r = renpy.Render(self.width, self.height)
+
+            for tile in tiles:
+                img = im.Crop(tile_images[tile.tileset_name.replace(".", "_")], (tile.sx, tile.sy, tile.w, tile.h))
+                self.r.blit(img.render(tile.w, tile.h, 0, 0), (tile.dx + int(tile.x * GameMap.TILE_WIDTH), tile.dy + int(tile.y * GameMap.TILE_HEIGHT)))
+
+        def render(self, width, height, st, at):
+            return self.r
+
+    class GameMap(SelectivelyPickle):
         TILE_ID_B      = 0
         TILE_ID_C      = 256
         TILE_ID_D      = 512
@@ -711,6 +738,17 @@ init python:
                     self._data = json.load(f)
 
             return self._data
+
+        def background_image(self):
+            if not hasattr(self, '_background_image'):
+                self._background_image = self.generate_background_image()
+
+            return self._background_image
+
+        def generate_background_image(self):
+            tiles = self.tiles()
+            d = GameMapBackground(self.tiles())
+            return d
 
         def is_tile_a1(self, tile_id):
             return tile_id >= GameMap.TILE_ID_A1 and tile_id < GameMap.TILE_ID_A2
@@ -959,7 +997,7 @@ init python:
 
             return coords
 
-    class GameState(ObjectWithJson):
+    class GameState(SelectivelyPickle):
         def __init__(self):
             self.common_events_index = None
             self.parallel_events_index = None
@@ -1044,52 +1082,82 @@ init python:
             renpy.checkpoint()
 
             coordinates = self.map.map_options()
-            tile_pixel_options = [
-                config.screen_width / float(self.map.data()['width']),
-                config.screen_height / float(self.map.data()['height'])
-            ]
-            tile_pixels = int(min(tile_pixel_options))
+
+            background_image = self.map.background_image()
+
+            map_width = background_image.width + 50
+            map_height = background_image.height + 50
+
+            width_ratio = config.screen_width / float(map_width)
+            height_ratio = config.screen_height / float(map_height)
+
+            print "mw: %s, mh: %s", (map_width, map_height)
+            print "w: %s, h: %s" % (width_ratio, height_ratio)
+
+            x_offset = 0
+            y_offset = 0
+            mapfactor = 1
+
+            if width_ratio > 1:
+                x_offset = (config.screen_width - map_width) // 2
+                if height_ratio > 1:
+                    # Image smaller than screen, show in native size
+                    mapfactor = 1
+                else:
+                    # Image too tall, shrink to fit
+                    mapfactor = float(config.screen_height) / map_height
+            else:
+                if height_ratio > 1:
+                    # Image too wide, shrink to fit
+                    mapfactor = float(config.screen_width) / map_width
+                else:
+                    # Image overflowing in both dimensions
+                    if width_ratio > height_ratio:
+                        # Overflowing more on height
+                        mapfactor = float(config.screen_height) / map_height
+                    else:
+                        # Overflowing more on width
+                        mapfactor = float(config.screen_width) / map_width
 
             renpy.call_screen(
                 "mapscreen",
-                mapfactor = 0.5,
+                mapfactor=mapfactor,
                 coords=coordinates,
-                tiles=self.map.tiles(),
+                background_image=background_image,
                 width=float(self.map.data()['width']),
                 height=float(self.map.data()['height']),
-                x_offset=int((config.screen_width - tile_pixels * self.map.data()['width']) / 2.0),
-                y_offset=int((config.screen_height - tile_pixels * self.map.data()['height']) / 2.0),
-                tile_pixels=tile_pixels
+                x_offset=x_offset,
+                y_offset=y_offset
             )
-
-define mapdest = None
-define mapfactor = 0.5
 
 transform mapzoom(mapfactor):
     zoom mapfactor
 
-screen mapscreen(coords = None, mapfactor = None, tiles = None, width = None, height = None, x_offset = None, y_offset = None, tile_pixels = None):
+screen mapscreen(coords = None, mapfactor = None, background_image = None, width = None, height = None, x_offset = None, y_offset = None):
+    #key "viewport_wheelup" action [
+    #    SetVariable('mapfactor', mapfactor * 1.5),
+    #    renpy.restart_interaction
+    #]
+    #key "viewport_wheeldown" action [
+    #    SetVariable('mapfactor', mapfactor * 0.66),
+    #    renpy.restart_interaction
+    #]
+
     viewport:
-        child_size (width * 48 + 100, height * 48 + 100)
+        child_size (width * GameMap.TILE_WIDTH, height * GameMap.TILE_HEIGHT)
         mousewheel True
         draggable True
         scrollbars True
         fixed at mapzoom(mapfactor):
-            for tile in tiles:
-                fixed:
-                    image tile.tileset_name.replace(".", "_"):
-                        crop (tile.sx, tile.sy, tile.w, tile.h)
-                    xpos x_offset + tile.dx + int(tile.x * 48)
-                    xsize tile.w
-                    ypos y_offset + tile.dy + int(tile.y * 48)
-                    ysize tile.h
-
+            add background_image:
+                xpos x_offset
+                ypos y_offset
             for i, coord in enumerate(coords):
                 button:
-                    xpos x_offset + int(coord[0] * 48)
-                    xsize 48
-                    ypos y_offset + int(coord[1] * 48)
-                    ysize 48
+                    xpos x_offset + int(coord[0] * GameMap.TILE_WIDTH)
+                    xsize GameMap.TILE_WIDTH
+                    ypos y_offset + int(coord[1] * GameMap.TILE_HEIGHT)
+                    ysize GameMap.TILE_HEIGHT
                     background "#f00"
                     hover_background "#00f"
                     action SetVariable("mapdest", coord), Jump("game")
