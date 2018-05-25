@@ -376,88 +376,88 @@ init python:
 
         def do_next_thing(self):
             if not self.done():
-                list_item = self.page['list'][self.list_index]
+                command = self.page['list'][self.list_index]
 
                 # Do nothing
-                if list_item['code'] == 0:
+                if command['code'] == 0:
                     pass
 
                 # Show text
-                elif list_item['code'] == 101:
+                elif command['code'] == 101:
                     accumulated_text = []
                     while len(self.page['list']) > self.list_index + 1 and self.page['list'][self.list_index + 1]['code'] == 401:
                         self.list_index += 1
-                        list_item = self.page['list'][self.list_index]
-                        text = list_item['parameters'][0]
+                        command = self.page['list'][self.list_index]
+                        text = command['parameters'][0]
                         text = text.replace("\\N[1]", self.state.actors.by_index(1)['name'])
                         accumulated_text.append(text)
 
                     renpy.say(None, "\n".join(accumulated_text))
 
                 # Show choices
-                elif list_item['code'] == 102:
-                    choice_texts = list_item['parameters'][0]
-                    cancel_type = list_item['parameters'][1]
+                elif command['code'] == 102:
+                    choice_texts = command['parameters'][0]
+                    cancel_type = command['parameters'][1]
                     if cancel_type >= len(choice_texts):
                         cancel_type = -2
                     result = renpy.display_menu([(text, index) for index, text in enumerate(choice_texts)])
-                    self.state.branch[list_item['indent']] = result
+                    self.state.branch[command['indent']] = result
 
                 # Comment
-                elif list_item['code'] == 108:
+                elif command['code'] == 108:
                     pass
 
                 # Conditional branch
-                elif list_item['code'] == 111:
-                    branch_result = self.conditional_branch_result(list_item['parameters'])
-                    self.state.branch[list_item['indent']] = branch_result
+                elif command['code'] == 111:
+                    branch_result = self.conditional_branch_result(command['parameters'])
+                    self.state.branch[command['indent']] = branch_result
                     if not branch_result:
-                        self.skip_branch(list_item['indent'])
+                        self.skip_branch(command['indent'])
 
                 # Loop -- TODO: this is not good enough
-                elif list_item['code'] == 112:
+                elif command['code'] == 112:
                     pass
 
                 # Repeat Above
-                elif list_item['code'] == 413:
+                elif command['code'] == 413:
                     while self.list_index > 0:
                         self.list_index -= 1
-                        if self.page['list'][self.list_index]['indent'] == list_item['indent']:
+                        if self.page['list'][self.list_index]['indent'] == command['indent']:
                             break
 
                 # Break Loop
-                elif list_item['code'] == 113:
+                elif command['code'] == 113:
                     while self.list_index < len(self.page['list']) - 1:
                         self.list_index += 1
                         command = self.page['list'][self.list_index]
-                        if command['code'] == 413 and command['indent'] < list_item['indent']:
+                        if command['code'] == 413 and command['indent'] < command['indent']:
                             break
 
                 # Label
-                elif list_item['code'] == 118:
+                elif command['code'] == 118:
                     pass
 
                 # Jump to Label
-                elif list_item['code'] == 119:
-                    label_name = list_item['parameters'][0]
-                    for index, other_list_item in enumerate(self.page['list']):
-                        if other_list_item['code'] == 118 and other_list_item['parameters'][0] == label_name:
-                            self.jump_to(index, current_indent = list_item['indent'])
+                elif command['code'] == 119:
+                    label_name = command['parameters'][0]
+                    for index, other_command in enumerate(self.page['list']):
+                        if other_command['code'] == 118 and other_command['parameters'][0] == label_name:
+                            self.jump_to(index, current_indent = command['indent'])
 
                 # Control Switches
-                elif list_item['code'] == 121:
-                    start, end, value = list_item['parameters'][0:3]
+                elif command['code'] == 121:
+                    start, end, value = command['parameters'][0:3]
                     for i in xrange(start, end + 1):
                         self.state.switches.set_value(i, value == 0)
 
                 # Control Variables
-                elif list_item['code'] == 122:
-                    start, end, operation_type, operand = list_item['parameters'][0:4]
+                elif command['code'] == 122:
+                    start, end, operation_type, operand = command['parameters'][0:4]
                     value = 0
                     if operand == 0:
-                        value = list_item['parameters'][4]
+                        value = command['parameters'][4]
                     elif operand == 1:
-                        value = this.state.variables.value(list_item['parameters'][4])
+                        value = this.state.variables.value(command['parameters'][4])
                     elif operand == 2:
                         #    value = this._params[4] + Math.randomInt(this._params[5] - this._params[4] + 1);
                         renpy.say(None, "Variable control operand 2, plz implement")
@@ -472,48 +472,48 @@ init python:
                         self.state.variables.operate_variable(i, operation_type, value)
 
                 # Control Self Switch
-                elif list_item['code'] == 123:
-                    switch_id, value = list_item['parameters']
+                elif command['code'] == 123:
+                    switch_id, value = command['parameters']
                     key = (self.state.map.map_id, self.state.event.event_data['id'], switch_id)
                     self.state.self_switches.set_value(key, value == 0)
 
                 # Change items
-                elif list_item['code'] == 126:
-                    item_id, operation, operand_type, operand = list_item['parameters']
+                elif command['code'] == 126:
+                    item_id, operation, operand_type, operand = command['parameters']
                     value = self.state.variables.operate_value(operation, operand_type, operand)
                     self.state.party.gain_item(self.state.items.by_id(item_id), value)
 
                 # Change party members -- TODO
-                elif list_item['code'] == 129:
-                    actor_index = list_item['parameters'][0]
+                elif command['code'] == 129:
+                    actor_index = command['parameters'][0]
                     actor = self.state.actors.by_index(actor_index)
                     if actor:
-                        if list_item['parameters'][1] == 0:
+                        if command['parameters'][1] == 0:
                             # Initialize actor - I don't think this is needed outside of combat, mostly
-                            if list_item['parameters'][2]:
+                            if command['parameters'][2]:
                                 pass
                             self.state.party.add_actor(actor_index)
                         else:
                             self.state.party.remove_actor(actor_index)
 
                 # Toggle menu access
-                elif list_item['code'] == 135:
+                elif command['code'] == 135:
                     pass
 
                 # Transfer maps
-                elif list_item['code'] == 201:
-                    method, self.new_map_id, self.new_x, self.new_y = list_item['parameters'][0:4]
+                elif command['code'] == 201:
+                    method, self.new_map_id, self.new_x, self.new_y = command['parameters'][0:4]
                     if debug_events:
                         renpy.say(None, "Map %d" % self.new_map_id)
                     if method != 0:
                         renpy.say(None, "Method on transfer was nonzero (%d), plz implement!" % method)
 
                 # Set event location - TODO
-                elif list_item['code'] == 203:
+                elif command['code'] == 203:
                     pass
 
                 # Set movement route
-                elif list_item['code'] == 205:
+                elif command['code'] == 205:
                     # If a movement route is set on 'wait' mode, and this is
                     # a parallel (background) command, finish the current
                     # event so that nothing else afterward will run.
@@ -521,19 +521,19 @@ init python:
                     # This has the effect that the character stays at the spawn
                     # point, but ensures that if the movement is in an infinite loop
                     # Renpy doesn't loop forever.
-                    if self.page['trigger'] == 4 and list_item['parameters'][1]['wait']:
+                    if self.page['trigger'] == 4 and command['parameters'][1]['wait']:
                         self.list_index = len(self.page['list']) - 1
 
                 # "Show baloon icon"
-                elif list_item['code'] == 213:
+                elif command['code'] == 213:
                     pass
 
                 # Fade in/out/shake/etc
-                elif list_item['code'] in [221, 222, 223, 224, 225]:
+                elif command['code'] in [221, 222, 223, 224, 225]:
                     pass
 
                 # Pause
-                elif list_item['code'] == 230:
+                elif command['code'] == 230:
                     # Skip to the final pause if there's a series of pauses and audio
                     fast_forwarded = False
                     while self.page['list'][self.list_index + 1]['code'] in [230, 250]:
@@ -544,88 +544,88 @@ init python:
                     renpy.pause()
 
                 # Show picture
-                elif list_item['code'] == 231:
+                elif command['code'] == 231:
                     renpy.scene()
-                    renpy.show(list_item['parameters'][1])
+                    renpy.show(command['parameters'][1])
 
                 # Move picture - TODO - like the first scene in the cafe in ics2
-                elif list_item['code'] == 232:
+                elif command['code'] == 232:
                     pass
 
                 # Erase picture
-                elif list_item['code'] == 235:
+                elif command['code'] == 235:
                     renpy.scene()
 
                 # Audio
-                elif list_item['code'] in [241, 242, 243, 244, 245, 246, 249, 250, 251]:
+                elif command['code'] in [241, 242, 243, 244, 245, 246, 249, 250, 251]:
                     pass
 
                 # Play Movie
-                elif list_item['code'] == 261:
-                    renpy.show(list_item['parameters'][0])
+                elif command['code'] == 261:
+                    renpy.show(command['parameters'][0])
 
                 # Get actor name
-                elif list_item['code'] == 303:
-                    actor_index = list_item['parameters'][0]
+                elif command['code'] == 303:
+                    actor_index = command['parameters'][0]
                     actor_name = renpy.input("What name should actor %d have?" % actor_index)
                     self.state.actors.set_property(actor_index, 'name', actor_name)
 
                 # Recover all
-                elif list_item['code'] == 314:
+                elif command['code'] == 314:
                     pass
 
                 # Change actor image
-                elif list_item['code'] == 322:
+                elif command['code'] == 322:
                     pass
 
                 # 'Script'
-                elif list_item['code'] == 355:
-                    if len(list_item['parameters']) == 1 and 'ImageManager' in list_item['parameters'][0]:
+                elif command['code'] == 355:
+                    if len(command['parameters']) == 1 and 'ImageManager' in command['parameters'][0]:
                         pass
                     else:
-                        renpy.say(None, "Code 355 not implemented to eval '%s'" % list_item['parameters'][0])
+                        renpy.say(None, "Code 355 not implemented to eval '%s'" % command['parameters'][0])
                 # Additional lines for script
-                elif list_item['code'] == 655:
+                elif command['code'] == 655:
                     pass
 
                 # 'Plugin'
-                elif list_item['code'] == 356:
+                elif command['code'] == 356:
                     pass
 
 
                 # When [**]
-                elif list_item['code'] == 402:
-                    if self.state.branch[list_item['indent']] != list_item['parameters'][0]:
-                        self.skip_branch(list_item['indent'])
+                elif command['code'] == 402:
+                    if self.state.branch[command['indent']] != command['parameters'][0]:
+                        self.skip_branch(command['indent'])
 
                 # When Cancel
-                elif list_item['code'] == 403:
-                    if self.state.branch[list_item['indent']] >= 0:
-                        self.skip_branch(list_item['indent'])
+                elif command['code'] == 403:
+                    if self.state.branch[command['indent']] >= 0:
+                        self.skip_branch(command['indent'])
 
                 # TODO: unknown
-                elif list_item['code'] == 404:
+                elif command['code'] == 404:
                     pass
 
                 # Some mouse hover thingie
-                elif list_item['code'] == 408:
+                elif command['code'] == 408:
                     pass
 
                 # Else
-                elif list_item['code'] == 411:
-                    if self.state.branch[list_item['indent']] != False:
-                        self.skip_branch(list_item['indent'])
+                elif command['code'] == 411:
+                    if self.state.branch[command['indent']] != False:
+                        self.skip_branch(command['indent'])
 
                 # Seems unimplemented?
-                elif list_item['code'] == 412:
+                elif command['code'] == 412:
                     pass
 
                 # TODO: Unknown
-                elif list_item['code'] == 505:
+                elif command['code'] == 505:
                     pass
 
                 else:
-                    renpy.say(None, "Code %d not implemented, plz fix." % list_item['code'])
+                    renpy.say(None, "Code %d not implemented, plz fix." % command['code'])
 
                 self.list_index += 1
 
@@ -975,8 +975,8 @@ init python:
             return True
 
         def has_commands(self, page):
-            for list_item in page['list']:
-                if list_item['code'] != 0:
+            for command in page['list']:
+                if command['code'] != 0:
                     return True
             return False
 
