@@ -174,6 +174,9 @@ init python:
             return actor_data
 
     class GameParty(SelectivelyPickle):
+        MAX_GOLD = 99999999
+        MAX_ITEMS = 99
+
         def __init__(self):
             # TODO: doesn't account for weapons and armor items
             self.members = [1]
@@ -188,9 +191,12 @@ init python:
         def has_item(self, item):
             return self.items.get(item['id'], 0) > 0
 
+        def gain_gold(self, amount):
+            self.gold = max(0, min(self.gold + amount, GameParty.MAX_GOLD))
+
         def gain_item(self, item, amount):
             existing_value = self.items.get(item['id'], 0)
-            self.items[item['id']] = max(0, min(existing_value + amount, 99))
+            self.items[item['id']] = max(0, min(existing_value + amount, GameParty.MAX_ITEMS))
             if self.items[item['id']] == 0:
                 del self.items[item['id']]
 
@@ -476,6 +482,12 @@ init python:
                     switch_id, value = command['parameters']
                     key = (self.state.map.map_id, self.state.event.event_data['id'], switch_id)
                     self.state.self_switches.set_value(key, value == 0)
+
+                # Change gold
+                elif command['code'] == 125:
+                    operation, operand_type, operand = command['parameters']
+                    value = self.state.variables.operate_value(operation, operand_type, operand)
+                    self.state.party.gain_gold(value);
 
                 # Change items
                 elif command['code'] == 126:
