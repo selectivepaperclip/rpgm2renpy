@@ -4,10 +4,8 @@
 # show tiles on the map
 # show characters on the map
 # combine lines better ('needed her the most')
-# reloading immediately after start is re-asking name ... some checkpointing problem seemingly
 # implement the phone?!
-# tile questions: why is it the slowest
-# tile questions: is there a way to use fractional pixels
+# a1 tiles for beach
 
 define debug_events = False
 define tile_images = {}
@@ -181,6 +179,12 @@ init python:
             # TODO: doesn't account for weapons and armor items
             self.members = [1]
             self.items = {}
+            self.gold = 0
+
+        def __setstate__(self, d):
+            self.__dict__.update(d)
+            if not hasattr(self, 'gold'):
+                self.gold = 0
 
         def has_item(self, item):
             return self.items.get(item['id'], 0) > 0
@@ -314,19 +318,14 @@ init python:
                 #}
             # Gold
             elif operation == 7:
-                renpy.say(None, "Conditional statements for Gold not implemented")
-                return False
-                #switch (this._params[2]) {
-                #case 0:  // Greater than or equal to
-                #    result = ($gameParty.gold() >= this._params[1]);
-                #    break;
-                #case 1:  // Less than or equal to
-                #    result = ($gameParty.gold() <= this._params[1]);
-                #    break;
-                #case 2:  // Less than
-                #    result = ($gameParty.gold() < this._params[1]);
-                #    break;
-                #}
+                value = params[1]
+                gold_operation = params[2]
+                if gold_operation == 0: # Greater than or equal to
+                    return self.state.party.gold >= value
+                elif gold_operation == 1: # Less than or equal to
+                    return self.state.party.gold <= value
+                elif gold_operation == 2: # Less than
+                    return self.state.party.gold < value
             # Item
             elif operation == 8:
                 return self.state.party.has_item(self.state.items.by_id(params[1]))
@@ -997,13 +996,25 @@ init python:
 
             return coords
 
+    class GameMapRegistry:
+        def __init__(self, state):
+            self.state = state
+            self.maps = {}
+
+        def get_map(self, map_id, x, y):
+            if not map_id in self.maps:
+                self.maps[map_id] = GameMap(self.state, map_id, x, y)
+
+            return self.maps[map_id]
+
     class GameState(SelectivelyPickle):
         def __init__(self):
             self.common_events_index = None
             self.parallel_events_index = None
             self.event = None
             self.starting_map_id = self.system_data()['startMapId']
-            self.map = GameMap(self, self.starting_map_id, self.system_data()['startX'], self.system_data()['startY'])
+            self.map_registry = GameMapRegistry(self)
+            self.map = self.map_registry.get_map(self.starting_map_id, self.system_data()['startX'], self.system_data()['startY'])
             self.switches = GameSwitches(self.system_data()['switches'])
             self.self_switches = GameSelfSwitches()
             self.variables = GameVariables(self.system_data()['variables'])
@@ -1044,7 +1055,7 @@ init python:
                 self.event.do_next_thing()
                 if self.event.done():
                     if self.event.new_map_id:
-                        self.map = GameMap(self, self.event.new_map_id, self.event.new_x, self.event.new_y)
+                        self.map = self.map_registry.get_map(self.event.new_map_id, self.event.new_x, self.event.new_y)
                         self.queue_common_and_parallel_events()
                     if self.common_events_index == None and self.parallel_events_index == None:
                         self.queue_common_and_parallel_events()
