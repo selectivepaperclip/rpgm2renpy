@@ -5,7 +5,6 @@
 # show characters on the map
 # combine lines better ('needed her the most')
 # implement the phone?!
-# a1 tiles for beach
 
 define debug_events = False
 define tile_images = {}
@@ -794,33 +793,30 @@ init python:
             is_table = False
 
             if self.is_tile_a1(tile_id):
-                renpy.say(None, "Tile A1 not yet implemented!")
-                #var waterSurfaceIndex = [0, 1, 2, 1][this._animationFrame % 4];
-                #setNumber = 0;
-                #if (kind === 0) {
-                #    bx = waterSurfaceIndex * 2;
-                #    by = 0;
-                #} else if (kind === 1) {
-                #    bx = waterSurfaceIndex * 2;
-                #    by = 3;
-                #} else if (kind === 2) {
-                #    bx = 6;
-                #    by = 0;
-                #} else if (kind === 3) {
-                #    bx = 6;
-                #    by = 3;
-                #} else {
-                #    bx = Math.floor(tx / 4) * 8;
-                #    by = ty * 6 + Math.floor(tx / 2) % 2 * 3;
-                #    if (kind % 2 === 0) {
-                #        bx += waterSurfaceIndex * 2;
-                #    }
-                #    else {
-                #        bx += 6;
-                #        autotileTable = Tilemap.WATERFALL_AUTOTILE_TABLE;
-                #        by += this._animationFrame % 3;
-                #    }
-                #}
+                animation_frame = 0
+                water_surface_index = [0, 1, 2, 1][animation_frame % 4];
+                set_number = 0
+                if kind == 0:
+                    bx = water_surface_index * 2
+                    by = 0;
+                elif kind == 1:
+                    bx = water_surface_index * 2
+                    by = 3
+                elif kind == 2:
+                    bx = 6
+                    by = 0
+                elif kind == 3:
+                    bx = 6
+                    by = 3
+                else:
+                    bx = (tx // 4) * 8
+                    by = ty * 6 + (tx // 2) % 2 * 3
+                    if kind % 2 == 0:
+                        bx += water_surface_index * 2
+                    else:
+                        bx += 6
+                        autotile_table = Tilemap.WATERFALL_AUTOTILE_TABLE
+                        by += animation_frame % 3
             elif self.is_tile_a2(tile_id):
                 set_number = 1
                 bx = tx * 2
