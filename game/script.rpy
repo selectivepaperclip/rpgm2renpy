@@ -791,7 +791,11 @@ init python:
             return tile_id >= GameMap.TILE_ID_A5 and tile_id < GameMap.TILE_ID_A1
 
         def flags(self, tile_id):
-            return self.state.tilesets()[self.data()['tilesetId']]['flags'][tile_id]
+            flag_data = self.state.tilesets()[self.data()['tilesetId']]['flags']
+            if len(flag_data) > tile_id:
+                return flag_data[tile_id]
+            else:
+                return 0
 
         def is_table_tile(self, tile_id):
             return self.is_tile_a2(tile_id) and (self.flags(tile_id) & 0x80)
@@ -934,9 +938,11 @@ init python:
                         for tile in all_tiles:
                             tile.x = x
                             tile.y = y
-                            tile.tileset_name = self.state.tilesets()[self.data()['tilesetId']]['tilesetNames'][tile.set_number]
+                            tileset_names = self.state.tilesets()[self.data()['tilesetId']]['tilesetNames']
+                            if len(tileset_names) > tile.set_number:
+                                tile.tileset_name = tileset_names[tile.set_number]
 
-                            result.append(tile)
+                                result.append(tile)
             return result
 
         def find_event_for_location(self, x, y):
