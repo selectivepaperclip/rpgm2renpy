@@ -1154,9 +1154,6 @@ init python:
             width_ratio = config.screen_width / float(map_width)
             height_ratio = config.screen_height / float(map_height)
 
-            print "mw: %s, mh: %s", (map_width, map_height)
-            print "w: %s, h: %s" % (width_ratio, height_ratio)
-
             x_offset = 0
             y_offset = 0
             mapfactor = 1
