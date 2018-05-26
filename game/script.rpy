@@ -188,11 +188,17 @@ init python:
             if not hasattr(self, 'gold'):
                 self.gold = 0
 
+        def num_items(self, item):
+            return self.items.get(item['id'], 0)
+
         def has_item(self, item):
-            return self.items.get(item['id'], 0) > 0
+            return self.num_items(item) > 0
 
         def gain_gold(self, amount):
             self.gold = max(0, min(self.gold + amount, GameParty.MAX_GOLD))
+
+        def lose_gold(self, amount):
+            self.gold = max(0, min(self.gold - amount, GameParty.MAX_GOLD))
 
         def gain_item(self, item, amount):
             existing_value = self.items.get(item['id'], 0)
@@ -575,6 +581,15 @@ init python:
                 # Play Movie
                 elif command['code'] == 261:
                     renpy.show(command['parameters'][0])
+
+                # Shop
+                elif command['code'] == 302:
+                    self.state.shop_params = {}
+                    self.state.shop_params['goods'] = [command['parameters']]
+                    self.state.shop_params['purchase_only'] = command['parameters'][4]
+                    while self.page['list'][self.list_index + 1]['code'] in [605]:
+                        self.list_index += 1
+                        self.state.shop_params['goods'].append(self.page['list'][self.list_index]['parameters'])
 
                 # Get actor name
                 elif command['code'] == 303:
@@ -1058,9 +1073,32 @@ init python:
             if len(self.map.data()['events']) > 0:
                 self.parallel_events_index = 1
 
+        def show_shop_ui(self):
+            shop_params = self.shop_params
+            self.shop_params = None
+            shop_items = []
+            for item_params in shop_params['goods']:
+                type, item_id, where_is_price, price_override = item_params[0:4]
+                if type != 0:
+                    renpy.say(None, "Purchasing item type %s is not supported!")
+                item = self.items.by_id(item_id)
+                if item:
+                    if where_is_price != 0:
+                        item = item.copy()
+                        item['price'] = price_override
+                    shop_items.append(item)
+            renpy.call_screen(
+                "shopscreen",
+                shop_items = shop_items,
+                purchase_only = shop_params['purchase_only']
+            )
+
         def do_next_thing(self, mapdest):
             if self.event:
                 self.event.do_next_thing()
+                if hasattr(self, 'shop_params') and self.shop_params:
+                    self.show_shop_ui()
+                    return True
                 if self.event.done():
                     if self.event.new_map_id:
                         self.map = self.map_registry.get_map(self.event.new_map_id, self.event.new_x, self.event.new_y)
@@ -1151,6 +1189,35 @@ init python:
 
 transform mapzoom(mapfactor):
     zoom mapfactor
+
+screen shopscreen(shop_items = None, purchase_only = None):
+    zorder 1
+    frame:
+        xalign 0.1
+        yalign 0.23
+        background Color("#f00", alpha = 0.75)
+
+        vbox:
+            textbutton "Leave":
+                background "#f00"
+                hover_background "#00f"
+                action Hide("shopscreen"), Jump("game")
+                xalign 1.0
+
+            text "Money: %s" % game_state.party.gold
+
+            null height 10
+
+            grid 3 len(shop_items):
+                for item in shop_items:
+                    textbutton item['name']
+                    textbutton "Own %s" % game_state.party.num_items(item)
+                    textbutton ("Buy (%s)" % item['price']):
+                        sensitive (game_state.party.gold >= item['price'])
+                        action [
+                            Function(game_state.party.gain_item, item, 1),
+                            Function(game_state.party.lose_gold, item['price'])
+                        ]
 
 screen mapscreen(coords = None, mapfactor = None, background_image = None, width = None, height = None, x_offset = None, y_offset = None):
     #key "viewport_wheelup" action [
