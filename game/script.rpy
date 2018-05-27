@@ -8,9 +8,12 @@
 # HUD: OrangeHudVariablePicture and OrangeHudLine in plugins.js
 # hide_choice for phone
 # is sewer grate entry allowed?
+# sprite positioning is off
 
 define debug_events = False
 define tile_images = {}
+define character_images = {}
+define character_image_sizes = {}
 define mapdest = None
 define keyed_common_event = None
 define draw_impassible_tiles = False
@@ -40,6 +43,14 @@ init python:
                 continue
 
             tile_images[image_name] = filename
+            renpy.image(image_name, filename)
+
+        if filename.startswith("unpacked/www/img/characters/"):
+            image_name = os.path.splitext(filename.replace("unpacked/www/img/characters/", ""))[0].replace(".", "_")
+            if renpy.has_image(image_name, exact=True):
+                continue
+
+            character_images[image_name] = filename
             renpy.image(image_name, filename)
 
     class SelectivelyPickle:
@@ -950,6 +961,34 @@ init python:
                                 result.append(tile)
             return result
 
+        def sprites(self):
+            result = []
+            for e in self.data()['events']:
+                if e:
+                    for page in reversed(e['pages']):
+                        if self.meets_conditions(e, page['conditions']):
+                            image_data = page['image']
+                            if image_data['characterName'] != '':
+                                if image_data['tileId'] > 0:
+                                    renpy.say(None, 'tileId in image not supported!')
+
+                                img_base_filename = image_data['characterName'].replace(".", "_")
+
+                                if not img_base_filename in character_image_sizes:
+                                    character_image_sizes[img_base_filename] = renpy.image_size(character_images[img_base_filename])
+                                img_size = character_image_sizes[img_base_filename]
+
+                                pw = img_size[0] / 12
+                                ph = img_size[1] / 8
+                                n = image_data['characterIndex']
+                                sx = (n % 4 * 3 + 1) * pw
+                                sy = ((n // 4) * 4) * ph
+
+                                img = im.Crop(character_images[img_base_filename], (sx, sy, GameMap.TILE_WIDTH, GameMap.TILE_HEIGHT))
+
+                                result.append((e['x'], e['y'], img))
+            return result
+
         def find_event_for_location(self, x, y):
             for e in self.data()['events']:
                 if e and e['x'] == x and e['y'] == y:
@@ -1228,6 +1267,7 @@ init python:
                 "mapscreen",
                 mapfactor=mapfactor,
                 coords=coordinates,
+                sprites=self.map.sprites(),
                 impassible_tiles=impassible_tiles,
                 common_events_keymap=self.common_events_keymap(),
                 background_image=background_image,
@@ -1269,7 +1309,7 @@ screen shopscreen(shop_items = None, purchase_only = None):
                             Function(game_state.party.lose_gold, item['price'])
                         ]
 
-screen mapscreen(coords = None, mapfactor = None, impassible_tiles = None, common_events_keymap = None, background_image = None, width = None, height = None, x_offset = None, y_offset = None):
+screen mapscreen(coords = None, mapfactor = None, sprites = None, impassible_tiles = None, common_events_keymap = None, background_image = None, width = None, height = None, x_offset = None, y_offset = None):
     #key "viewport_wheelup" action [
     #    SetVariable('mapfactor', mapfactor * 1.5),
     #    renpy.restart_interaction
@@ -1300,6 +1340,14 @@ screen mapscreen(coords = None, mapfactor = None, impassible_tiles = None, commo
                     ypos y_offset + int(coord[1] * GameMap.TILE_HEIGHT)
                     ysize GameMap.TILE_HEIGHT
                     background "#0f0"
+
+            for x, y, img in sprites:
+                button:
+                    xpos x_offset + int(x * GameMap.TILE_WIDTH)
+                    xsize GameMap.TILE_WIDTH
+                    ypos y_offset + int(y * GameMap.TILE_HEIGHT)
+                    ysize GameMap.TILE_HEIGHT
+                    add img
 
             for i, coord in enumerate(coords):
                 button:
