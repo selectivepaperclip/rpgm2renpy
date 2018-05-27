@@ -4,11 +4,16 @@
 # show tiles on the map
 # show characters on the map
 # combine lines better ('needed her the most')
-# implement the phone?!
+# Phone: YEP_ButtonCommonEvents
+# HUD: OrangeHudVariablePicture and OrangeHudLine in plugins.js
+# hide_choice for phone
+# is sewer grate entry allowed?
 
 define debug_events = False
 define tile_images = {}
 define mapdest = None
+define keyed_common_event = None
+define draw_impassible_tiles = False
 
 init python:
     import json
@@ -1073,6 +1078,36 @@ init python:
 
             return self._tilesets
 
+        def plugins(self):
+            if not hasattr(self, '_plugins'):
+                with renpy.file('unpacked/www/js/plugins.js') as f:
+                    # the plugins.js file starts with "var $plugins = ["
+                    # the '[' should be on line 4
+                    content = "".join(f.readlines()[3:-1])
+                    print content
+                    self._plugins = json.loads(content)
+
+            return self._plugins
+
+        def common_events_keymap(self):
+            if self.system_data()['gameTitle'] == 'Incest Story 2 v1.0 Final':
+                return [('p', 4)]
+            else:
+                return []
+
+            plugins = self.plugins()
+            yepp_common_events = next(plugin_data for plugin_data in plugins if plugin_data['name'] == 'YEP_ButtonCommonEvents')
+            print yepp_common_events
+            if not yepp_common_events:
+                return []
+
+            result = []
+            for key_desc, event_str in yepp_common_events:
+                if event_str != "" and event_str != "0":
+                    print key_desc
+                    result.append((key_desc, event_str))
+            return result
+
         def queue_common_and_parallel_events(self):
             if len(self.common_events_data()) > 0:
                 self.common_events_index = 1
@@ -1099,7 +1134,7 @@ init python:
                 purchase_only = shop_params['purchase_only']
             )
 
-        def do_next_thing(self, mapdest):
+        def do_next_thing(self, mapdest, keyed_common_event):
             if self.event:
                 self.event.do_next_thing()
                 if hasattr(self, 'shop_params') and self.shop_params:
@@ -1134,6 +1169,11 @@ init python:
 
             self.event = self.map.find_auto_trigger_event()
             if self.event:
+                return True
+
+            if keyed_common_event:
+                common_event = self.common_events_data()[int(keyed_common_event)]
+                self.event = GameEvent(self, common_event, common_event)
                 return True
 
             if mapdest:
@@ -1179,10 +1219,17 @@ init python:
                         # Overflowing more on width
                         mapfactor = float(config.screen_width) / map_width
 
+            if draw_impassible_tiles:
+                impassible_tiles=self.map.impassible_tiles()
+            else:
+                impassible_tiles = []
+
             renpy.call_screen(
                 "mapscreen",
                 mapfactor=mapfactor,
                 coords=coordinates,
+                impassible_tiles=impassible_tiles,
+                common_events_keymap=self.common_events_keymap(),
                 background_image=background_image,
                 width=float(self.map.data()['width']),
                 height=float(self.map.data()['height']),
@@ -1222,7 +1269,7 @@ screen shopscreen(shop_items = None, purchase_only = None):
                             Function(game_state.party.lose_gold, item['price'])
                         ]
 
-screen mapscreen(coords = None, mapfactor = None, background_image = None, width = None, height = None, x_offset = None, y_offset = None):
+screen mapscreen(coords = None, mapfactor = None, impassible_tiles = None, common_events_keymap = None, background_image = None, width = None, height = None, x_offset = None, y_offset = None):
     #key "viewport_wheelup" action [
     #    SetVariable('mapfactor', mapfactor * 1.5),
     #    renpy.restart_interaction
@@ -1231,6 +1278,10 @@ screen mapscreen(coords = None, mapfactor = None, background_image = None, width
     #    SetVariable('mapfactor', mapfactor * 0.66),
     #    renpy.restart_interaction
     #]
+
+    for key_str, event_id in common_events_keymap:
+        key key_str:
+            action SetVariable("keyed_common_event", event_id), Jump("game")
 
     viewport:
         child_size (width * GameMap.TILE_WIDTH, height * GameMap.TILE_HEIGHT)
@@ -1241,15 +1292,25 @@ screen mapscreen(coords = None, mapfactor = None, background_image = None, width
             add background_image:
                 xpos x_offset
                 ypos y_offset
+
+            for coord in impassible_tiles:
+                button:
+                    xpos x_offset + int(coord[0] * GameMap.TILE_WIDTH)
+                    xsize GameMap.TILE_WIDTH
+                    ypos y_offset + int(coord[1] * GameMap.TILE_HEIGHT)
+                    ysize GameMap.TILE_HEIGHT
+                    background "#0f0"
+
             for i, coord in enumerate(coords):
                 button:
                     xpos x_offset + int(coord[0] * GameMap.TILE_WIDTH)
                     xsize GameMap.TILE_WIDTH
                     ypos y_offset + int(coord[1] * GameMap.TILE_HEIGHT)
                     ysize GameMap.TILE_HEIGHT
-                    background "#f00"
+                    background Color("#f00", alpha = 0.75)
                     hover_background "#00f"
                     action SetVariable("mapdest", coord), Jump("game")
+
 
 label start:
     python:
@@ -1259,7 +1320,8 @@ label game:
     $ end_game = False
 
     while end_game == False:
-        $ game_state.do_next_thing(mapdest)
+        $ game_state.do_next_thing(mapdest, keyed_common_event)
         $ mapdest = None
+        $ keyed_common_event = None
 
     return
