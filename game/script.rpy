@@ -17,6 +17,7 @@ define character_image_sizes = {}
 define mapdest = None
 define keyed_common_event = None
 define draw_impassible_tiles = False
+define show_inventory = None
 
 init python:
     import json
@@ -1210,7 +1211,7 @@ init python:
                 purchase_only = shop_params['purchase_only']
             )
 
-        def do_next_thing(self, mapdest, keyed_common_event):
+        def do_next_thing(self, mapdest, keyed_common_event, show_inventory):
             if self.event:
                 self.event.do_next_thing()
                 if hasattr(self, 'shop_params') and self.shop_params:
@@ -1256,6 +1257,27 @@ init python:
                 self.event = self.map.find_event_for_location(mapdest[0], mapdest[1])
                 if debug_events:
                     renpy.say(None, "%d,%d" % mapdest)
+                return True
+
+            if show_inventory:
+                interesting_items = []
+                for item_id in self.party.items.keys():
+                    item = self.items.by_id(item_id)
+                    if item['effects'] and len(item['effects']) > 0:
+                        common_event_effects = [effect for effect in item['effects'] if effect['code'] == 44]
+                        if len(common_event_effects) > 0:
+                            if len(common_event_effects) > 1:
+                                renpy.say(None, "Items with more than one common event effect not supported!")
+                            interesting_items.append(item)
+
+                if len(interesting_items) == 0:
+                    return True
+
+                result = renpy.display_menu([(item['name'], item) for item in interesting_items])
+                common_event_effects = [effect for effect in result['effects'] if effect['code'] == 44]
+                effect = common_event_effects[0]
+                common_event = self.common_events_data()[int(effect['dataId'])]
+                self.event = GameEvent(self, common_event, common_event)
                 return True
 
             renpy.checkpoint()
@@ -1356,6 +1378,9 @@ screen mapscreen(coords = None, mapfactor = None, sprites = None, impassible_til
     #    renpy.restart_interaction
     #]
 
+    key 'i':
+        action SetVariable("show_inventory", True), Jump("game")
+
     for key_str, event_id in common_events_keymap:
         key key_str:
             action SetVariable("keyed_common_event", event_id), Jump("game")
@@ -1405,8 +1430,9 @@ label game:
     $ end_game = False
 
     while end_game == False:
-        $ game_state.do_next_thing(mapdest, keyed_common_event)
+        $ game_state.do_next_thing(mapdest, keyed_common_event, show_inventory)
         $ mapdest = None
         $ keyed_common_event = None
+        $ show_inventory = None
 
     return
