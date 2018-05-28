@@ -546,6 +546,10 @@ init python:
                 elif command['code'] == 203:
                     pass
 
+                # Scroll map
+                elif command['code'] == 204:
+                    pass
+
                 # Set movement route
                 elif command['code'] == 205:
                     # If a movement route is set on 'wait' mode, and this is
@@ -586,6 +590,10 @@ init python:
                 elif command['code'] == 232:
                     pass
 
+                # Tint picture - TODO ?
+                elif command['code'] == 234:
+                    pass
+
                 # Erase picture
                 elif command['code'] == 235:
                     renpy.scene()
@@ -597,6 +605,15 @@ init python:
                 # Play Movie
                 elif command['code'] == 261:
                     renpy.show(command['parameters'][0])
+
+                # Change Parallax
+                elif command['code'] == 284:
+                    pass
+
+                # Battle
+                elif command['code'] == 301:
+                    result = renpy.display_menu([("A battle is happening!", None), ("You Win!", 0), ("You Escape!", 1), ("You Lose!", 2)])
+                    self.state.branch[command['indent']] = result
 
                 # Shop
                 elif command['code'] == 302:
@@ -627,6 +644,26 @@ init python:
                         pass
                     else:
                         renpy.say(None, "Code 355 not implemented to eval '%s'" % command['parameters'][0])
+
+                # On Battle Win
+                elif command['code'] == 601:
+                    if self.state.branch[command['indent']] != 0:
+                        self.skip_branch(command['indent'])
+
+                # On Battle Escape
+                elif command['code'] == 602:
+                    if self.state.branch[command['indent']] != 1:
+                        self.skip_branch(command['indent'])
+
+                # On Battle Lose
+                elif command['code'] == 603:
+                    if self.state.branch[command['indent']] != 2:
+                        self.skip_branch(command['indent'])
+
+                # Dunno, probably battle related?
+                elif command['code'] == 604:
+                    pass
+
                 # Additional lines for script
                 elif command['code'] == 655:
                     pass
