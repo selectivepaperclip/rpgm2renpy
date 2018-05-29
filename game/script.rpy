@@ -276,7 +276,7 @@ init python:
 
             # Self Switches
             elif operation == 2:
-                if this.state.event:
+                if len(self.state.events) > 0:
                     key = (self.state.map.map_id, event_data['id'], params[1])
                     return self.state.self_switches.value(key) == (params[2] == 0)
             # Timer
@@ -447,6 +447,11 @@ init python:
                 elif command['code'] == 112:
                     pass
 
+                # Common Event
+                elif command['code'] == 117:
+                    common_event = self.state.common_events_data()[command['parameters'][0]]
+                    return GameEvent(self, common_event, common_event)
+
                 # Repeat Above
                 elif command['code'] == 413:
                     while self.list_index > 0:
@@ -503,7 +508,7 @@ init python:
                 # Control Self Switch
                 elif command['code'] == 123:
                     switch_id, value = command['parameters']
-                    key = (self.state.map.map_id, self.state.event.event_data['id'], switch_id)
+                    key = (self.state.map.map_id, self.state.events[-1].event_data['id'], switch_id)
                     self.state.self_switches.set_value(key, value == 0)
 
                 # Change gold
@@ -1122,7 +1127,7 @@ init python:
         def __init__(self):
             self.common_events_index = None
             self.parallel_events_index = None
-            self.event = None
+            self.events = []
             self.starting_map_id = self.system_data()['startMapId']
             self.map_registry = GameMapRegistry(self)
             self.map = self.map_registry.get_map(self.starting_map_id, self.system_data()['startX'], self.system_data()['startY'])
@@ -1133,6 +1138,11 @@ init python:
             self.actors = GameActors()
             self.items = GameItems()
             self.branch = {}
+
+        def __setstate__(self, d):
+            self.__dict__.update(d)
+            if not hasattr(self, 'events'):
+                self.events = [event for event in [self.event] if event]
 
         def system_data(self):
             if not hasattr(self, '_system_data'):
@@ -1212,18 +1222,22 @@ init python:
             )
 
         def do_next_thing(self, mapdest, keyed_common_event, show_inventory):
-            if self.event:
-                self.event.do_next_thing()
+            if len(self.events) > 0:
+                this_event = self.events[-1]
+                new_event = this_event.do_next_thing()
+                if new_event:
+                    self.events.append(new_event)
+                    return True
                 if hasattr(self, 'shop_params') and self.shop_params:
                     self.show_shop_ui()
                     return True
-                if self.event.done():
-                    if self.event.new_map_id:
-                        self.map = self.map_registry.get_map(self.event.new_map_id, self.event.new_x, self.event.new_y)
+                if this_event.done():
+                    if this_event.new_map_id:
+                        self.map = self.map_registry.get_map(this_event.new_map_id, this_event.new_x, this_event.new_y)
                         self.queue_common_and_parallel_events()
                     if self.common_events_index == None and self.parallel_events_index == None:
                         self.queue_common_and_parallel_events()
-                    self.event = None
+                    self.events.pop()
                 return True
 
             if self.common_events_index != None and self.common_events_index < len(self.common_events_data()):
@@ -1231,7 +1245,7 @@ init python:
                     common_event = self.common_events_data()[self.common_events_index]
                     self.common_events_index += 1
                     if common_event['trigger'] > 0 and self.switches.value(common_event['switchId']) == True:
-                        self.event = GameEvent(self, common_event, common_event)
+                        self.events.append(GameEvent(self, common_event, common_event))
                         return True
             self.common_events_index = None
 
@@ -1240,21 +1254,21 @@ init python:
                     possible_parallel_event = self.map.parallel_event_at_index(self.parallel_events_index)
                     self.parallel_events_index += 1
                     if possible_parallel_event:
-                        self.event = possible_parallel_event
+                        self.events.append(possible_parallel_event)
                         return True
             self.parallel_events_index = None
 
-            self.event = self.map.find_auto_trigger_event()
-            if self.event:
+            self.events = [e for e in [self.map.find_auto_trigger_event()] if e]
+            if len(self.events) > 0:
                 return True
 
             if keyed_common_event:
                 common_event = self.common_events_data()[int(keyed_common_event)]
-                self.event = GameEvent(self, common_event, common_event)
+                self.events.append(GameEvent(self, common_event, common_event))
                 return True
 
             if mapdest:
-                self.event = self.map.find_event_for_location(mapdest[0], mapdest[1])
+                self.events.append(self.map.find_event_for_location(mapdest[0], mapdest[1]))
                 if debug_events:
                     renpy.say(None, "%d,%d" % mapdest)
                 return True
@@ -1277,7 +1291,7 @@ init python:
                 common_event_effects = [effect for effect in result['effects'] if effect['code'] == 44]
                 effect = common_event_effects[0]
                 common_event = self.common_events_data()[int(effect['dataId'])]
-                self.event = GameEvent(self, common_event, common_event)
+                self.events.append(GameEvent(self, common_event, common_event))
                 return True
 
             renpy.checkpoint()
