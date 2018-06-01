@@ -1340,6 +1340,7 @@ init python:
                 "mapscreen",
                 mapfactor=mapfactor,
                 coords=coordinates,
+                player_position=(self.map.x, self.map.y),
                 sprites=self.map.sprites(),
                 impassible_tiles=impassible_tiles,
                 common_events_keymap=self.common_events_keymap(),
@@ -1382,7 +1383,7 @@ screen shopscreen(shop_items = None, purchase_only = None):
                             Function(game_state.party.lose_gold, item['price'])
                         ]
 
-screen mapscreen(coords = None, mapfactor = None, sprites = None, impassible_tiles = None, common_events_keymap = None, background_image = None, width = None, height = None, x_offset = None, y_offset = None):
+screen mapscreen(coords = None, mapfactor = None, player_position = None, sprites = None, impassible_tiles = None, common_events_keymap = None, background_image = None, width = None, height = None, x_offset = None, y_offset = None):
     #key "viewport_wheelup" action [
     #    SetVariable('mapfactor', mapfactor * 1.5),
     #    renpy.restart_interaction
@@ -1408,6 +1409,13 @@ screen mapscreen(coords = None, mapfactor = None, sprites = None, impassible_til
             add background_image:
                 xpos x_offset
                 ypos y_offset
+
+            button:
+                xpos x_offset + int(player_position[0] * GameMap.TILE_WIDTH)
+                xsize GameMap.TILE_WIDTH
+                ypos y_offset + int(player_position[1] * GameMap.TILE_HEIGHT)
+                ysize GameMap.TILE_HEIGHT
+                background "#00f"
 
             for coord in impassible_tiles:
                 button:
