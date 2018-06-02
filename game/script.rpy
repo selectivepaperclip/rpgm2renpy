@@ -606,6 +606,10 @@ init python:
                 elif command['code'] == 235:
                     renpy.scene()
 
+                # Weather Effect
+                elif command['code'] == 236:
+                    pass
+
                 # Audio
                 elif command['code'] in [241, 242, 243, 244, 245, 246, 249, 250, 251]:
                     pass
