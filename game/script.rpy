@@ -20,6 +20,7 @@ define draw_impassible_tiles = False
 define show_inventory = None
 
 init python:
+    import re
     import json
     import math
 
@@ -402,6 +403,8 @@ init python:
                     indent = new_indent
             self.list_index = index
 
+        def replace_names(self, text):
+            return re.sub(r'\\N\[(\d+)\]', lambda m: self.state.actors.by_index(int(m.group(1)))['name'], text)
 
         def do_next_thing(self):
             if not self.done():
@@ -417,8 +420,7 @@ init python:
                     while len(self.page['list']) > self.list_index + 1 and self.page['list'][self.list_index + 1]['code'] == 401:
                         self.list_index += 1
                         command = self.page['list'][self.list_index]
-                        text = command['parameters'][0]
-                        text = text.replace("\\N[1]", self.state.actors.by_index(1)['name'])
+                        text = self.replace_names(command['parameters'][0])
                         accumulated_text.append(text)
 
                     renpy.say(None, "\n".join(accumulated_text))
@@ -429,7 +431,7 @@ init python:
                     cancel_type = command['parameters'][1]
                     if cancel_type >= len(choice_texts):
                         cancel_type = -2
-                    result = renpy.display_menu([(text, index) for index, text in enumerate(choice_texts)])
+                    result = renpy.display_menu([(self.replace_names(text), index) for index, text in enumerate(choice_texts)])
                     self.state.branch[command['indent']] = result
 
                 # Comment
