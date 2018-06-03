@@ -27,8 +27,9 @@ init python:
             self.r = renpy.Render(self.width, self.height)
 
             for tile in tiles:
-                img = im.Crop(tile_images[tile.tileset_name.replace(".", "_")], (tile.sx, tile.sy, tile.w, tile.h))
-                self.r.blit(img.render(tile.w, tile.h, 0, 0), (tile.dx + int(tile.x * GameMap.TILE_WIDTH), tile.dy + int(tile.y * GameMap.TILE_HEIGHT)))
+                if len(tile.tileset_name) > 0:
+                    img = im.Crop(tile_images[tile.tileset_name.replace(".", "_")], (tile.sx, tile.sy, tile.w, tile.h))
+                    self.r.blit(img.render(tile.w, tile.h, 0, 0), (tile.dx + int(tile.x * GameMap.TILE_WIDTH), tile.dy + int(tile.y * GameMap.TILE_HEIGHT)))
 
         def render(self, width, height, st, at):
             return self.r
