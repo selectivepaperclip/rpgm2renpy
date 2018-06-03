@@ -311,6 +311,7 @@ init python:
                                 img = im.Crop(character_images[img_base_filename], (sx, sy, GameMap.TILE_WIDTH, GameMap.TILE_HEIGHT))
 
                                 result.append((e['x'], e['y'], img))
+                            break
             return result
 
         def find_event_for_location(self, x, y):
