@@ -1,16 +1,4 @@
-﻿# TODOS:
-
-# read and show map names out of MapInfos.json
-# show tiles on the map
-# show characters on the map
-# combine lines better ('needed her the most')
-# Phone: YEP_ButtonCommonEvents
-# HUD: OrangeHudVariablePicture and OrangeHudLine in plugins.js
-# hide_choice for phone
-# is sewer grate entry allowed?
-# sprite positioning is off
-
-define debug_events = False
+﻿define debug_events = False
 define tile_images = {}
 define character_images = {}
 define character_image_sizes = {}

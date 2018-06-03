@@ -1,0 +1,13 @@
+read and show map names out of MapInfos.json
+
+combine lines better ('needed her the most')
+
+Phone: YEP_ButtonCommonEvents
+
+HUD: OrangeHudVariablePicture and OrangeHudLine in plugins.js
+
+hide_choice for phone
+
+is sewer grate entry allowed?
+
+sprite positioning is off
