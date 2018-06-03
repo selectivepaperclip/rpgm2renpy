@@ -12,11 +12,17 @@ init python:
     import json
     import math
 
+    def scale_image(path):
+        return im.Scale(path, 1280, 720, bilinear=True)
+
+    def scale_movie(path):
+        return Movie(play=filename, size=(1280,720))
+
     with renpy.file('unpacked/www/data/System.json') as f:
         system_data = json.load(f)
         title_screen_file_path = 'unpacked/www/img/titles1/' + system_data['title1Name'] + '.png'
         if renpy.exists(title_screen_file_path):
-            gui.main_menu_background = title_screen_file_path
+            gui.main_menu_background = scale_image(title_screen_file_path)
 
     for filename in renpy.list_files():
         if filename.startswith("unpacked/www/img/pictures/"):
@@ -24,14 +30,14 @@ init python:
             if renpy.has_image(image_name, exact=True):
                 continue
 
-            renpy.image(image_name, filename)
+            renpy.image(image_name, scale_image(filename))
 
         if filename.startswith("unpacked/www/movies/"):
             image_name = os.path.splitext(filename.replace("unpacked/www/movies/", ""))[0]
             if renpy.has_image(image_name, exact=True):
                 continue
 
-            renpy.image(image_name, Movie(play=filename))
+            renpy.image(image_name, scale_movie(filename))
 
         if filename.startswith("unpacked/www/img/tilesets/"):
             image_name = os.path.splitext(filename.replace("unpacked/www/img/tilesets/", ""))[0].replace(".", "_")
