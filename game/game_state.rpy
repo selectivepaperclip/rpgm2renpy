@@ -217,6 +217,7 @@ init python:
                 mapfactor=mapfactor,
                 coords=coordinates,
                 player_position=(self.map.x, self.map.y),
+                map_name=self.map.name(),
                 sprites=self.map.sprites(),
                 impassible_tiles=impassible_tiles,
                 common_events_keymap=self.common_events_keymap(),

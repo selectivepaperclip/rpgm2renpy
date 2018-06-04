@@ -1,5 +1,3 @@
-read and show map names out of MapInfos.json
-
 combine lines better ('needed her the most')
 
 Phone: YEP_ButtonCommonEvents

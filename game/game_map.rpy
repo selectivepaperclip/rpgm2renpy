@@ -395,6 +395,11 @@ init python:
 
             return coords
 
+        def name(self):
+            if 'displayName' in self.data() and len(self.data()['displayName']) > 0:
+                return self.data()['displayName']
+            return None
+
     class GameMapRegistry:
         def __init__(self, state):
             self.state = state
