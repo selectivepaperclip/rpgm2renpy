@@ -17,6 +17,14 @@ init python:
         def num_items(self, item):
             return self.items.get(item['id'], 0)
 
+        def item_choices(self, type):
+            result = []
+            for item_id in self.items:
+                item = game_state.items.by_id(item_id)
+                if item['itypeId'] == type:
+                    result.append((item['name'], item['id']))
+            return result
+
         def has_item(self, item):
             return self.num_items(item) > 0
 

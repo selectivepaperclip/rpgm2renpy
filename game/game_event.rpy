@@ -198,6 +198,18 @@ init python:
                     result = renpy.display_menu([(self.replace_names(text), index) for index, text in enumerate(choice_texts)])
                     self.state.branch[command['indent']] = result
 
+                # Choose item
+                elif command['code'] == 104:
+                    variable_id = command['parameters'][0]
+                    item_type = command['parameters'][1] or 2
+                    choices = self.state.party.item_choices(item_type)
+                    result = None
+                    if len(choices) > 0:
+                        result = renpy.display_menu([(text, index) for text, index in choices])
+                    else:
+                        renpy.say(None, "No items to choose...")
+                    self.state.variables.set_value(variable_id, result)
+
                 # Comment
                 elif command['code'] == 108:
                     pass
