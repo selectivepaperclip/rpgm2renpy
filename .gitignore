@@ -8,3 +8,4 @@ game/saves
 game/unpacked
 game/game_name
 *.rpyc
+*.rpymc
