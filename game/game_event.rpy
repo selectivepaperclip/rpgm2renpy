@@ -216,7 +216,7 @@ init python:
                 # Common Event
                 elif command['code'] == 117:
                     common_event = self.state.common_events_data()[command['parameters'][0]]
-                    return GameEvent(self, common_event, common_event)
+                    return GameEvent(self.state, common_event, common_event)
 
                 # Repeat Above
                 elif command['code'] == 413:
