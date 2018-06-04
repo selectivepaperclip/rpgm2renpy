@@ -142,7 +142,7 @@ default preferences.afm_time = 15
 ## This generally should not be changed, and if it is, should always be a
 ## literal string, not an expression.
 
-define config.save_directory = config.name + "-1526021564"
+define config.save_directory = renpy.file('game_name').read().strip() + "-1526021564"
 
 
 ## Icon ########################################################################
