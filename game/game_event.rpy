@@ -257,7 +257,7 @@ init python:
                     if operand == 0:
                         value = command['parameters'][4]
                     elif operand == 1:
-                        value = this.state.variables.value(command['parameters'][4])
+                        value = self.state.variables.value(command['parameters'][4])
                     elif operand == 2:
                         #    value = this._params[4] + Math.randomInt(this._params[5] - this._params[4] + 1);
                         renpy.say(None, "Variable control operand 2, plz implement")
