@@ -12,6 +12,9 @@ init python:
         def common(self):
             return self.event_data.has_key('switchId')
 
+        def parallel(self):
+            return self.page['trigger'] == 4
+
         def conditional_branch_result(self, params):
             operation = params[0]
             # Switches
@@ -232,6 +235,12 @@ init python:
 
                 # Repeat Above
                 elif command['code'] == 413:
+                    if self.parallel():
+                        # This might be an endlessly looping animation in a parallel
+                        # event. Bail out of the event.
+                        self.list_index = len(self.page['list']) - 1
+                        return
+
                     while self.list_index > 0:
                         self.list_index -= 1
                         if self.page['list'][self.list_index]['indent'] == command['indent']:
@@ -343,7 +352,7 @@ init python:
                     # This has the effect that the character stays at the spawn
                     # point, but ensures that if the movement is in an infinite loop
                     # Renpy doesn't loop forever.
-                    if self.page['trigger'] == 4 and command['parameters'][1]['wait']:
+                    if self.parallel() and command['parameters'][1]['wait']:
                         self.list_index = len(self.page['list']) - 1
 
                 # "Show baloon icon"
@@ -363,7 +372,8 @@ init python:
                         self.list_index += 1
                     if fast_forwarded:
                         self.list_index -= 1
-                    renpy.pause()
+                    if not self.parallel():
+                        renpy.pause()
 
                 # Show picture
                 elif command['code'] == 231:
