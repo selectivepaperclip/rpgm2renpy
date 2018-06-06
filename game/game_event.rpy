@@ -231,6 +231,7 @@ init python:
                 # Common Event
                 elif command['code'] == 117:
                     common_event = self.state.common_events_data()[command['parameters'][0]]
+                    self.list_index += 1
                     return GameEvent(self.state, common_event, common_event)
 
                 # Repeat Above
@@ -377,8 +378,8 @@ init python:
 
                 # Show picture
                 elif command['code'] == 231:
-                    renpy.scene()
-                    renpy.show(command['parameters'][1])
+                    picture_id, picture_name = command['parameters'][0:2]
+                    renpy.show(picture_name, tag = "picture%s" % picture_id)
 
                 # Move picture - TODO - like the first scene in the cafe in ics2
                 elif command['code'] == 232:
@@ -390,7 +391,8 @@ init python:
 
                 # Erase picture
                 elif command['code'] == 235:
-                    renpy.scene()
+                    picture_id = command['parameters'][0]
+                    renpy.hide("picture%s" % picture_id)
 
                 # Weather Effect
                 elif command['code'] == 236:
@@ -431,6 +433,11 @@ init python:
                 # Recover all
                 elif command['code'] == 314:
                     pass
+
+                # Change actor name
+                elif command['code'] == 320:
+                    actor_index, actor_name = command['parameters'][0:2]
+                    self.state.actors.set_property(actor_index, 'name', actor_name)
 
                 # Change actor image
                 elif command['code'] == 322:
