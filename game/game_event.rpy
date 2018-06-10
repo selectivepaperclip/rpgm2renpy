@@ -404,7 +404,7 @@ init python:
 
                 # Play Movie
                 elif command['code'] == 261:
-                    renpy.show(command['parameters'][0])
+                    renpy.show(command['parameters'][0], tag = "picture1")
 
                 # Change Parallax
                 elif command['code'] == 284:
