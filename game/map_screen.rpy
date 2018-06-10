@@ -1,4 +1,4 @@
-screen mapscreen(coords = None, mapfactor = None, player_position = None, map_name = None, sprites = None, impassible_tiles = None, common_events_keymap = None, background_image = None, width = None, height = None, x_offset = None, y_offset = None):
+screen mapscreen(coords = None, mapfactor = None, hud_pics = [], hud_lines = [], player_position = None, map_name = None, sprites = None, impassible_tiles = None, common_events_keymap = None, background_image = None, width = None, height = None, x_offset = None, y_offset = None):
     #key "viewport_wheelup" action [
     #    SetVariable('mapfactor', mapfactor * 1.5),
     #    renpy.restart_interaction
@@ -57,6 +57,15 @@ screen mapscreen(coords = None, mapfactor = None, player_position = None, map_na
                     background Color("#f00", alpha = 0.75)
                     hover_background "#00f"
                     action SetVariable("mapdest", coord), Jump("game")
+
+    for hud_pic in hud_pics:
+        add hud_pic['image']:
+            xpos hud_pic['X']
+            ypos hud_pic['Y']
+            size renpy.image_size(normal_images[hud_pic['image']])
+
+    for hud_line in hud_lines:
+        text hud_line['text'] ypos hud_line['Y'] xpos hud_line['X']
 
     if map_name:
         text map_name ypos 10 xpos 10 outlines [ (2, "#000", 0, 0) ]

@@ -45,12 +45,39 @@ init python:
             if not hasattr(self, '_plugins'):
                 with renpy.file('unpacked/www/js/plugins.js') as f:
                     # the plugins.js file starts with "var $plugins = ["
-                    # the '[' should be on line 4
-                    content = "".join(f.readlines()[3:-1])
-                    print content
-                    self._plugins = json.loads(content)
+                    # delete everything before the first [
+                    content = f.read()
+                    self._plugins = json.loads(content[content.find('['):].rstrip().rstrip(';'))
 
             return self._plugins
+
+        def orange_hud_variable_pictures(self):
+            plugins = self.plugins()
+            pic_data_list = [plugin_data for plugin_data in plugins if plugin_data['name'].startswith('OrangeHudVariablePicture')]
+
+            pics = []
+            for pic_data in pic_data_list:
+                if self.switches.value(int(pic_data['parameters']['SwitchId']) == True):
+                    pics.append({
+                        'X': int(pic_data['parameters']['X']),
+                        'Y': int(pic_data['parameters']['Y']),
+                        'image': pic_data['parameters']['Pattern'].replace('%1', str(self.variables.value(int(pic_data['parameters']['VariableId']))))
+                    })
+            return pics
+
+        def orange_hud_lines(self):
+            plugins = self.plugins()
+            line_data_list = [plugin_data for plugin_data in plugins if plugin_data['name'].startswith('OrangeHudLine')]
+
+            lines = []
+            for line_data in line_data_list:
+                if self.switches.value(int(line_data['parameters']['SwitchId']) == True):
+                    lines.append({
+                        'X': int(line_data['parameters']['X']),
+                        'Y': int(line_data['parameters']['Y']),
+                        'text': line_data['parameters']['Pattern'].replace('%1', str(self.variables.value(int(line_data['parameters']['VariableId']))))
+                    })
+            return lines
 
         def common_events_keymap(self):
             if self.system_data()['gameTitle'] == 'Incest Story 2 v1.0 Final':
@@ -216,6 +243,9 @@ init python:
                             # Overflowing more on width
                             mapfactor = float(config.screen_width) / map_width
 
+            hud_pics = self.orange_hud_variable_pictures()
+            hud_lines = self.orange_hud_lines()
+
             if draw_impassible_tiles:
                 impassible_tiles=self.map.impassible_tiles()
             else:
@@ -226,6 +256,8 @@ init python:
                 mapfactor=mapfactor,
                 coords=coordinates,
                 player_position=(self.map.x, self.map.y),
+                hud_pics=hud_pics,
+                hud_lines=hud_lines,
                 map_name=self.map.name(),
                 sprites=self.map.sprites(),
                 impassible_tiles=impassible_tiles,

@@ -1,5 +1,6 @@
 ﻿define debug_events = False
 define tile_images = {}
+define normal_images = {}
 define character_images = {}
 define character_image_sizes = {}
 define mapdest = None
@@ -29,6 +30,7 @@ init python:
             image_name = os.path.splitext(filename.replace("unpacked/www/img/pictures/", ""))[0]
             if renpy.has_image(image_name, exact=True):
                 continue
+            normal_images[image_name] = filename
 
             renpy.image(image_name, scale_image(filename))
 
