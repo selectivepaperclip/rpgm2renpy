@@ -174,38 +174,47 @@ init python:
 
             coordinates = self.map.map_options()
 
-            background_image = self.map.background_image()
-
-            map_width = background_image.width + 50
-            map_height = background_image.height + 50
-
-            width_ratio = config.screen_width / float(map_width)
-            height_ratio = config.screen_height / float(map_height)
-
             x_offset = 0
             y_offset = 0
             mapfactor = 1
+            width = None
+            height = None
 
-            if width_ratio > 1:
-                x_offset = (config.screen_width - map_width) // 2
-                if height_ratio > 1:
-                    # Image smaller than screen, show in native size
-                    mapfactor = 1
-                else:
-                    # Image too tall, shrink to fit
-                    mapfactor = float(config.screen_height) / map_height
+            background_image = None
+            width = float(self.map.data()['width'])
+            height = float(self.map.data()['height'])
+
+            if renpy.showing('picture1'):
+                mapfactor = 0.46
             else:
-                if height_ratio > 1:
-                    # Image too wide, shrink to fit
-                    mapfactor = float(config.screen_width) / map_width
-                else:
-                    # Image overflowing in both dimensions
-                    if width_ratio > height_ratio:
-                        # Overflowing more on height
-                        mapfactor = float(config.screen_height) / map_height
+                background_image = self.map.background_image()
+
+                map_width = background_image.width + 50
+                map_height = background_image.height + 50
+
+                width_ratio = config.screen_width / float(map_width)
+                height_ratio = config.screen_height / float(map_height)
+
+                if width_ratio >= 1:
+                    x_offset = (config.screen_width - map_width) // 2
+                    if height_ratio >= 1:
+                        # Image smaller than screen, show in native size
+                        mapfactor = 1
                     else:
-                        # Overflowing more on width
+                        # Image too tall, shrink to fit
+                        mapfactor = float(config.screen_height) / map_height
+                else:
+                    if height_ratio >= 1:
+                        # Image too wide, shrink to fit
                         mapfactor = float(config.screen_width) / map_width
+                    else:
+                        # Image overflowing in both dimensions
+                        if width_ratio > height_ratio:
+                            # Overflowing more on height
+                            mapfactor = float(config.screen_height) / map_height
+                        else:
+                            # Overflowing more on width
+                            mapfactor = float(config.screen_width) / map_width
 
             if draw_impassible_tiles:
                 impassible_tiles=self.map.impassible_tiles()
@@ -222,8 +231,8 @@ init python:
                 impassible_tiles=impassible_tiles,
                 common_events_keymap=self.common_events_keymap(),
                 background_image=background_image,
-                width=float(self.map.data()['width']),
-                height=float(self.map.data()['height']),
+                width=width,
+                height=height,
                 x_offset=x_offset,
                 y_offset=y_offset
             )
