@@ -116,6 +116,21 @@ init python:
             d = GameMapBackground(self.tiles())
             return d
 
+        def is_clicky(self):
+            for e in self.data()['events']:
+                if e:
+                    for page in reversed(e['pages']):
+                        if self.meets_conditions(e, page['conditions']):
+                            first_command = page['list'][0]
+                            if first_command and (first_command['code'] == 108) and (first_command['parameters'][0] == 'click_activate!'):
+                                subsequent_command_params = [command['parameters'] for command in page['list'][1:]]
+                                flat_command_params = [params[0] for params in subsequent_command_params if len(params) == 1]
+                                if 'hover_icon 340;' in flat_command_params:
+                                    continue
+                                else:
+                                    return True
+            return False
+
         def is_tile_a1(self, tile_id):
             return tile_id >= GameMap.TILE_ID_A1 and tile_id < GameMap.TILE_ID_A2
 
@@ -385,11 +400,16 @@ init python:
 
         def map_options(self):
             coords = []
+            clicky = self.is_clicky()
             for e in self.data()['events']:
                 if e:
                     for page in reversed(e['pages']):
                         if page['trigger'] < 3 and self.meets_conditions(e, page['conditions']):
-                            if self.has_commands(page):
+                            if clicky:
+                                parameters = page['list'][0]['parameters']
+                                if len(parameters) == 1 and parameters[0] == 'click_activate!':
+                                    coords.append((e['x'], e['y']))
+                            elif self.has_commands(page):
                                 coords.append((e['x'], e['y']))
                             break
 

@@ -214,7 +214,7 @@ init python:
             width = float(self.map.data()['width'])
             height = float(self.map.data()['height'])
 
-            if renpy.showing('picture1'):
+            if self.map.is_clicky():
                 mapfactor = 0.46
             else:
                 background_image = self.map.background_image()
