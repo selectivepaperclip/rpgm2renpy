@@ -6,7 +6,6 @@ define character_image_sizes = {}
 define mapdest = None
 define keyed_common_event = None
 define draw_impassible_tiles = False
-define show_inventory = None
 
 init python:
     import re
@@ -65,9 +64,8 @@ label game:
     $ end_game = False
 
     while end_game == False:
-        $ game_state.do_next_thing(mapdest, keyed_common_event, show_inventory)
+        $ game_state.do_next_thing(mapdest, keyed_common_event)
         $ mapdest = None
         $ keyed_common_event = None
-        $ show_inventory = None
 
     return

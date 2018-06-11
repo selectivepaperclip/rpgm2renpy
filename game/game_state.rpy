@@ -51,7 +51,7 @@ init python:
 
             return self._plugins
 
-        def orange_hud_variable_pictures(self):
+        def orange_hud_pictures(self):
             plugins = self.plugins()
             pic_data_list = [plugin_data for plugin_data in plugins if plugin_data['name'].startswith('OrangeHudVariablePicture')]
 
@@ -63,6 +63,16 @@ init python:
                         'Y': int(pic_data['parameters']['Y']),
                         'image': pic_data['parameters']['Pattern'].replace('%1', str(self.variables.value(int(pic_data['parameters']['VariableId']))))
                     })
+
+            fixed_pic_data_list = [plugin_data for plugin_data in plugins if plugin_data['name'].startswith('OrangeHudFixedPicture')]
+            for pic_data in fixed_pic_data_list:
+                if self.switches.value(int(pic_data['parameters']['SwitchId']) == True):
+                    pics.append({
+                        'X': int(pic_data['parameters']['X']),
+                        'Y': int(pic_data['parameters']['Y']),
+                        'image': pic_data['parameters']['FileName']
+                    })
+
             return pics
 
         def orange_hud_lines(self):
@@ -80,22 +90,17 @@ init python:
             return lines
 
         def common_events_keymap(self):
-            if self.system_data()['gameTitle'] == 'Incest Story 2 v1.0 Final':
-                return [('p', 4)]
-            else:
-                return []
-
             plugins = self.plugins()
-            yepp_common_events = next(plugin_data for plugin_data in plugins if plugin_data['name'] == 'YEP_ButtonCommonEvents')
-            print yepp_common_events
+            yepp_common_events = next((plugin_data for plugin_data in plugins if plugin_data['name'] == 'YEP_ButtonCommonEvents'), None)
             if not yepp_common_events:
                 return []
 
             result = []
-            for key_desc, event_str in yepp_common_events:
+            for key_desc, event_str in yepp_common_events['parameters'].iteritems():
                 if event_str != "" and event_str != "0":
-                    print key_desc
-                    result.append((key_desc, event_str))
+                    match = re.match("Key (\w)", key_desc)
+                    if match:
+                        result.append((match.groups()[0].lower(), event_str))
             return result
 
         def queue_common_and_parallel_events(self):
@@ -103,6 +108,27 @@ init python:
                 self.common_events_index = 1
             if len(self.map.data()['events']) > 0:
                 self.parallel_events_index = 1
+
+        def show_inventory(self):
+            interesting_items = []
+            for item_id in self.party.items.keys():
+                item = self.items.by_id(item_id)
+                if item['effects'] and len(item['effects']) > 0:
+                    common_event_effects = [effect for effect in item['effects'] if effect['code'] == 44]
+                    if len(common_event_effects) > 0:
+                        if len(common_event_effects) > 1:
+                            renpy.say(None, "Items with more than one common event effect not supported!")
+                        interesting_items.append(item)
+
+            if len(interesting_items) == 0:
+                return True
+
+            result = renpy.display_menu([(item['name'], item) for item in interesting_items])
+            common_event_effects = [effect for effect in result['effects'] if effect['code'] == 44]
+            effect = common_event_effects[0]
+            common_event = self.common_events_data()[int(effect['dataId'])]
+            self.events.append(GameEvent(self, common_event, common_event))
+            return True
 
         def show_shop_ui(self):
             shop_params = self.shop_params
@@ -124,7 +150,7 @@ init python:
                 purchase_only = shop_params['purchase_only']
             )
 
-        def do_next_thing(self, mapdest, keyed_common_event, show_inventory):
+        def do_next_thing(self, mapdest, keyed_common_event):
             if len(self.events) > 0:
                 this_event = self.events[-1]
                 new_event = this_event.do_next_thing()
@@ -176,27 +202,6 @@ init python:
                     renpy.say(None, "%d,%d" % mapdest)
                 return True
 
-            if show_inventory:
-                interesting_items = []
-                for item_id in self.party.items.keys():
-                    item = self.items.by_id(item_id)
-                    if item['effects'] and len(item['effects']) > 0:
-                        common_event_effects = [effect for effect in item['effects'] if effect['code'] == 44]
-                        if len(common_event_effects) > 0:
-                            if len(common_event_effects) > 1:
-                                renpy.say(None, "Items with more than one common event effect not supported!")
-                            interesting_items.append(item)
-
-                if len(interesting_items) == 0:
-                    return True
-
-                result = renpy.display_menu([(item['name'], item) for item in interesting_items])
-                common_event_effects = [effect for effect in result['effects'] if effect['code'] == 44]
-                effect = common_event_effects[0]
-                common_event = self.common_events_data()[int(effect['dataId'])]
-                self.events.append(GameEvent(self, common_event, common_event))
-                return True
-
             renpy.checkpoint()
 
             coordinates = self.map.map_options()
@@ -243,7 +248,7 @@ init python:
                             # Overflowing more on width
                             mapfactor = float(config.screen_width) / map_width
 
-            hud_pics = self.orange_hud_variable_pictures()
+            hud_pics = self.orange_hud_pictures()
             hud_lines = self.orange_hud_lines()
 
             if draw_impassible_tiles:

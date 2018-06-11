@@ -8,9 +8,6 @@ screen mapscreen(coords = None, mapfactor = None, hud_pics = [], hud_lines = [],
     #    renpy.restart_interaction
     #]
 
-    key 'i':
-        action SetVariable("show_inventory", True), Jump("game")
-
     for key_str, event_id in common_events_keymap:
         key key_str:
             action SetVariable("keyed_common_event", event_id), Jump("game")

@@ -181,6 +181,11 @@ init python:
 
         def eval_script(self, command):
             script_string = command['parameters'][0]
+
+            if len(command['parameters']) != 1:
+                renpy.say(None, "More than one parameter in script eval starting with '%s'" % script_string)
+                return
+
             hide_choice_command = re.match("hide_choice\((\d+), \"\$gameSwitches.value\((\d+)\) === (\w+)\"\)", script_string)
             if len(command['parameters']) == 1 and 'ImageManager' in script_string:
                 pass
@@ -189,6 +194,8 @@ init python:
                 choice_id, switch_id, switch_value = (int(groups[0]), int(groups[1]), groups[2] == 'true')
                 if self.state.switches.value(switch_id) == switch_value:
                     self.hide_choice(choice_id)
+            elif script_string == 'SceneManager.push(Scene_Menu);':
+                self.state.show_inventory()
             else:
                 renpy.say(None, "Code 355 not implemented to eval '%s'" % script_string)
 
