@@ -67,5 +67,6 @@ label game:
         $ game_state.do_next_thing(mapdest, keyed_common_event)
         $ mapdest = None
         $ keyed_common_event = None
+        $ renpy.checkpoint()
 
     return

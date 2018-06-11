@@ -202,8 +202,6 @@ init python:
                     renpy.say(None, "%d,%d" % mapdest)
                 return True
 
-            renpy.checkpoint()
-
             coordinates = self.map.map_options()
 
             x_offset = 0
