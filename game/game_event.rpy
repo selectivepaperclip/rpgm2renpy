@@ -8,6 +8,7 @@ init python:
             self.new_map_id = None
             self.x = None
             self.y = None
+            self.choices_to_hide = []
 
         def common(self):
             return self.event_data.has_key('switchId')
@@ -173,6 +174,24 @@ init python:
         def replace_names(self, text):
             return re.sub(r'\\N\[(\d+)\]', lambda m: self.state.actors.by_index(int(m.group(1)))['name'], text)
 
+        def hide_choice(self, choice_id):
+            if not hasattr(self, 'choices_to_hide'):
+                self.choices_to_hide = []
+            self.choices_to_hide.append(choice_id)
+
+        def eval_script(self, command):
+            script_string = command['parameters'][0]
+            hide_choice_command = re.match("hide_choice\((\d+), \"\$gameSwitches.value\((\d+)\) === (\w+)\"\)", script_string)
+            if len(command['parameters']) == 1 and 'ImageManager' in script_string:
+                pass
+            elif hide_choice_command:
+                groups = hide_choice_command.groups()
+                choice_id, switch_id, switch_value = (int(groups[0]), int(groups[1]), groups[2] == 'true')
+                if self.state.switches.value(switch_id) == switch_value:
+                    self.hide_choice(choice_id)
+            else:
+                renpy.say(None, "Code 355 not implemented to eval '%s'" % script_string)
+
         def do_next_thing(self):
             if not self.done():
                 command = self.page['list'][self.list_index]
@@ -198,8 +217,13 @@ init python:
                     cancel_type = command['parameters'][1]
                     if cancel_type >= len(choice_texts):
                         cancel_type = -2
-                    result = renpy.display_menu([(self.replace_names(text), index) for index, text in enumerate(choice_texts)])
+
+                    if not hasattr(self, 'choices_to_hide'):
+                        self.choices_to_hide = []
+
+                    result = renpy.display_menu([(self.replace_names(text), index) for index, text in enumerate(choice_texts) if index not in self.choices_to_hide])
                     self.state.branch[command['indent']] = result
+                    self.choices_to_hide = []
 
                 # Choose item
                 elif command['code'] == 104:
@@ -445,10 +469,10 @@ init python:
 
                 # 'Script'
                 elif command['code'] == 355:
-                    if len(command['parameters']) == 1 and 'ImageManager' in command['parameters'][0]:
-                        pass
-                    else:
-                        renpy.say(None, "Code 355 not implemented to eval '%s'" % command['parameters'][0])
+                    self.eval_script(command)
+                    while self.page['list'][self.list_index + 1]['code'] in [655]:
+                        self.list_index += 1
+                        self.eval_script(self.page['list'][self.list_index])
 
                 # On Battle Win
                 elif command['code'] == 601:
@@ -467,10 +491,6 @@ init python:
 
                 # Dunno, probably battle related?
                 elif command['code'] == 604:
-                    pass
-
-                # Additional lines for script
-                elif command['code'] == 655:
                     pass
 
                 # 'Plugin'
