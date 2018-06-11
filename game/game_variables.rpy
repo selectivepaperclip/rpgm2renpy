@@ -41,4 +41,4 @@ init python:
             longest_string = len(max(self.variable_names, key=len))
 
             for i in xrange(0, len(self.variable_names)):
-                print ("%3s: '%" + str(longest_string) + "s' = %s") % (i, self.variable_names[i], self.variable_values[i])
+                print (("%3s: '%" + str(longest_string) + "s' = %s") % (i, self.variable_names[i], self.variable_values[i]))
