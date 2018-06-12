@@ -28,8 +28,16 @@ init python:
 
             for tile in tiles:
                 if len(tile.tileset_name) > 0:
-                    img = im.Crop(tile_images[tile.tileset_name.replace(".", "_")], (tile.sx, tile.sy, tile.w, tile.h))
-                    self.r.blit(img.render(tile.w, tile.h, 0, 0), (tile.dx + int(tile.x * GameMap.TILE_WIDTH), tile.dy + int(tile.y * GameMap.TILE_HEIGHT)))
+                    img_path = tile_images[tile.tileset_name.replace(".", "_")]
+                    img_size = None
+                    if img_path not in image_sizes:
+                        image_sizes[img_path] = renpy.image_size(img_path)
+                    img_size = image_sizes[img_path]
+                    if tile.sx + tile.w <= img_size[0] and tile.sy + tile.h <= img_size[1]:
+                        img = im.Crop(img_path, (tile.sx, tile.sy, tile.w, tile.h))
+                        self.r.blit(img.render(tile.w, tile.h, 0, 0), (tile.dx + int(tile.x * GameMap.TILE_WIDTH), tile.dy + int(tile.y * GameMap.TILE_HEIGHT)))
+                    else:
+                        print ("Image source out of bounds! '%s', imgWidth: %s, imgHeight: %s, sourceX: %s, sourceY: %s, sourceWidth: %s, sourceHeight: %s" % (tile.tileset_name, img_size[0], img_size[1], tile.sx, tile.sy, tile.w, tile.h))
 
         def render(self, width, height, st, at):
             return self.r
@@ -336,7 +344,7 @@ init python:
                     for index, page in enumerate(reversed(e['pages'])):
                         if self.meets_conditions(e, page['conditions']) and page['trigger'] != 3:
                             if debug_events:
-                                renpy.say(None, "page -%s" % index)
+                                renpy.say(None, "event %s, page -%s" % (e['id'], index))
                             return GameEvent(self.state, e, page)
             return None
 
