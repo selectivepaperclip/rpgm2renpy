@@ -1,4 +1,5 @@
 ﻿define debug_events = False
+define debug_pickling = False
 define tile_images = {}
 define normal_images = {}
 define character_images = {}
@@ -7,6 +8,7 @@ define image_sizes = {}
 define mapdest = None
 define keyed_common_event = None
 define draw_impassible_tiles = False
+define show_synthesis = None
 
 init python:
     import re
@@ -68,6 +70,7 @@ label game:
         $ game_state.do_next_thing(mapdest, keyed_common_event)
         $ mapdest = None
         $ keyed_common_event = None
+        $ show_synthesis = None
         $ renpy.checkpoint()
 
     return

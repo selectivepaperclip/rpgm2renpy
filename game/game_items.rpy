@@ -15,3 +15,9 @@ init python:
                 if item and item['id'] == id:
                     return item
             return None
+
+        def by_name(self, name):
+            for item in self.data():
+                if item and item['name'] == name:
+                    return item
+            return None

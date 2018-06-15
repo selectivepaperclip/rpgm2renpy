@@ -100,11 +100,9 @@ init python:
         TILE_WIDTH = 48
         TILE_HEIGHT = 48
 
-        def __init__(self, state, map_id, x, y):
+        def __init__(self, state, map_id):
             self.state = state
             self.map_id = map_id
-            self.x = x
-            self.y = y
 
         def data(self):
             if not hasattr(self, '_data'):
@@ -124,19 +122,15 @@ init python:
             d = GameMapBackground(self.tiles())
             return d
 
-        def is_clicky(self):
+        def is_clicky(self, player_x, player_y):
             for e in self.data()['events']:
                 if e:
                     for page in reversed(e['pages']):
                         if self.meets_conditions(e, page['conditions']):
                             first_command = page['list'][0]
                             if first_command and (first_command['code'] == 108) and (first_command['parameters'][0] == 'click_activate!'):
-                                subsequent_command_params = [command['parameters'] for command in page['list'][1:]]
-                                flat_command_params = [params[0] for params in subsequent_command_params if len(params) == 1]
-                                if 'hover_icon 340;' in flat_command_params:
-                                    continue
-                                else:
-                                    return True
+                                return not self.can_move(player_x, player_y)
+
             return False
 
         def is_tile_a1(self, tile_id):
@@ -259,21 +253,53 @@ init python:
         def is_visible_tile(self, tile_id):
             return tile_id > 0 and tile_id < GameMap.TILE_ID_MAX
 
+        def is_impassible(self, x, y):
+            direction_bits = [1, 2, 4, 8]
+
+            if self.tile_region(x, y) == 1:
+                return True
+
+            tile_ids = [self.data()['data'][(z * self.height() + y) * self.width() + x] for z in xrange(0, 4)]
+            for tile_id in tile_ids:
+                flag = self.flags(tile_id)
+                if any([(flag & direction_bit) == direction_bit for direction_bit in direction_bits]):
+                    return True
+
+            return False
+
+        def height(self):
+            return self.data()['height']
+
+        def width(self):
+            return self.data()['width']
+
         def impassible_tiles(self):
             result = []
-            direction_bits = [1, 2, 4, 8]
-            width = self.data()['width']
-            height = self.data()['height']
-            for x in xrange(0, width):
-                for y in xrange(0, height):
-                    tile_ids = [self.data()['data'][(z * height + y) * width + x] for z in xrange(0, 4)]
-                    for tile_id in tile_ids:
-                        flag = self.flags(tile_id)
-                        if any([(flag & direction_bit) == direction_bit for direction_bit in direction_bits]):
-                            result.append((x, y))
-                            break
+            for x in xrange(0, self.width()):
+                for y in xrange(0, self.height()):
+                    if self.is_impassible(x, y):
+                        result.append((x, y))
 
             return result
+
+        def first_open_adjacent_square(self, around_x ,around_y):
+            directions = [(0, -1), (0, 1), (-1, 0), (1, 0)]
+            for d in directions:
+                x, y = around_x + d[0], around_y + d[1]
+                if not self.is_impassible(x, y):
+                    return (x, y)
+            return None
+
+        def can_move(self, x, y):
+            event_on_player = self.find_event_for_location(x, y)
+            if event_on_player:
+                return False
+
+            return self.first_open_adjacent_square(x, y) != None
+
+        def tile_region(self, x, y):
+            region_z = 5
+            return self.data()['data'][(region_z * self.height() + y) * self.width() + x]
 
         def tiles(self):
             result = []
@@ -406,9 +432,9 @@ init python:
                     return True
             return False
 
-        def map_options(self):
+        def map_options(self, player_x, player_y):
             coords = []
-            clicky = self.is_clicky()
+            clicky = self.is_clicky(player_x, player_y)
             for e in self.data()['events']:
                 if e:
                     for page in reversed(e['pages']):
@@ -433,8 +459,8 @@ init python:
             self.state = state
             self.maps = {}
 
-        def get_map(self, map_id, x, y):
+        def get_map(self, map_id):
             if not map_id in self.maps:
-                self.maps[map_id] = GameMap(self.state, map_id, x, y)
+                self.maps[map_id] = GameMap(self.state, map_id)
 
             return self.maps[map_id]

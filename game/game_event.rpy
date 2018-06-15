@@ -6,8 +6,6 @@ init python:
             self.page = page
             self.list_index = 0
             self.new_map_id = None
-            self.x = None
-            self.y = None
             self.choices_to_hide = []
 
         def common(self):
@@ -504,8 +502,9 @@ init python:
 
                 # 'Plugin'
                 elif command['code'] == 356:
-                    pass
-
+                    if command['parameters'][0] == 'OpenSynthesis':
+                        self.list_index += 1
+                        self.state.show_synthesis_ui()
 
                 # When [**]
                 elif command['code'] == 402:

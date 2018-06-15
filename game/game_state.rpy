@@ -6,7 +6,9 @@ init python:
             self.events = []
             self.starting_map_id = self.system_data()['startMapId']
             self.map_registry = GameMapRegistry(self)
-            self.map = self.map_registry.get_map(self.starting_map_id, self.system_data()['startX'], self.system_data()['startY'])
+            self.map = self.map_registry.get_map(self.starting_map_id)
+            self.player_x = self.system_data()['startX']
+            self.player_y = self.system_data()['startY']
             self.switches = GameSwitches(self.system_data()['switches'])
             self.self_switches = GameSelfSwitches()
             self.variables = GameVariables(self.system_data()['variables'])
@@ -150,6 +152,52 @@ init python:
                 purchase_only = shop_params['purchase_only']
             )
 
+        def show_synthesis_ui(self):
+            recipes = []
+            for item_id in self.party.items:
+                item = self.items.by_id(item_id)
+                recipe_match = re.match('<Item Recipe: (\d+)>', item['note'])
+                if recipe_match:
+                    recipe_item_id = int(recipe_match.groups()[0])
+                    if recipe_item_id not in recipes:
+                        recipes.append(recipe_item_id)
+
+            synthesizables = []
+            for item_id in recipes:
+                item = self.items.by_id(item_id)
+                items_and_counts = self.synthesis_ingredients(item)
+                if items_and_counts:
+                    has_all = True
+                    for (item_name, count) in items_and_counts:
+                        ingredient_item = self.items.by_name(item_name)
+                        renpy.say(None, ("has %s of %s" % (self.party.num_items(ingredient_item), ingredient_item['name'])))
+                        if self.party.num_items(ingredient_item) < count:
+                            has_all = False
+                    if has_all:
+                        synthesizables.append(item)
+
+            renpy.call_screen(
+                "synthesisscreen",
+                synthesizables = synthesizables
+            )
+
+        def synthesis_ingredients(self, item):
+            items_and_count = []
+            ingredient_pattern = re.compile('<Synthesis Ingredients>[\r\n](.*?)[\r\n]</Synthesis Ingredients\>', re.DOTALL)
+            ingredients = re.findall(ingredient_pattern, item['note'])[0]
+            if ingredients:
+                for ingredient in ingredients.split("\n"):
+                    item_name, count_str = ingredient.split(": ")
+                    items_and_count.append((item_name, int(count_str)))
+                return items_and_count
+            return None
+
+        def synthesize_item(self, item):
+            for (item_name, count) in self.synthesis_ingredients(item):
+                ingredient_item = self.items.by_name(item_name)
+                self.party.gain_item(ingredient_item, -1)
+            self.party.gain_item(item, 1)
+
         def do_next_thing(self, mapdest, keyed_common_event):
             if len(self.events) > 0:
                 this_event = self.events[-1]
@@ -162,7 +210,9 @@ init python:
                     return True
                 if this_event.done():
                     if this_event.new_map_id:
-                        self.map = self.map_registry.get_map(this_event.new_map_id, this_event.new_x, this_event.new_y)
+                        self.map = self.map_registry.get_map(this_event.new_map_id)
+                        self.player_x = this_event.new_x
+                        self.player_y = this_event.new_y
                         self.queue_common_and_parallel_events()
                     if self.common_events_index == None and self.parallel_events_index == None:
                         self.queue_common_and_parallel_events()
@@ -196,13 +246,27 @@ init python:
                 self.events.append(GameEvent(self, common_event, common_event))
                 return True
 
+            if show_synthesis:
+                common_event = self.common_events_data()[1]
+                self.events.append(GameEvent(self, common_event, common_event))
+                return True
+
             if mapdest:
-                self.events.append(self.map.find_event_for_location(mapdest[0], mapdest[1]))
+                map_event = self.map.find_event_for_location(mapdest[0], mapdest[1])
+                if map_event.page['through'] == True and map_event.page['priorityType'] > 0:
+                    self.player_x = map_event.event_data['x']
+                    self.player_y = map_event.event_data['y']
+                else:
+                    first_open_square = self.map.first_open_adjacent_square(map_event.event_data['x'], map_event.event_data['y'])
+                    if first_open_square:
+                        self.player_x, self.player_y = first_open_square
+
+                self.events.append(map_event)
                 if debug_events:
                     renpy.say(None, "%d,%d" % mapdest)
                 return True
 
-            coordinates = self.map.map_options()
+            coordinates = self.map.map_options(self.player_x, self.player_y)
 
             x_offset = 0
             y_offset = 0
@@ -214,7 +278,7 @@ init python:
             width = float(self.map.data()['width'])
             height = float(self.map.data()['height'])
 
-            if self.map.is_clicky():
+            if self.map.is_clicky(self.player_x, self.player_y):
                 mapfactor = 0.46
             else:
                 background_image = self.map.background_image()
@@ -258,7 +322,7 @@ init python:
                 "mapscreen",
                 mapfactor=mapfactor,
                 coords=coordinates,
-                player_position=(self.map.x, self.map.y),
+                player_position=(self.player_x, self.player_y),
                 hud_pics=hud_pics,
                 hud_lines=hud_lines,
                 map_name=self.map.name(),
@@ -269,5 +333,6 @@ init python:
                 width=width,
                 height=height,
                 x_offset=x_offset,
-                y_offset=y_offset
+                y_offset=y_offset,
+                show_synthesis_button=(self.system_data()['gameTitle'] == 'Milfs Villa v1.0 Final')
             )
