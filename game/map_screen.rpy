@@ -1,4 +1,21 @@
-screen mapscreen(coords = None, mapfactor = None, hud_pics = [], hud_lines = [], player_position = None, map_name = None, sprites = None, impassible_tiles = None, common_events_keymap = None, background_image = None, width = None, height = None, x_offset = None, y_offset = None, show_synthesis_button = False):
+screen mapscreen(
+    coords = None,
+    mapfactor = None,
+    hud_pics = [],
+    hud_lines = [],
+    player_position = None,
+    map_name = None,
+    sprites = None,
+    impassible_tiles = None,
+    common_events_keymap = None,
+    background_image = None,
+    width = None,
+    height = None,
+    x_initial = 0,
+    y_initial = 0,
+    x_offset = None,
+    y_offset = None,
+    show_synthesis_button = False):
     #key "viewport_wheelup" action [
     #    SetVariable('mapfactor', mapfactor * 1.5),
     #    renpy.restart_interaction
