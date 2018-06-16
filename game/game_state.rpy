@@ -253,13 +253,16 @@ init python:
 
             if mapdest:
                 map_event = self.map.find_event_for_location(mapdest[0], mapdest[1])
-                if map_event.page['through'] == True and map_event.page['priorityType'] > 0:
-                    self.player_x = map_event.event_data['x']
-                    self.player_y = map_event.event_data['y']
-                else:
-                    first_open_square = self.map.first_open_adjacent_square(map_event.event_data['x'], map_event.event_data['y'])
-                    if first_open_square:
-                        self.player_x, self.player_y = first_open_square
+                if not map_event:
+                    map_event = self.map.find_event_for_location(mapdest[0], mapdest[1], only_special = True)
+                if len(map_event.page['list'][0]['parameters']) < 1 or map_event.page['list'][0]['parameters'][0] != 'click_activate!':
+                    if map_event.page['through'] == True and map_event.page['priorityType'] > 0:
+                        self.player_x = map_event.event_data['x']
+                        self.player_y = map_event.event_data['y']
+                    else:
+                        first_open_square = self.map.first_open_adjacent_square(map_event.event_data['x'], map_event.event_data['y'])
+                        if first_open_square:
+                            self.player_x, self.player_y = first_open_square
 
                 self.events.append(map_event)
                 if debug_events:
@@ -267,22 +270,33 @@ init python:
                 return True
 
             coordinates = self.map.map_options(self.player_x, self.player_y)
+            special_coordinates = self.map.map_options(self.player_x, self.player_y, only_special = True)
 
             x_offset = 0
             y_offset = 0
+            x_initial = 0
+            y_initial = 0
             mapfactor = 1
-            width = None
-            height = None
 
-            background_image = None
-            width = float(self.map.data()['width'])
-            height = float(self.map.data()['height'])
+            background_image = self.map.background_image()
+            width = background_image.width
+            height = background_image.height
 
             if self.map.is_clicky(self.player_x, self.player_y):
-                mapfactor = 0.46
-            else:
-                background_image = self.map.background_image()
+                # assume we want to show about 40 tiles wide, 22 tiles high
+                # player x, y should be centered in the visible map
+                # if they are greater than (19, 12)
 
+                mapfactor = 0.65
+
+                #print ("px: %s, py: %s, w: %s, h: %s" % (self.player_x, self.player_y, width, height))
+
+                if self.player_x > 19:
+                    x_initial = int((self.player_x - 19) * GameMap.TILE_WIDTH * mapfactor)
+                if self.player_y > 12:
+                    y_initial = int((self.player_y - 12) * GameMap.TILE_HEIGHT * mapfactor)
+                background_image = None
+            else:
                 map_width = background_image.width + 50
                 map_height = background_image.height + 50
 
@@ -322,6 +336,7 @@ init python:
                 "mapscreen",
                 mapfactor=mapfactor,
                 coords=coordinates,
+                special_coords=special_coordinates,
                 player_position=(self.player_x, self.player_y),
                 hud_pics=hud_pics,
                 hud_lines=hud_lines,
@@ -332,6 +347,8 @@ init python:
                 background_image=background_image,
                 width=width,
                 height=height,
+                x_initial=x_initial,
+                y_initial=y_initial,
                 x_offset=x_offset,
                 y_offset=y_offset,
                 show_synthesis_button=(self.system_data()['gameTitle'] == 'Milfs Villa v1.0 Final')

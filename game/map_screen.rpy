@@ -1,5 +1,6 @@
 screen mapscreen(
-    coords = None,
+    coords = [],
+    special_coords = [],
     mapfactor = None,
     hud_pics = [],
     hud_lines = [],
@@ -30,7 +31,9 @@ screen mapscreen(
             action SetVariable("keyed_common_event", event_id), Jump("game")
 
     viewport:
-        child_size (width * GameMap.TILE_WIDTH, height * GameMap.TILE_HEIGHT)
+        xinitial x_initial
+        yinitial y_initial
+        child_size (width, height)
         mousewheel True
         draggable True
         scrollbars True
@@ -54,13 +57,14 @@ screen mapscreen(
                     ysize GameMap.TILE_HEIGHT
                     background "#0f0"
 
-            for x, y, img in sprites:
-                button:
-                    xpos x_offset + int(x * GameMap.TILE_WIDTH)
-                    xsize GameMap.TILE_WIDTH
-                    ypos y_offset + int(y * GameMap.TILE_HEIGHT)
-                    ysize GameMap.TILE_HEIGHT
-                    add img
+            if background_image:
+                for x, y, img in sprites:
+                    button:
+                        xpos x_offset + int(x * GameMap.TILE_WIDTH)
+                        xsize GameMap.TILE_WIDTH
+                        ypos y_offset + int(y * GameMap.TILE_HEIGHT)
+                        ysize GameMap.TILE_HEIGHT
+                        add img
 
             for i, coord in enumerate(coords):
                 button:
@@ -69,6 +73,16 @@ screen mapscreen(
                     ypos y_offset + int(coord[1] * GameMap.TILE_HEIGHT)
                     ysize GameMap.TILE_HEIGHT
                     background Color("#f00", alpha = 0.75)
+                    hover_background "#00f"
+                    action SetVariable("mapdest", coord), Jump("game")
+
+            for i, coord in enumerate(special_coords):
+                button:
+                    xpos x_offset + int(coord[0] * GameMap.TILE_WIDTH)
+                    xsize GameMap.TILE_WIDTH
+                    ypos y_offset + int(coord[1] * GameMap.TILE_HEIGHT)
+                    ysize GameMap.TILE_HEIGHT
+                    background Color("#0f0", alpha = 0.75)
                     hover_background "#00f"
                     action SetVariable("mapdest", coord), Jump("game")
 
@@ -81,7 +95,7 @@ screen mapscreen(
     for hud_line in hud_lines:
         text hud_line['text'] ypos hud_line['Y'] xpos hud_line['X']
 
-    if show_synthesis_button:
+    if background_image and show_synthesis_button:
         textbutton "Combine Items" xalign 0.98 ypos 140 background "#000" action SetVariable("show_synthesis", True), Jump("game")
 
     if map_name:

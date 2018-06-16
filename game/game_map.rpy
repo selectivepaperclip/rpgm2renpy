@@ -123,15 +123,19 @@ init python:
             return d
 
         def is_clicky(self, player_x, player_y):
+            some_event_is_clicky = False
+            all_events_are_clicky = True
             for e in self.data()['events']:
                 if e:
                     for page in reversed(e['pages']):
                         if self.meets_conditions(e, page['conditions']):
                             first_command = page['list'][0]
                             if first_command and (first_command['code'] == 108) and (first_command['parameters'][0] == 'click_activate!'):
-                                return not self.can_move(player_x, player_y)
+                                some_event_is_clicky = True
+                            else:
+                                all_events_are_clicky = False
 
-            return False
+            return all_events_are_clicky or (some_event_is_clicky and not self.can_move(player_x, player_y))
 
         def is_tile_a1(self, tile_id):
             return tile_id >= GameMap.TILE_ID_A1 and tile_id < GameMap.TILE_ID_A2
@@ -286,7 +290,7 @@ init python:
             directions = [(0, -1), (0, 1), (-1, 0), (1, 0)]
             for d in directions:
                 x, y = around_x + d[0], around_y + d[1]
-                if not self.is_impassible(x, y):
+                if not self.find_event_for_location(x, y) and not self.is_impassible(x, y):
                     return (x, y)
             return None
 
@@ -364,11 +368,16 @@ init python:
                             break
             return result
 
-        def find_event_for_location(self, x, y):
+        def event_is_special(self, e):
+            return re.search('weightSwitch', e['note'])
+
+        def find_event_for_location(self, x, y, only_special = False):
             for e in self.data()['events']:
                 if e and e['x'] == x and e['y'] == y:
                     for index, page in enumerate(reversed(e['pages'])):
                         if self.meets_conditions(e, page['conditions']) and page['trigger'] != 3:
+                            if ((not only_special) and self.event_is_special(e)):
+                                return None
                             if debug_events:
                                 renpy.say(None, "event %s, page -%s" % (e['id'], index))
                             return GameEvent(self.state, e, page)
@@ -432,13 +441,13 @@ init python:
                     return True
             return False
 
-        def map_options(self, player_x, player_y):
+        def map_options(self, player_x, player_y, only_special = False):
             coords = []
             clicky = self.is_clicky(player_x, player_y)
             for e in self.data()['events']:
                 if e:
                     for page in reversed(e['pages']):
-                        if page['trigger'] < 3 and self.meets_conditions(e, page['conditions']):
+                        if page['trigger'] < 3 and self.meets_conditions(e, page['conditions']) and ((not only_special) or self.event_is_special(e)):
                             if clicky:
                                 parameters = page['list'][0]['parameters']
                                 if len(parameters) == 1 and parameters[0] == 'click_activate!':
