@@ -122,6 +122,19 @@ init python:
             d = GameMapBackground(self.tiles())
             return d
 
+        def clicky_page(self, page):
+            first_command = page['list'][0]
+            if first_command and (first_command['code'] == 108) and (first_command['parameters'][0] == 'click_activate!'):
+                return True
+            return False
+
+        def ignored_clicky_page(self, page):
+            # ZONE OF HACKS
+            if game_state.system_data()['gameTitle'] == 'Milfs Villa v1.0 Final':
+                if len(page['list']) > 2 and page['list'][2]['parameters'][0] == "<Mini Label: Pool>":
+                    return True
+            return False
+
         def is_clicky(self, player_x, player_y):
             some_event_is_clicky = False
             all_events_are_clicky = True
@@ -129,8 +142,7 @@ init python:
                 if e:
                     for page in reversed(e['pages']):
                         if self.meets_conditions(e, page['conditions']):
-                            first_command = page['list'][0]
-                            if first_command and (first_command['code'] == 108) and (first_command['parameters'][0] == 'click_activate!'):
+                            if self.clicky_page(page) and not self.ignored_clicky_page(page):
                                 some_event_is_clicky = True
                             else:
                                 all_events_are_clicky = False

@@ -42,12 +42,13 @@ screen mapscreen(
                 xpos x_offset
                 ypos y_offset
 
-            button:
-                xpos x_offset + int(player_position[0] * GameMap.TILE_WIDTH)
-                xsize GameMap.TILE_WIDTH
-                ypos y_offset + int(player_position[1] * GameMap.TILE_HEIGHT)
-                ysize GameMap.TILE_HEIGHT
-                background "#00f"
+            if background_image:
+                button:
+                    xpos x_offset + int(player_position[0] * GameMap.TILE_WIDTH)
+                    xsize GameMap.TILE_WIDTH
+                    ypos y_offset + int(player_position[1] * GameMap.TILE_HEIGHT)
+                    ysize GameMap.TILE_HEIGHT
+                    background "#00f"
 
             for coord in impassible_tiles:
                 button:

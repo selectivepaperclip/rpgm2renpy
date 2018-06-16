@@ -255,7 +255,7 @@ init python:
                 map_event = self.map.find_event_for_location(mapdest[0], mapdest[1])
                 if not map_event:
                     map_event = self.map.find_event_for_location(mapdest[0], mapdest[1], only_special = True)
-                if len(map_event.page['list'][0]['parameters']) < 1 or map_event.page['list'][0]['parameters'][0] != 'click_activate!':
+                if not self.map.clicky_page(map_event.page):
                     if map_event.page['through'] == True and map_event.page['priorityType'] > 0:
                         self.player_x = map_event.event_data['x']
                         self.player_y = map_event.event_data['y']
