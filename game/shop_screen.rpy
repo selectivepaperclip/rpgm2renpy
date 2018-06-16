@@ -3,11 +3,11 @@ screen shopscreen(shop_items = None, purchase_only = None):
     frame:
         xalign 0.1
         yalign 0.23
-        background Color("#f00", alpha = 0.75)
+        background Color("#005", alpha = 0.75)
 
         vbox:
             textbutton "Leave":
-                background "#f00"
+                background "#000"
                 hover_background "#00f"
                 action Hide("shopscreen"), Jump("game")
                 xalign 1.0
@@ -18,9 +18,10 @@ screen shopscreen(shop_items = None, purchase_only = None):
 
             grid 3 len(shop_items):
                 for item in shop_items:
-                    textbutton item['name']
-                    textbutton "Own %s" % game_state.party.num_items(item)
+                    textbutton item['name'] text_color "#fff"
+                    textbutton "Own %s" % game_state.party.num_items(item) text_color "#fff"
                     textbutton ("Buy (%s)" % item['price']):
+                        text_color "#fff"
                         sensitive (game_state.party.gold >= item['price'])
                         action [
                             Function(game_state.party.gain_item, item, 1),

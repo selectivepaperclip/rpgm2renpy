@@ -22,6 +22,15 @@ init python:
             if not hasattr(self, 'events'):
                 self.events = [event for event in [self.event] if event]
 
+        def migrate_player_x(self):
+            # for game saves created before player_x moved from map to state
+            if not hasattr(self, 'player_x'):
+                if hasattr(self.map, 'x'):
+                    self.player_x = self.map.x
+            if not hasattr(self, 'player_y'):
+                if hasattr(self.map, 'y'):
+                    self.player_y = self.map.y
+
         def system_data(self):
             if not hasattr(self, '_system_data'):
                 with renpy.file('unpacked/www/data/System.json') as f:
@@ -199,6 +208,7 @@ init python:
             self.party.gain_item(item, 1)
 
         def do_next_thing(self, mapdest, keyed_common_event):
+            self.migrate_player_x()
             if len(self.events) > 0:
                 this_event = self.events[-1]
                 new_event = this_event.do_next_thing()
