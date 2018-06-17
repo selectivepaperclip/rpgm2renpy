@@ -1,6 +1,5 @@
 screen mapscreen(
     coords = [],
-    special_coords = [],
     mapfactor = None,
     hud_pics = [],
     hud_lines = [],
@@ -69,23 +68,15 @@ screen mapscreen(
 
             for i, coord in enumerate(coords):
                 button:
-                    xpos x_offset + int(coord[0] * GameMap.TILE_WIDTH)
+                    xpos x_offset + int(coord.x * GameMap.TILE_WIDTH)
                     xsize GameMap.TILE_WIDTH
-                    ypos y_offset + int(coord[1] * GameMap.TILE_HEIGHT)
+                    ypos y_offset + int(coord.y * GameMap.TILE_HEIGHT)
                     ysize GameMap.TILE_HEIGHT
-                    background Color("#f00", alpha = 0.75)
+                    background Color(("#0f0" if coord.special else "#f00"), alpha = 0.75)
                     hover_background "#00f"
-                    action SetVariable("mapdest", coord), Jump("game")
-
-            for i, coord in enumerate(special_coords):
-                button:
-                    xpos x_offset + int(coord[0] * GameMap.TILE_WIDTH)
-                    xsize GameMap.TILE_WIDTH
-                    ypos y_offset + int(coord[1] * GameMap.TILE_HEIGHT)
-                    ysize GameMap.TILE_HEIGHT
-                    background Color("#0f0", alpha = 0.75)
-                    hover_background "#00f"
-                    action SetVariable("mapdest", coord), Jump("game")
+                    tooltip coord.label
+                    hovered SetVariable("hover_coord", coord)
+                    action SetVariable("mapdest", (coord.x, coord.y)), Jump("game")
 
     for hud_pic in hud_pics:
         add hud_pic['image']:
@@ -98,6 +89,14 @@ screen mapscreen(
 
     if background_image and show_synthesis_button:
         textbutton "Combine Items" xalign 0.98 ypos 140 background "#000" action SetVariable("show_synthesis", True), Jump("game")
+
+    $ tooltip = GetTooltip()
+    if tooltip:
+        $ mousepos = renpy.get_mouse_pos()
+        text tooltip:
+            xpos mousepos[0]
+            ypos mousepos[1]
+            outlines [ (2, "#000", 0, 0) ]
 
     if map_name:
         text map_name ypos 10 xpos 10 outlines [ (2, "#000", 0, 0) ]

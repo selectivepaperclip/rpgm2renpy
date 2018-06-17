@@ -1,4 +1,11 @@
 init python:
+    class MapClickable:
+        def __init__(self, x, y, label = None, special = False):
+            self.x = x
+            self.y = y
+            self.label = label
+            self.special = special
+
     class GameTile:
         def __init__(self, tile_id = None, sx = None, sy = None, dx = None, dy = None, w = None, h = None, set_number = None):
             self.tile_id = tile_id
@@ -453,19 +460,28 @@ init python:
                     return True
             return False
 
+        def page_label(self, page):
+            for command in page['list']:
+                if command['code'] == 408:
+                    match = re.match('<Mini Label:(.*?)>', command['parameters'][0])
+                    if match:
+                        return match.groups()[0]
+            return None
+
         def map_options(self, player_x, player_y, only_special = False):
             coords = []
             clicky = self.is_clicky(player_x, player_y)
             for e in self.data()['events']:
                 if e:
                     for page in reversed(e['pages']):
-                        if page['trigger'] < 3 and self.meets_conditions(e, page['conditions']) and ((not only_special) or self.event_is_special(e)):
+                        if page['trigger'] < 3 and self.meets_conditions(e, page['conditions']):
+                            map_clickable = MapClickable(e['x'], e['y'], self.page_label(page), self.event_is_special(e))
                             if clicky:
                                 parameters = page['list'][0]['parameters']
                                 if len(parameters) == 1 and parameters[0] == 'click_activate!':
-                                    coords.append((e['x'], e['y']))
+                                    coords.append(map_clickable)
                             elif self.has_commands(page):
-                                coords.append((e['x'], e['y']))
+                                coords.append(map_clickable)
                             break
 
             return coords

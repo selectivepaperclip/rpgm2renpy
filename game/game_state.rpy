@@ -280,7 +280,6 @@ init python:
                 return True
 
             coordinates = self.map.map_options(self.player_x, self.player_y)
-            special_coordinates = self.map.map_options(self.player_x, self.player_y, only_special = True)
 
             x_offset = 0
             y_offset = 0
@@ -346,7 +345,6 @@ init python:
                 "mapscreen",
                 mapfactor=mapfactor,
                 coords=coordinates,
-                special_coords=special_coordinates,
                 player_position=(self.player_x, self.player_y),
                 hud_pics=hud_pics,
                 hud_lines=hud_lines,
