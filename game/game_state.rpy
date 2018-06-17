@@ -15,6 +15,7 @@ init python:
             self.party = GameParty()
             self.actors = GameActors()
             self.items = GameItems()
+            self.picture_since_last_pause = False
             self.branch = {}
 
         def __setstate__(self, d):
@@ -278,6 +279,8 @@ init python:
                 if debug_events:
                     renpy.say(None, "%d,%d" % mapdest)
                 return True
+
+            game_state.picture_since_last_pause = False
 
             coordinates = self.map.map_options(self.player_x, self.player_y)
 

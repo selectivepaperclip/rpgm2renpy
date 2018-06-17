@@ -406,11 +406,18 @@ init python:
                         self.list_index += 1
                     if fast_forwarded:
                         self.list_index -= 1
-                    if not self.parallel():
+
+                    if not hasattr(game_state, 'picture_since_last_pause'):
+                        # Backfill the boolean for savegames from before this bit was introduced
+                        game_state.picture_since_last_pause = True
+
+                    if game_state.picture_since_last_pause and not self.parallel():
+                        game_state.picture_since_last_pause = False
                         renpy.pause()
 
                 # Show picture
                 elif command['code'] == 231:
+                    game_state.picture_since_last_pause = True
                     picture_id, picture_name = command['parameters'][0:2]
                     renpy.show(picture_name, tag = "picture%s" % picture_id)
 
