@@ -170,7 +170,11 @@ init python:
             self.list_index = index
 
         def replace_names(self, text):
-            return re.sub(r'\\N\[(\d+)\]', lambda m: self.state.actors.by_index(int(m.group(1)))['name'], text)
+            # Replace statements from actor numbers, e.g. \N[2] with their actor name
+            text = re.sub(r'\\N\[(\d+)\]', lambda m: self.state.actors.by_index(int(m.group(1)))['name'], text)
+            # Replace statements from literal strings, e.g. \n<Doug> with that string followed by a colon
+            text = re.sub(r'\\n\<(.*?)\>', lambda m: ("%s: " % m.group(1)), text)
+            return text
 
         def hide_choice(self, choice_id):
             if not hasattr(self, 'choices_to_hide'):
