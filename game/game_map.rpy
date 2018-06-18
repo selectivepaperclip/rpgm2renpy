@@ -371,6 +371,10 @@ init python:
 
                                 img_base_filename = image_data['characterName'].replace(".", "_")
 
+                                is_big_character = False
+                                if re.match("^[!$]+", img_base_filename):
+                                    is_big_character = True
+
                                 if not img_base_filename in character_image_sizes:
                                     character_image_sizes[img_base_filename] = renpy.image_size(character_images[img_base_filename])
                                 img_size = character_image_sizes[img_base_filename]
@@ -378,8 +382,19 @@ init python:
                                 pw = img_size[0] / 12
                                 ph = img_size[1] / 8
                                 n = image_data['characterIndex']
-                                sx = (n % 4 * 3 + 1) * pw
-                                sy = ((n // 4) * 4) * ph
+
+                                character_block_x = n % 4 * 3
+                                character_block_y = (n // 4) * 4
+                                character_pattern_x = image_data['pattern'] if (image_data['pattern'] < 3) else 1
+                                character_pattern_y = (image_data['direction'] - 2) / 2
+                                if is_big_character:
+                                    pw = img_size[0] / 3
+                                    ph = img_size[1] / 4
+                                    character_block_x = 0
+                                    character_block_y = 0
+
+                                sx = (character_block_x + character_pattern_x) * pw
+                                sy = (character_block_y + character_pattern_y) * ph
 
                                 img = im.Crop(character_images[img_base_filename], (sx, sy, GameMap.TILE_WIDTH, GameMap.TILE_HEIGHT))
 
