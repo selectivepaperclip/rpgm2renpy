@@ -47,7 +47,7 @@ screen mapscreen(
                     xsize GameMap.TILE_WIDTH
                     ypos y_offset + int(player_position[1] * GameMap.TILE_HEIGHT)
                     ysize GameMap.TILE_HEIGHT
-                    background "#00f"
+                    background Color("#00f", alpha = 0.5)
 
             for coord in impassible_tiles:
                 button:
@@ -55,7 +55,7 @@ screen mapscreen(
                     xsize GameMap.TILE_WIDTH
                     ypos y_offset + int(coord[1] * GameMap.TILE_HEIGHT)
                     ysize GameMap.TILE_HEIGHT
-                    background "#0f0"
+                    background Color("#0f0", alpha = 0.5)
 
             if background_image:
                 for x, y, img in sprites:
@@ -72,8 +72,8 @@ screen mapscreen(
                     xsize GameMap.TILE_WIDTH
                     ypos y_offset + int(coord.y * GameMap.TILE_HEIGHT)
                     ysize GameMap.TILE_HEIGHT
-                    background Color(("#0f0" if coord.special else "#f00"), alpha = 0.75)
-                    hover_background "#00f"
+                    background Color(("#0f0" if coord.special else "#f00"), alpha = 0.5)
+                    hover_background Color("#00f", alpha = 0.5)
                     tooltip coord.label
                     hovered SetVariable("hover_coord", coord)
                     action SetVariable("mapdest", (coord.x, coord.y)), Jump("game")
