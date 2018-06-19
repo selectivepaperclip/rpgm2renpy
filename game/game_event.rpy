@@ -174,6 +174,8 @@ init python:
             text = re.sub(r'\\N\[(\d+)\]', lambda m: self.state.actors.by_index(int(m.group(1)))['name'], text)
             # Replace statements from literal strings, e.g. \n<Doug> with that string followed by a colon
             text = re.sub(r'\\n\<(.*?)\>', lambda m: ("%s: " % m.group(1)), text)
+            # Remove font size increase statements, e.g. \{
+            text = re.sub(r'\\{', '', text)
             return text
 
         def hide_choice(self, choice_id):
