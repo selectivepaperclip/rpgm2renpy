@@ -246,6 +246,18 @@ init python:
                     self.state.branch[command['indent']] = result
                     self.choices_to_hide = []
 
+                # Input number
+                elif command['code'] == 103:
+                    variable_id, max_digits = command['parameters']
+                    entered_a_number = False
+                    while not entered_a_number:
+                        try:
+                            result = renpy.input("Input number:", length=max_digits)
+                            self.state.variables.set_value(variable_id, int(result))
+                            entered_a_number = True
+                        except ValueError:
+                            pass
+
                 # Choose item
                 elif command['code'] == 104:
                     variable_id = command['parameters'][0]
