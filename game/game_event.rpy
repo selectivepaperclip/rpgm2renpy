@@ -318,8 +318,7 @@ init python:
                     elif operand == 1:
                         value = self.state.variables.value(command['parameters'][4])
                     elif operand == 2:
-                        #    value = this._params[4] + Math.randomInt(this._params[5] - this._params[4] + 1);
-                        renpy.say(None, "Variable control operand 2, plz implement")
+                        value = command['parameters'][4] + random.randint(0, command['parameters'][5] - command['parameters'][4]);
                     elif operand == 3:
                         #    value = this.gameDataOperand(this._params[4], this._params[5], this._params[6]);
                         renpy.say(None, "Variable control operand 3, plz implement")

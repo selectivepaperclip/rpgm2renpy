@@ -12,6 +12,7 @@ define show_synthesis = None
 
 init python:
     import re
+    import random
     import json
     import math
 
