@@ -265,7 +265,11 @@ init python:
                     choices = self.state.party.item_choices(item_type)
                     result = None
                     if len(choices) > 0:
-                        result = renpy.display_menu([(text, index) for text, index in choices])
+                        item_options = [(text, index) for text, index in choices]
+                        result = renpy.display_menu(
+                            sorted(item_options, key=lambda opt: opt[0]),
+                            screen='inventory_choice_screen'
+                        )
                     else:
                         renpy.say(None, "No items to choose...")
                     self.state.variables.set_value(variable_id, result)
