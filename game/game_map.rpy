@@ -137,7 +137,7 @@ init python:
 
         def ignored_clicky_page(self, page):
             # ZONE OF HACKS
-            if game_state.system_data()['gameTitle'] == 'Milfs Villa v1.0 Final':
+            if GameIdentifier().is_milfs_villa():
                 if len(page['list']) > 2 and page['list'][2]['parameters'][0] == "<Mini Label: Pool>":
                     return True
             return False
@@ -366,9 +366,6 @@ init python:
                         if self.meets_conditions(e, page['conditions']):
                             image_data = page['image']
                             if image_data['characterName'] != '':
-                                if image_data['tileId'] > 0:
-                                    renpy.say(None, 'tileId in image not supported!')
-
                                 img_base_filename = image_data['characterName'].replace(".", "_")
 
                                 is_big_character = False
@@ -381,6 +378,7 @@ init python:
 
                                 pw = img_size[0] / 12
                                 ph = img_size[1] / 8
+
                                 n = image_data['characterIndex']
 
                                 character_block_x = n % 4 * 3
@@ -397,7 +395,16 @@ init python:
                                 sy = (character_block_y + character_pattern_y) * ph
 
                                 img = im.Crop(character_images[img_base_filename], (sx, sy, GameMap.TILE_WIDTH, GameMap.TILE_HEIGHT))
+                                result.append((e['x'], e['y'], img))
+                            elif image_data['tileId'] != 0:
+                                tileset_names = self.state.tilesets()[self.data()['tilesetId']]['tilesetNames']
+                                set_number = 5 + (image_data['tileId'] // 256)
+                                tileset_name = tileset_names[set_number]
 
+                                sx = ((image_data['tileId'] // 128) % 2 * 8 + image_data['tileId'] % 8) * GameMap.TILE_WIDTH
+                                sy = ((image_data['tileId'] % 256) // 8) % 16 * GameMap.TILE_HEIGHT
+
+                                img = im.Crop(tile_images[tileset_name.replace(".", "_")], (sx, sy, GameMap.TILE_WIDTH, GameMap.TILE_HEIGHT))
                                 result.append((e['x'], e['y'], img))
                             break
             return result
@@ -483,6 +490,21 @@ init python:
                         return match.groups()[0]
             return None
 
+        def hide_buggy_event(self, event, page):
+            # Milf's Villa has a scene where you need to cover a hole with an ottoman.
+            # If you move the ottoman to the area before there is a hole, even in the original game, it will be lost forever.
+            if GameIdentifier().is_milfs_villa():
+                if self.map_id == 19:
+                    # Fix broken state from savegames before this fix was in - if the hole was covered before the hole existed,
+                    # the switches will be in the wrong state
+                    if game_state.switches.value(59) == True and game_state.switches.value(61) == True:
+                        game_state.switches.set_value(61, False)
+
+                    # Hide the ottoman destination tiles if the quest is not to the phase where the ottoman should be moved there
+                    if event['id'] in [14, 15, 16]:
+                        return game_state.switches.value(59) != True
+            return False
+
         def map_options(self, player_x, player_y, only_special = False):
             coords = []
             clicky = self.is_clicky(player_x, player_y)
@@ -491,6 +513,8 @@ init python:
                     for page in reversed(e['pages']):
                         if page['trigger'] < 3 and self.meets_conditions(e, page['conditions']):
                             map_clickable = MapClickable(e['x'], e['y'], self.page_label(page), self.event_is_special(e))
+                            if self.hide_buggy_event(e, page):
+                                break
                             if clicky:
                                 parameters = page['list'][0]['parameters']
                                 if len(parameters) == 1 and parameters[0] == 'click_activate!':

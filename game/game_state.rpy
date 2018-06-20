@@ -362,5 +362,5 @@ init python:
                 y_initial=y_initial,
                 x_offset=x_offset,
                 y_offset=y_offset,
-                show_synthesis_button=(self.system_data()['gameTitle'] == 'Milfs Villa v1.0 Final')
+                show_synthesis_button=GameIdentifier().is_milfs_villa()
             )
