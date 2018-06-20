@@ -59,8 +59,16 @@ init python:
                 #}
             # Actor
             elif operation == 4:
-                renpy.say(None, "Conditional statements for Actor not implemented")
-                return False
+                actor = self.state.actors.by_index(params[1])
+                if actor:
+                    n = params[3]
+                    if params[2] == 0: # In the Party
+                        return self.state.party.has_actor(actor)
+                    elif params[2] == 1: # Name
+                        return actor['name'] == n
+                    else:
+                        renpy.say(None, ("Operand %s for Actor conditions not implemented!" % params[2]))
+                        return False
                 #var actor = $gameActors.actor(this._params[1]);
                 #if (actor) {
                 #    var n = this._params[3];
