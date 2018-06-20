@@ -16,10 +16,10 @@ init python:
     import math
 
     def scale_image(path):
-        return im.Scale(path, 1280, 720, bilinear=True)
+        return im.Scale(path, config.screen_width, config.screen_height, bilinear=True)
 
     def scale_movie(path):
-        return Movie(play=filename, size=(1280,720))
+        return Movie(play=filename, size=(config.screen_width, config.screen_height))
 
     with renpy.file('unpacked/www/data/System.json') as f:
         system_data = json.load(f)
