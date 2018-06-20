@@ -17,7 +17,10 @@ init python:
             return None
 
         def by_name(self, name):
+            # In cases where two items have the exact same name,
+            # YEP_ItemSynthesis matches to the LAST item with the same name, not the first
+            matching_item = None
             for item in self.data():
                 if item and item['name'] == name:
-                    return item
-            return None
+                    matching_item = item
+            return matching_item
