@@ -420,6 +420,10 @@ init python:
                     if self.parallel() and command['parameters'][1]['wait']:
                         self.list_index = len(self.page['list']) - 1
 
+                # Change Transparency
+                elif command['code'] == 211:
+                    pass
+
                 # "Show baloon icon"
                 elif command['code'] == 213:
                     pass
@@ -507,14 +511,28 @@ init python:
                 elif command['code'] == 314:
                     pass
 
+                # Change equipment
+                elif command['code'] == 319:
+                    print ("command319 (change equipment) called with params: %s" % command['parameters'])
+
                 # Change actor name
                 elif command['code'] == 320:
                     actor_index, actor_name = command['parameters'][0:2]
                     self.state.actors.set_property(actor_index, 'name', actor_name)
 
+                # Change class
+                elif command['code'] == 321:
+                    actor_index, class_index = command['parameters'][0:2]
+                    self.state.actors.set_property(actor_index, 'class_index', class_index)
+
                 # Change actor image
                 elif command['code'] == 322:
                     pass
+
+                # Change actor nickname
+                elif command['code'] == 324:
+                    actor_index, nickname = command['parameters'][0:2]
+                    self.state.actors.set_property(actor_index, 'nickname', nickname)
 
                 # 'Script'
                 elif command['code'] == 355:
