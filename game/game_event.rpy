@@ -113,12 +113,14 @@ init python:
                 #}
             # Character
             elif operation == 6:
-                renpy.say(None, "Conditional statements for Character not implemented")
-                return False
-                #var character = this.character(this._params[1]);
-                #if (character) {
-                #    result = (character.direction() === this._params[2]);
-                #}
+                character_id = params[1]
+                direction = params[2]
+                if character_id < 0:
+                    if hasattr(game_state, 'player_direction'):
+                        return game_state.player_direction == direction
+                else:
+                    renpy.say(None, "Direction checks for non-player Character not implemented")
+                    return False
             # Gold
             elif operation == 7:
                 value = params[1]

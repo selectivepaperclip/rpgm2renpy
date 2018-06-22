@@ -1,4 +1,14 @@
 init python:
+    class GameDirection(object):
+        UP = 8
+        DOWN = 2
+        LEFT = 4
+        RIGHT = 6
+        UP_LEFT = 7
+        UP_RIGHT = 9
+        DOWN_LEFT = 1
+        DOWN_RIGHT = 3
+
     class GameState(SelectivelyPickle):
         def __init__(self):
             self.common_events_index = None
@@ -9,6 +19,7 @@ init python:
             self.map = self.map_registry.get_map(self.starting_map_id)
             self.player_x = self.system_data()['startX']
             self.player_y = self.system_data()['startY']
+            self.player_direction = GameDirection.DOWN
             self.switches = GameSwitches(self.system_data()['switches'])
             self.self_switches = GameSelfSwitches()
             self.variables = GameVariables(self.system_data()['variables'])
@@ -208,6 +219,12 @@ init python:
                 self.party.gain_item(ingredient_item, -1)
             self.party.gain_item(item, 1)
 
+        def determine_direction(self, new_x, new_y):
+            if new_y > self.player_y:
+                return GameDirection.DOWN
+            else:
+                return GameDirection.UP
+
         def do_next_thing(self, mapdest, keyed_common_event):
             self.migrate_player_x()
             if len(self.events) > 0:
@@ -268,11 +285,15 @@ init python:
                     map_event = self.map.find_event_for_location(mapdest[0], mapdest[1], only_special = True)
                 if not self.map.clicky_page(map_event.page):
                     if map_event.page['through'] == True and map_event.page['priorityType'] > 0:
-                        self.player_x = map_event.event_data['x']
-                        self.player_y = map_event.event_data['y']
+                        new_x = map_event.event_data['x']
+                        new_y = map_event.event_data['y']
+                        self.player_direction = self.determine_direction(new_x, new_y)
+                        self.player_x = new_x
+                        self.player_y = new_y
                     else:
                         first_open_square = self.map.first_open_adjacent_square(map_event.event_data['x'], map_event.event_data['y'])
                         if first_open_square:
+                            self.player_direction = self.determine_direction(map_event.event_data['x'], map_event.event_data['y'])
                             self.player_x, self.player_y = first_open_square
 
                 self.events.append(map_event)
