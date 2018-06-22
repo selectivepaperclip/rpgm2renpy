@@ -188,6 +188,8 @@ init python:
             text = re.sub(r'\\I\[(\d+)\]', '', text, flags=re.IGNORECASE)
             # Remove font size increase statements, e.g. \{
             text = re.sub(r'\\{', '', text)
+            # Remove fancy characters from GALV_VisualNovelChoices.js
+            text = re.sub(r'\\C\[(\d+)\]', '', text, flags=re.IGNORECASE)
             return text
 
         def hide_choice(self, choice_id):
