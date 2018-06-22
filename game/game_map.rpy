@@ -129,11 +129,16 @@ init python:
             d = GameMapBackground(self.tiles())
             return d
 
-        def clicky_page(self, page):
-            first_command = page['list'][0]
-            if first_command and (first_command['code'] == 108) and (first_command['parameters'][0] == 'click_activate!'):
+        def clicky_command(self, command):
+           return (command['code'] == 108) and (command['parameters'][0] == 'click_activate!')
+
+        def clicky_event(self, event, page):
+            first_event_command = event['pages'][0]['list'][0]
+            if first_event_command and self.clicky_command(first_event_command):
                 return True
-            return False
+
+            first_page_command = page['list'][0]
+            return first_page_command and self.clicky_command(first_page_command)
 
         def ignored_clicky_page(self, page):
             # ZONE OF HACKS
@@ -149,7 +154,7 @@ init python:
                 if e:
                     for page in reversed(e['pages']):
                         if self.meets_conditions(e, page['conditions']):
-                            if self.clicky_page(page) and not self.ignored_clicky_page(page):
+                            if self.clicky_event(e, page) and not self.ignored_clicky_page(page):
                                 some_event_is_clicky = True
                             else:
                                 all_events_are_clicky = False
