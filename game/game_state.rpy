@@ -225,8 +225,18 @@ init python:
             else:
                 return GameDirection.UP
 
+        def skip_bad_events(self):
+            if GameIdentifier().is_milfs_villa():
+                if self.map.map_id == 64 and not self.self_switches.value((64, 1, "B")):
+                    self.self_switches.set_value((64, 1, "A"), True)
+                    self.self_switches.set_value((64, 1, "B"), True)
+                if self.map.map_id == 27 and self.switches.value(129) == True and not self.self_switches.value((27, 14, "B")):
+                    self.self_switches.set_value((27, 14, "A"), True)
+                    self.self_switches.set_value((27, 14, "B"), True)
+
         def do_next_thing(self, mapdest, keyed_common_event):
             self.migrate_player_x()
+            self.skip_bad_events()
             if len(self.events) > 0:
                 this_event = self.events[-1]
                 new_event = this_event.do_next_thing()

@@ -534,6 +534,11 @@ init python:
                     actor_index, nickname = command['parameters'][0:2]
                     self.state.actors.set_property(actor_index, 'nickname', nickname)
 
+                # Return to title
+                elif command['code'] == 354:
+                    # TODO
+                    pass
+
                 # 'Script'
                 elif command['code'] == 355:
                     self.eval_script(command)
