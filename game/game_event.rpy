@@ -204,7 +204,8 @@ init python:
                 renpy.say(None, "More than one parameter in script eval starting with '%s'" % script_string)
                 return
 
-            hide_choice_command = re.match("hide_choice\((\d+), \"\$gameSwitches.value\((\d+)\) === (\w+)\"\)", script_string)
+            self_switch_set_command = re.match("\$gameSelfSwitches\.setValue\(\[(\d+),(\d+),'(.*?)'\], (\w+)\);?", script_string)
+            hide_choice_command = re.match("hide_choice\((\d+), \"\$gameSwitches\.value\((\d+)\) === (\w+)\"\)", script_string)
             if len(command['parameters']) == 1 and 'ImageManager' in script_string:
                 pass
             elif hide_choice_command:
@@ -212,6 +213,10 @@ init python:
                 choice_id, switch_id, switch_value = (int(groups[0]), int(groups[1]), groups[2] == 'true')
                 if self.state.switches.value(switch_id) == switch_value:
                     self.hide_choice(choice_id)
+            elif self_switch_set_command:
+                groups = self_switch_set_command.groups()
+                map_id, event_id, self_switch_name, self_switch_value = (int(groups[0]), int(groups[1]), groups[2], groups[3] == 'true')
+                self.state.self_switches.set_value((map_id, event_id, self_switch_name), self_switch_value)
             elif script_string == 'SceneManager.push(Scene_Menu);':
                 self.state.show_inventory()
             else:
