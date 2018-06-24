@@ -319,10 +319,11 @@ init python:
 
                 # Break Loop
                 elif command['code'] == 113:
+                    current_indent = command['indent']
                     while self.list_index < len(self.page['list']) - 1:
                         self.list_index += 1
                         command = self.page['list'][self.list_index]
-                        if command['code'] == 413 and command['indent'] < command['indent']:
+                        if command['code'] == 413 and command['indent'] < current_indent:
                             break
 
                 # Label
