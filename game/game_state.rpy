@@ -129,6 +129,9 @@ init python:
         def queue_common_and_parallel_events(self):
             if len(self.common_events_data()) > 0:
                 self.common_events_index = 1
+            self.queue_parallel_events()
+
+        def queue_parallel_events(self):
             if len(self.map.data()['events']) > 0:
                 self.parallel_events_index = 1
 
@@ -233,6 +236,11 @@ init python:
                 if self.map.map_id == 27 and self.switches.value(129) == True and not self.self_switches.value((27, 14, "B")):
                     self.self_switches.set_value((27, 14, "A"), True)
                     self.self_switches.set_value((27, 14, "B"), True)
+
+        def set_game_start_events(self):
+            self.events = [e for e in [self.map.find_auto_trigger_event()] if e]
+            if len(self.events) == 0:
+                self.queue_parallel_events()
 
         def do_next_thing(self, mapdest, keyed_common_event):
             self.migrate_player_x()

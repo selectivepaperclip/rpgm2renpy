@@ -63,6 +63,7 @@ init python:
 label start:
     python:
         game_state = GameState()
+        game_state.set_game_start_events()
 
 label game:
     $ end_game = False
