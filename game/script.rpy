@@ -1,4 +1,5 @@
 ﻿define debug_events = False
+define noisy_events = False
 define debug_pickling = False
 define tile_images = {}
 define normal_images = {}
