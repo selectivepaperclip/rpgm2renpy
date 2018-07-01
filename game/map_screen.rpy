@@ -13,8 +13,11 @@ screen mapscreen(
     height = None,
     x_initial = 0,
     y_initial = 0,
+    viewport_xadjustment = None,
+    viewport_yadjustment = None,
     x_offset = None,
     y_offset = None,
+    in_interaction = False,
     show_synthesis_button = False):
     #key "viewport_wheelup" action [
     #    SetVariable('mapfactor', mapfactor * 1.5),
@@ -29,13 +32,13 @@ screen mapscreen(
         key key_str:
             action SetVariable("keyed_common_event", event_id), Jump("game")
 
-    viewport:
-        xinitial x_initial
-        yinitial y_initial
+    viewport id "map_bg_viewport":
+        xadjustment viewport_xadjustment
+        yadjustment viewport_yadjustment
         child_size (width, height)
-        mousewheel True
-        draggable True
-        scrollbars True
+        mousewheel (not in_interaction)
+        draggable (not in_interaction)
+        scrollbars (not in_interaction)
         fixed at mapzoom(mapfactor):
             add background_image:
                 xpos x_offset
@@ -66,6 +69,17 @@ screen mapscreen(
                         ysize GameMap.TILE_HEIGHT
                         add img
 
+    for (id, args) in game_state.pictures():
+        add args['image_name']
+
+    viewport id "map_fg_viewport":
+        xadjustment viewport_xadjustment
+        yadjustment viewport_yadjustment
+        child_size (width, height)
+        mousewheel (not in_interaction)
+        draggable (not in_interaction)
+        scrollbars (not in_interaction)
+        fixed at mapzoom(mapfactor):
             for i, coord in enumerate(coords):
                 button:
                     xpos x_offset + int(coord.x * GameMap.TILE_WIDTH)

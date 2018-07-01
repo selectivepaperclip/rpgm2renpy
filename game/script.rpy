@@ -10,12 +10,16 @@ define mapdest = None
 define keyed_common_event = None
 define draw_impassible_tiles = False
 define show_synthesis = None
+define viewport_xadjustment = ui.adjustment()
+define viewport_yadjustment = ui.adjustment()
 
 init python:
     import re
     import random
     import json
     import math
+
+    config.layers = [ 'maplayer', 'master', 'transient', 'screens', 'overlay' ]
 
     def scale_image(path):
         return im.Scale(path, config.screen_width, config.screen_height, bilinear=True)
@@ -70,10 +74,13 @@ label game:
     $ end_game = False
 
     while end_game == False:
-        $ game_state.do_next_thing(mapdest, keyed_common_event)
+        $ in_interaction = game_state.do_next_thing(mapdest, keyed_common_event)
+        $ game_state.show_map(in_interaction)
+        if not in_interaction:
+          $ renpy.checkpoint()
+          $ renpy.ui.interact(mouse="screen", type="screen")
         $ mapdest = None
         $ keyed_common_event = None
         $ show_synthesis = None
-        $ renpy.checkpoint()
 
     return

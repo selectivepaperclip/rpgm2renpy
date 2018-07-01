@@ -463,7 +463,7 @@ init python:
                 elif command['code'] == 231:
                     game_state.picture_since_last_pause = True
                     picture_id, picture_name = command['parameters'][0:2]
-                    renpy.show(picture_name, tag = "picture%s" % picture_id)
+                    game_state.show_picture(picture_id, {'image_name': picture_name})
 
                 # Move picture - TODO - like the first scene in the cafe in ics2
                 elif command['code'] == 232:
@@ -476,7 +476,7 @@ init python:
                 # Erase picture
                 elif command['code'] == 235:
                     picture_id = command['parameters'][0]
-                    renpy.hide("picture%s" % picture_id)
+                    game_state.hide_picture(picture_id)
 
                 # Weather Effect
                 elif command['code'] == 236:

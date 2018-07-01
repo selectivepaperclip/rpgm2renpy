@@ -28,6 +28,7 @@ init python:
             self.items = GameItems()
             self.picture_since_last_pause = False
             self.branch = {}
+            self.shown_pictures = {}
 
         def __setstate__(self, d):
             self.__dict__.update(d)
@@ -42,6 +43,30 @@ init python:
             if not hasattr(self, 'player_y'):
                 if hasattr(self.map, 'y'):
                     self.player_y = self.map.y
+
+        def migrate_shown_pictures(self):
+            if not hasattr(self, 'shown_pictures'):
+                self.shown_pictures = {}
+                for tag in renpy.get_showing_tags():
+                    picture_id = int(re.search("(\d+)$", tag).groups()[0])
+                    displayable = renpy.display.core.displayable_by_tag('master', tag)
+                    if len(displayable.children) == 1:
+                      image_name = ' '.join(displayable.children[0].name)
+                      game_state.show_picture(picture_id, {'image_name': image_name})
+                    renpy.hide(tag)
+
+        def show_picture(self, picture_id, args):
+            self.migrate_shown_pictures()
+            self.shown_pictures[picture_id] = args
+
+        def hide_picture(self, picture_id):
+            self.migrate_shown_pictures()
+            if picture_id in self.shown_pictures:
+                del game_state.shown_pictures[picture_id]
+
+        def pictures(self):
+            self.migrate_shown_pictures()
+            return iter(sorted(self.shown_pictures.iteritems()))
 
         def system_data(self):
             if not hasattr(self, '_system_data'):
@@ -319,9 +344,14 @@ init python:
                     renpy.say(None, "%d,%d" % mapdest)
                 return True
 
+            return False
+
+        def show_map(self, in_interaction = False):
             game_state.picture_since_last_pause = False
 
-            coordinates = self.map.map_options(self.player_x, self.player_y)
+            coordinates = []
+            if not in_interaction:
+              coordinates = self.map.map_options(self.player_x, self.player_y)
 
             x_offset = 0
             y_offset = 0
@@ -383,8 +413,12 @@ init python:
             else:
                 impassible_tiles = []
 
-            renpy.call_screen(
+            viewport_xadjustment.set_value(x_initial)
+            viewport_yadjustment.set_value(y_initial)
+
+            renpy.show_screen(
                 "mapscreen",
+                _layer="maplayer",
                 mapfactor=mapfactor,
                 coords=coordinates,
                 player_position=(self.player_x, self.player_y),
@@ -397,9 +431,10 @@ init python:
                 background_image=background_image,
                 width=width,
                 height=height,
-                x_initial=x_initial,
-                y_initial=y_initial,
+                viewport_xadjustment=viewport_xadjustment,
+                viewport_yadjustment=viewport_yadjustment,
                 x_offset=x_offset,
                 y_offset=y_offset,
-                show_synthesis_button=GameIdentifier().is_milfs_villa()
+                in_interaction=in_interaction,
+                show_synthesis_button=(not in_interaction) and GameIdentifier().is_milfs_villa()
             )

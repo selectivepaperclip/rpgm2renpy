@@ -31,23 +31,33 @@ init python:
 
             self.width = (largest_x + 1) * GameMap.TILE_WIDTH
             self.height = (largest_y + 1) * GameMap.TILE_HEIGHT
-            self.r = renpy.Render(self.width, self.height)
+            self.tiles = tiles
 
-            for tile in tiles:
-                if len(tile.tileset_name) > 0:
-                    img_path = tile_images[tile.tileset_name.replace(".", "_")]
-                    img_size = None
-                    if img_path not in image_sizes:
-                        image_sizes[img_path] = renpy.image_size(img_path)
-                    img_size = image_sizes[img_path]
-                    if tile.sx + tile.w <= img_size[0] and tile.sy + tile.h <= img_size[1]:
-                        img = im.Crop(img_path, (tile.sx, tile.sy, tile.w, tile.h))
-                        self.r.blit(img.render(tile.w, tile.h, 0, 0), (tile.dx + int(tile.x * GameMap.TILE_WIDTH), tile.dy + int(tile.y * GameMap.TILE_HEIGHT)))
-                    else:
-                        print ("Image source out of bounds! '%s', imgWidth: %s, imgHeight: %s, sourceX: %s, sourceY: %s, sourceWidth: %s, sourceHeight: %s" % (tile.tileset_name, img_size[0], img_size[1], tile.sx, tile.sy, tile.w, tile.h))
+        def __getstate__(self):
+            map_pickle_values = [(k, v) for k, v in self.__dict__.iteritems() if not k.startswith('_')]
+            if debug_pickling:
+                print ("picklin %s" % self.__class__.__name__)
+                print map_pickle_values
+            return dict(map_pickle_values)
 
         def render(self, width, height, st, at):
-            return self.r
+            if not hasattr(self, '_r'):
+              self._r = renpy.Render(self.width, self.height)
+
+              for tile in self.tiles:
+                  if len(tile.tileset_name) > 0:
+                      img_path = tile_images[tile.tileset_name.replace(".", "_")]
+                      img_size = None
+                      if img_path not in image_sizes:
+                          image_sizes[img_path] = renpy.image_size(img_path)
+                      img_size = image_sizes[img_path]
+                      if tile.sx + tile.w <= img_size[0] and tile.sy + tile.h <= img_size[1]:
+                          img = im.Crop(img_path, (tile.sx, tile.sy, tile.w, tile.h))
+                          self._r.blit(img.render(tile.w, tile.h, 0, 0), (tile.dx + int(tile.x * GameMap.TILE_WIDTH), tile.dy + int(tile.y * GameMap.TILE_HEIGHT)))
+                      else:
+                          print ("Image source out of bounds! '%s', imgWidth: %s, imgHeight: %s, sourceX: %s, sourceY: %s, sourceWidth: %s, sourceHeight: %s" % (tile.tileset_name, img_size[0], img_size[1], tile.sx, tile.sy, tile.w, tile.h))
+
+            return self._r
 
     class GameMap(SelectivelyPickle):
         TILE_ID_B      = 0
