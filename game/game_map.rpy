@@ -242,7 +242,7 @@ init python:
                         bx += water_surface_index * 2
                     else:
                         bx += 6
-                        autotile_table = Tilemap.WATERFALL_AUTOTILE_TABLE
+                        autotile_table = GameMap.WATERFALL_AUTOTILE_TABLE
                         by += animation_frame % 3
             elif self.is_tile_a2(tile_id):
                 set_number = 1
