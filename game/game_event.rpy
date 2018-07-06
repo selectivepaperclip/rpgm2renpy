@@ -197,30 +197,42 @@ init python:
                 self.choices_to_hide = []
             self.choices_to_hide.append(choice_id)
 
-        def eval_script(self, command):
-            script_string = command['parameters'][0]
+        def eval_script(self, script_string):
+            xhr_compare_command = re.match(re.compile("var xhr = new XMLHttpRequest\(\);.*if\(.*?\) {\n(.*?)}", re.DOTALL), script_string)
 
-            if len(command['parameters']) != 1:
-                renpy.say(None, "More than one parameter in script eval starting with '%s'" % script_string)
+            if xhr_compare_command:
+                success_clause = xhr_compare_command.groups()[0]
+                self.eval_script(success_clause.strip())
                 return
 
-            self_switch_set_command = re.match("\$gameSelfSwitches\.setValue\(\[(\d+),(\d+),'(.*?)'\], (\w+)\);?", script_string)
-            hide_choice_command = re.match("hide_choice\((\d+), \"\$gameSwitches\.value\((\d+)\) === (\w+)\"\)", script_string)
-            if len(command['parameters']) == 1 and 'ImageManager' in script_string:
-                pass
-            elif hide_choice_command:
-                groups = hide_choice_command.groups()
-                choice_id, switch_id, switch_value = (int(groups[0]), int(groups[1]), groups[2] == 'true')
-                if self.state.switches.value(switch_id) == switch_value:
-                    self.hide_choice(choice_id)
-            elif self_switch_set_command:
-                groups = self_switch_set_command.groups()
-                map_id, event_id, self_switch_name, self_switch_value = (int(groups[0]), int(groups[1]), groups[2], groups[3] == 'true')
-                self.state.self_switches.set_value((map_id, event_id, self_switch_name), self_switch_value)
-            elif script_string == 'SceneManager.push(Scene_Menu);':
-                self.state.show_inventory()
-            else:
-                renpy.say(None, "Code 355 not implemented to eval '%s'" % script_string)
+            for line in script_string.split("\n"):
+                variable_set_command = re.match("\$gameVariables\.setValue\((\d+), (\d+)\)", line)
+                self_switch_set_command = re.match("\$gameSelfSwitches\.setValue\(\[(\d+),(\d+),'(.*?)'\], (\w+)\);?", line)
+                hide_choice_command = re.match("hide_choice\((\d+), \"\$gameSwitches\.value\((\d+)\) === (\w+)\"\)", line)
+
+                if 'ImageManager' in line:
+                    pass
+                elif variable_set_command:
+                    groups = variable_set_command.groups()
+                    variable_id, value = (int(groups[0]), int(groups[1]))
+                    self.state.variables.set_value(variable_id, value)
+                elif hide_choice_command:
+                    groups = hide_choice_command.groups()
+                    choice_id, switch_id, switch_value = (int(groups[0]), int(groups[1]), groups[2] == 'true')
+                    if self.state.switches.value(switch_id) == switch_value:
+                        self.hide_choice(choice_id)
+                elif self_switch_set_command:
+                    groups = self_switch_set_command.groups()
+                    map_id, event_id, self_switch_name, self_switch_value = (int(groups[0]), int(groups[1]), groups[2], groups[3] == 'true')
+                    self.state.self_switches.set_value((map_id, event_id, self_switch_name), self_switch_value)
+                elif line == 'SceneManager.push(Scene_Menu);':
+                    self.state.show_inventory()
+                else:
+                    print "Script that could not be evaluated:\n"
+                    print script_string
+                    renpy.say(None, "Code 355 not implemented to eval script including line '%s'\nSee console for full script" % line.replace("{", "{{"))
+                    return
+
 
         def do_next_thing(self):
             if not self.done():
@@ -242,7 +254,11 @@ init python:
                         text = self.replace_names(command['parameters'][0])
                         accumulated_text.append(text)
 
-                    renpy.say(None, "\n".join(accumulated_text))
+                    text_to_show = "\n".join(accumulated_text).strip()
+                    if len(text_to_show) > 0:
+                        renpy.say(None, text_to_show)
+                    else:
+                        renpy.pause()
 
                 # Show choices
                 elif command['code'] == 102:
@@ -550,10 +566,18 @@ init python:
 
                 # 'Script'
                 elif command['code'] == 355:
-                    self.eval_script(command)
+                    if len(command['parameters']) != 1:
+                      renpy.say(None, "More than one parameter in script eval starting with '%s'" % command['parameters'][0])
+                      return
+                    script_lines = [command['parameters'][0]]
                     while self.page['list'][self.list_index + 1]['code'] in [655]:
                         self.list_index += 1
-                        self.eval_script(self.page['list'][self.list_index])
+                        command = self.page['list'][self.list_index]
+                        if len(command['parameters']) != 1:
+                          renpy.say(None, "More than one parameter in script eval starting with '%s'" % command['parameters'][0])
+                          return
+                        script_lines.append(command['parameters'][0])
+                    self.eval_script("\n".join(script_lines))
 
                 # On Battle Win
                 elif command['code'] == 601:
