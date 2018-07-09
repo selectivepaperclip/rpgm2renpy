@@ -8,5 +8,6 @@ game/saves
 game/unpacked
 game/game_name
 rpgmdata
+rpgm_game_data.json
 *.rpyc
 *.rpymc

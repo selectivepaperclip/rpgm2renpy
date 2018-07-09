@@ -4,6 +4,14 @@
 ## them. Lines beginning with a single '#' mark are commented-out code, and you
 ## may want to uncomment them when appropriate.
 
+python early:
+    import json
+    rpgm_game_data_path = os.path.join(config.basedir, 'rpgm_game_data.json').replace('\\', '/')
+    rpgm_game_data = None
+    if os.path.exists(rpgm_game_data_path):
+        rpgm_game_data = json.load(renpy.file(rpgm_game_data_path))
+    else:
+        rpgm_game_data = {"short_name": renpy.file('game_name').read().strip()}
 
 ## Basics ######################################################################
 
@@ -12,7 +20,8 @@
 ##
 ## The _() surrounding the string marks it as eligible for translation.
 
-define config.name = _(renpy.file('game_name').read().strip())
+python early:
+    config.name = rpgm_game_data['short_name']
 
 
 ## Determines if the title given above is shown on the main menu screen. Set
@@ -37,7 +46,8 @@ define gui.about = _p("""
 ## distribution. This must be ASCII-only, and must not contain spaces, colons,
 ## or semicolons.
 
-define build.name = config.name.replace(' ', '_')
+python early:
+    build.name = config.name.replace(' ', '_')
 
 
 ## Sounds and music ############################################################
@@ -142,7 +152,8 @@ default preferences.afm_time = 15
 ## This generally should not be changed, and if it is, should always be a
 ## literal string, not an expression.
 
-define config.save_directory = renpy.file('game_name').read().strip() + "-1526021564"
+python early:
+    config.save_directory = rpgm_game_data['short_name'] + "-1526021564"
 
 
 ## Icon ########################################################################
