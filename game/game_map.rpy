@@ -123,7 +123,7 @@ init python:
 
         def data(self):
             if not hasattr(self, '_data'):
-                with renpy.file("unpacked/www/data/Map%03d.json" % self.map_id) as f:
+                with rpgm_file("www/data/Map%03d.json" % self.map_id) as f:
                     self._data = json.load(f)
 
             return self._data

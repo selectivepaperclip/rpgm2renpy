@@ -7,5 +7,6 @@ game/cache
 game/saves
 game/unpacked
 game/game_name
+rpgmdata
 *.rpyc
 *.rpymc

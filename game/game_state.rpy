@@ -70,28 +70,28 @@ init python:
 
         def system_data(self):
             if not hasattr(self, '_system_data'):
-                with renpy.file('unpacked/www/data/System.json') as f:
+                with rpgm_file('www/data/System.json') as f:
                     self._system_data = json.load(f)
 
             return self._system_data
 
         def common_events_data(self):
             if not hasattr(self, '_common_events_data'):
-                with renpy.file('unpacked/www/data/CommonEvents.json') as f:
+                with rpgm_file('www/data/CommonEvents.json') as f:
                     self._common_events_data = json.load(f)
 
             return self._common_events_data
 
         def tilesets(self):
             if not hasattr(self, '_tilesets'):
-                with renpy.file('unpacked/www/data/Tilesets.json') as f:
+                with rpgm_file('www/data/Tilesets.json') as f:
                     self._tilesets = json.load(f)
 
             return self._tilesets
 
         def plugins(self):
             if not hasattr(self, '_plugins'):
-                with renpy.file('unpacked/www/js/plugins.js') as f:
+                with rpgm_file('www/js/plugins.js') as f:
                     # the plugins.js file starts with "var $plugins = ["
                     # delete everything before the first [
                     content = f.read()
