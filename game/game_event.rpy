@@ -478,8 +478,24 @@ init python:
                 # Show picture
                 elif command['code'] == 231:
                     game_state.picture_since_last_pause = True
-                    picture_id, picture_name = command['parameters'][0:2]
-                    game_state.show_picture(picture_id, {'image_name': picture_name})
+                    picture_id, picture_name, origin = command['parameters'][0:3]
+                    x, y = None, None
+                    if command['parameters'][3] == 0:
+                        x = command['parameters'][4]
+                        y = command['parameters'][5]
+                    else:
+                        x = game_state.variables.value(command['parameters'][4])
+                        y = game_state.variables.value(command['parameters'][5])
+
+                    scale_x, scale_y, opacity, blend_mode = command['parameters'][6:10]
+                    picture_args = {
+                      'image_name': picture_name
+                    }
+                    if x != 0 or y != 0:
+                      picture_args['x'] = x
+                      picture_args['y'] = y
+                      picture_args['size'] = renpy.image_size(normal_images[picture_name])
+                    game_state.show_picture(picture_id, picture_args)
 
                 # Move picture - TODO - like the first scene in the cafe in ics2
                 elif command['code'] == 232:
