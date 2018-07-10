@@ -130,10 +130,13 @@ init python:
             lines = []
             for line_data in line_data_list:
                 if self.switches.value(int(line_data['parameters']['SwitchId']) == True):
+                    replaced_text = line_data['parameters']['Pattern'].replace('%1', str(self.variables.value(int(line_data['parameters']['VariableId']))))
+                    # Remove color codes, e.g. \c[24] - for my_summer
+                    replaced_text = re.sub(r'\\C\[(\d+)\]', '', replaced_text, flags=re.IGNORECASE)
                     lines.append({
                         'X': int(line_data['parameters']['X']),
                         'Y': int(line_data['parameters']['Y']),
-                        'text': line_data['parameters']['Pattern'].replace('%1', str(self.variables.value(int(line_data['parameters']['VariableId']))))
+                        'text': replaced_text
                     })
             return lines
 
