@@ -56,12 +56,13 @@ init python:
         renpy.image(image_name, scale_image(pictures_path + filename))
 
     movies_path = rpgm_path("www/movies/")
-    for filename in os.listdir(movies_path):
-        image_name = os.path.splitext(os.path.basename(filename))[0]
-        if renpy.has_image(image_name, exact=True):
-            continue
+    if os.path.exists(movies_path):
+        for filename in os.listdir(movies_path):
+            image_name = os.path.splitext(os.path.basename(filename))[0]
+            if renpy.has_image(image_name, exact=True):
+                continue
 
-        renpy.image(image_name, scale_movie(movies_path + filename))
+            renpy.image(image_name, scale_movie(movies_path + filename))
 
     tilesets_path = rpgm_path("www/img/tilesets/")
     for filename in os.listdir(tilesets_path):
