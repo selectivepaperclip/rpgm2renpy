@@ -66,6 +66,10 @@ init python:
                         return self.state.party.has_actor(actor)
                     elif params[2] == 1: # Name
                         return actor['name'] == n
+                    elif params[2] == 6: # State
+                        if hasattr(actor, 'affected_states'):
+                            return n in actor['affected_states']
+                        return False
                     else:
                         renpy.say(None, ("Operand %s for Actor conditions not implemented!" % params[2]))
                         return False
@@ -373,8 +377,110 @@ init python:
                     elif operand == 2:
                         value = command['parameters'][4] + random.randint(0, command['parameters'][5] - command['parameters'][4]);
                     elif operand == 3:
-                        #    value = this.gameDataOperand(this._params[4], this._params[5], this._params[6]);
-                        renpy.say(None, "Variable control operand 3, plz implement")
+                        game_data_operand_type = command['parameters'][4]
+                        game_data_operand_param1 = command['parameters'][5]
+                        game_data_operand_param2 = command['parameters'][6]
+                        if game_data_operand_type == 3: # Actor
+                            if game_data_operand_param2 == 0: # Level
+                                renpy.say(None, ("Variable control operand 3 not implemented for type 3 (Level), plz implement"))
+                            elif game_data_operand_param2 == 1: # EXP
+                                renpy.say(None, ("Variable control operand 3 not implemented for type 3 (EXP), plz implement"))
+                            elif game_data_operand_param2 == 1: # HP
+                                renpy.say(None, ("Variable control operand 3 not implemented for type 3 (HP), plz implement"))
+                            elif game_data_operand_param2 == 1: # MP
+                                renpy.say(None, ("Variable control operand 3 not implemented for type 3 (MP), plz implement"))
+                            else: # Parameter
+                                renpy.say(None, ("Variable control operand 3 not implemented for actor parameter, plz implement"))
+                        else:
+                            renpy.say(None, ("Variable control operand 3 not implemented for type %s, plz implement" % game_data_operand_type))
+
+                        #switch (type) {
+                        #case 0:  // Item
+                        #    return $gameParty.numItems($dataItems[param1]);
+                        #case 1:  // Weapon
+                        #    return $gameParty.numItems($dataWeapons[param1]);
+                        #case 2:  // Armor
+                        #    return $gameParty.numItems($dataArmors[param1]);
+                        #case 3:  // Actor
+                        #    var actor = $gameActors.actor(param1);
+                        #    if (actor) {
+                        #        switch (param2) {
+                        #        case 0:  // Level
+                        #            return actor.level;
+                        #        case 1:  // EXP
+                        #            return actor.currentExp();
+                        #        case 2:  // HP
+                        #            return actor.hp;
+                        #        case 3:  // MP
+                        #            return actor.mp;
+                        #        default:    // Parameter
+                        #            if (param2 >= 4 && param2 <= 11) {
+                        #                return actor.param(param2 - 4);
+                        #            }
+                        #        }
+                        #    }
+                        #    break;
+                        #case 4:  // Enemy
+                        #    var enemy = $gameTroop.members()[param1];
+                        #    if (enemy) {
+                        #        switch (param2) {
+                        #        case 0:  // HP
+                        #            return enemy.hp;
+                        #        case 1:  // MP
+                        #            return enemy.mp;
+                        #        default:    // Parameter
+                        #            if (param2 >= 2 && param2 <= 9) {
+                        #                return enemy.param(param2 - 2);
+                        #            }
+                        #        }
+                        #    }
+                        #    break;
+                        #case 5:  // Character
+                        #    var character = this.character(param1);
+                        #    if (character) {
+                        #        switch (param2) {
+                        #        case 0:  // Map X
+                        #            return character.x;
+                        #        case 1:  // Map Y
+                        #            return character.y;
+                        #        case 2:  // Direction
+                        #            return character.direction();
+                        #        case 3:  // Screen X
+                        #            return character.screenX();
+                        #        case 4:  // Screen Y
+                        #            return character.screenY();
+                        #        }
+                        #    }
+                        #    break;
+                        #case 6:  // Party
+                        #    actor = $gameParty.members()[param1];
+                        #    return actor ? actor.actorId() : 0;
+                        #case 7:  // Other
+                        #    switch (param1) {
+                        #    case 0:  // Map ID
+                        #        return $gameMap.mapId();
+                        #    case 1:  // Party Members
+                        #        return $gameParty.size();
+                        #    case 2:  // Gold
+                        #        return $gameParty.gold();
+                        #    case 3:  // Steps
+                        #        return $gameParty.steps();
+                        #    case 4:  // Play Time
+                        #        return $gameSystem.playtime();
+                        #    case 5:  // Timer
+                        #        return $gameTimer.seconds();
+                        #    case 6:  // Save Count
+                        #        return $gameSystem.saveCount();
+                        #    case 7:  // Battle Count
+                        #        return $gameSystem.battleCount();
+                        #    case 8:  // Win Count
+                        #        return $gameSystem.winCount();
+                        #    case 9:  // Escape Count
+                        #        return $gameSystem.escapeCount();
+                        #    }
+                        #    break;
+                        #}
+                        #return 0;
                     elif operand == 4:
                         #    value = eval(this._params[4]);
                         renpy.say(None, "Variable control operand 4, plz implement")
@@ -547,6 +653,16 @@ init python:
                     actor_index = command['parameters'][0]
                     actor_name = renpy.input("What name should actor %d have?" % actor_index)
                     self.state.actors.set_property(actor_index, 'name', actor_name)
+
+                # Change state
+                elif command['code'] == 313:
+                    direct = command['parameters'][0] == 0
+                    actor_index = command['parameters'][1] if direct else self.state.variables.value(command['parameters'][1])
+                    state_to_change = command['parameters'][3]
+                    if command['parameters'][2] == 0:
+                        self.state.actors.add_state(actor_index, state_to_change)
+                    else:
+                        self.state.actors.remove_state(actor_index, state_to_change)
 
                 # Recover all
                 elif command['code'] == 314:
