@@ -186,6 +186,8 @@ init python:
         def replace_names(self, text):
             # Replace statements from actor numbers, e.g. \N[2] with their actor name
             text = re.sub(r'\\N\[(\d+)\]', lambda m: self.state.actors.by_index(int(m.group(1)))['name'], text, flags=re.IGNORECASE)
+            # Replace statements from variable ids, e.g. \V[2] with their value
+            text = re.sub(r'\\V\[(\d+)\]', lambda m: str(self.state.variables.value(int(m.group(1)))), text, flags=re.IGNORECASE)
             # Replace statements from literal strings, e.g. \n<Doug> with that string followed by a colon
             text = re.sub(r'\\n\<(.*?)\>', lambda m: ("%s: " % m.group(1)), text)
             # Remove statements with image replacements, e.g. \I[314]
@@ -210,7 +212,7 @@ init python:
                 return
 
             for line in script_string.split("\n"):
-                variable_set_command = re.match("\$gameVariables\.setValue\((\d+), (\d+)\)", line)
+                variable_set_command = re.match("\$gameVariables\.setValue\((\d+),\s*(.+)\);?", line)
                 self_switch_set_command = re.match("\$gameSelfSwitches\.setValue\(\[(\d+),(\d+),'(.*?)'\], (\w+)\);?", line)
                 hide_choice_command = re.match("hide_choice\((\d+), \"\$gameSwitches\.value\((\d+)\) === (\w+)\"\)", line)
 
@@ -218,7 +220,8 @@ init python:
                     pass
                 elif variable_set_command:
                     groups = variable_set_command.groups()
-                    variable_id, value = (int(groups[0]), int(groups[1]))
+                    variable_id = int(groups[0])
+                    value = self.eval_fancypants_value_statement(groups[1])
                     self.state.variables.set_value(variable_id, value)
                 elif hide_choice_command:
                     groups = hide_choice_command.groups()
@@ -237,6 +240,20 @@ init python:
                     renpy.say(None, "Code 355 not implemented to eval script including line '%s'\nSee console for full script" % line.replace("{", "{{"))
                     return
 
+        def eval_fancypants_value_statement(self, script_string):
+            while True:
+                still_has_variables = re.search('\$gameVariables.value\((\d+)\)', script_string)
+                if still_has_variables:
+                    script_string = re.sub(r'\$gameVariables.value\((\d+)\)', lambda m: str(self.state.variables.value(int(m.group(1)))), script_string)
+                else:
+                    break
+
+            # eval the statement in python-land if it looks like it contains only arithmetic expressions
+            if re.match('^[\d\s.+\-*()\s]+$', script_string):
+                return eval(script_string)
+            else:
+                renpy.say(None, "Remaining non-evaluatable fancypants value statement: %s" % script_string)
+                return 0
 
         def do_next_thing(self):
             if not self.done():
@@ -482,8 +499,12 @@ init python:
                         #}
                         #return 0;
                     elif operand == 4:
-                        #    value = eval(this._params[4]);
-                        renpy.say(None, "Variable control operand 4, plz implement")
+                        script_string = command['parameters'][4]
+                        if re.search('\$gameVariables.value\((\d+)\)', script_string):
+                            value = self.eval_fancypants_value_statement(script_string)
+                        else:
+                            renpy.say(None, "Variable control operand 4 not implemented for '%s'" % script_string)
+                            value = 0
 
                     for i in xrange(start, end + 1):
                         self.state.variables.operate_variable(i, operation_type, value)
