@@ -598,9 +598,13 @@ init python:
                       'image_name': picture_name
                     }
                     if x != 0 or y != 0:
-                      picture_args['x'] = x
-                      picture_args['y'] = y
-                      picture_args['size'] = renpy.image_size(normal_images[picture_name])
+                        picture_args['size'] = renpy.image_size(normal_images[picture_name])
+                        if origin == 0: # origin of 0 means x,y is topleft
+                            picture_args['x'] = x
+                            picture_args['y'] = y
+                        else: # origin of 1 means it's screen center
+                            picture_args['x'] = x - picture_args['size'][0] / 2
+                            picture_args['y'] = y - picture_args['size'][1] / 2
                     game_state.show_picture(picture_id, picture_args)
 
                 # Move picture - TODO - like the first scene in the cafe in ics2
