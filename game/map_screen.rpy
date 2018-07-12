@@ -70,10 +70,11 @@ screen mapscreen(
                         add img
 
     for (id, args) in game_state.pictures():
-        add args['image_name']:
-          xpos args.get('x', 0)
-          ypos args.get('y', 0)
-          size args.get('size', None)
+        if ('opacity' not in args) or (args['opacity'] != 0):
+            add args['image_name']:
+                xpos args.get('x', 0)
+                ypos args.get('y', 0)
+                size args.get('size', None)
 
     viewport id "map_fg_viewport":
         xadjustment viewport_xadjustment

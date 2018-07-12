@@ -581,9 +581,10 @@ init python:
                         game_state.picture_since_last_pause = False
                         renpy.pause()
 
-                # Show picture
-                elif command['code'] == 231:
-                    game_state.picture_since_last_pause = True
+                # Show picture / Move picture
+                elif command['code'] == 231 or command['code'] == 232:
+                    if command['code'] == 231:
+                        game_state.picture_since_last_pause = True
                     picture_id, picture_name, origin = command['parameters'][0:3]
                     x, y = None, None
                     if command['parameters'][3] == 0:
@@ -594,22 +595,25 @@ init python:
                         y = game_state.variables.value(command['parameters'][5])
 
                     scale_x, scale_y, opacity, blend_mode = command['parameters'][6:10]
-                    picture_args = {
-                      'image_name': picture_name
-                    }
+
+                    picture_args = None
+                    if command['code'] == 231:
+                        picture_args = {'image_name': picture_name}
+                    else:
+                        picture_args = game_state.shown_pictures[picture_id]
+
+                    picture_args['opacity'] = opacity
                     if x != 0 or y != 0:
-                        picture_args['size'] = renpy.image_size(normal_images[picture_name])
+                        if command['code'] == 231:
+                            picture_args['size'] = renpy.image_size(normal_images[picture_name])
                         if origin == 0: # origin of 0 means x,y is topleft
                             picture_args['x'] = x
                             picture_args['y'] = y
                         else: # origin of 1 means it's screen center
                             picture_args['x'] = x - picture_args['size'][0] / 2
                             picture_args['y'] = y - picture_args['size'][1] / 2
-                    game_state.show_picture(picture_id, picture_args)
 
-                # Move picture - TODO - like the first scene in the cafe in ics2
-                elif command['code'] == 232:
-                    pass
+                    game_state.show_picture(picture_id, picture_args)
 
                 # Tint picture - TODO ?
                 elif command['code'] == 234:
@@ -694,6 +698,10 @@ init python:
                 elif command['code'] == 324:
                     actor_index, nickname = command['parameters'][0:2]
                     self.state.actors.set_property(actor_index, 'nickname', nickname)
+
+                # Open Save Screen
+                elif command['code'] == 352:
+                    renpy.say(None, "RPGMaker would show the save screen right now. You can just open it at your leisure.")
 
                 # Return to title
                 elif command['code'] == 354:
