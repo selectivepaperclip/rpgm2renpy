@@ -384,7 +384,7 @@ init python:
                                 img_base_filename = image_data['characterName'].replace(".", "_")
 
                                 is_big_character = False
-                                if re.match("^[!$]+", img_base_filename):
+                                if re.search("^[!$]+", img_base_filename) and img_base_filename[0] == '$':
                                     is_big_character = True
 
                                 if not img_base_filename in character_image_sizes:
@@ -409,7 +409,7 @@ init python:
                                 sx = (character_block_x + character_pattern_x) * pw
                                 sy = (character_block_y + character_pattern_y) * ph
 
-                                img = im.Crop(character_images[img_base_filename], (sx, sy, GameMap.TILE_WIDTH, GameMap.TILE_HEIGHT))
+                                img = im.Crop(character_images[img_base_filename], (sx, sy, pw, ph))
                                 result.append((e['x'], e['y'], img))
                             elif image_data['tileId'] != 0:
                                 tileset_names = self.state.tilesets()[self.data()['tilesetId']]['tilesetNames']
