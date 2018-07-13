@@ -67,20 +67,12 @@ init python:
     tilesets_path = rpgm_path("www/img/tilesets/")
     for filename in os.listdir(tilesets_path):
         image_name = os.path.splitext(os.path.basename(filename))[0].replace(".", "_")
-        if renpy.has_image(image_name, exact=True):
-            continue
-
         tile_images[image_name] = tilesets_path + filename
-        renpy.image(image_name, tilesets_path + filename)
 
     characters_path = rpgm_path("www/img/characters/")
     for filename in os.listdir(characters_path):
         image_name = os.path.splitext(os.path.basename(filename))[0].replace(".", "_")
-        if renpy.has_image(image_name, exact=True):
-            continue
-
         character_images[image_name] = characters_path + filename
-        renpy.image(image_name, characters_path + filename)
 
 label start:
     python:
