@@ -27,7 +27,6 @@ init python:
             self.actors = GameActors()
             self.items = GameItems()
             self.picture_since_last_pause = False
-            self.branch = {}
             self.shown_pictures = {}
 
         def __setstate__(self, d):
@@ -288,9 +287,9 @@ init python:
                         self.player_x = this_event.new_x
                         self.player_y = this_event.new_y
                         self.queue_common_and_parallel_events()
-                    if self.common_events_index == None and self.parallel_events_index == None:
-                        self.queue_common_and_parallel_events()
                     self.events.pop()
+                    if len(self.events) == 0 and self.common_events_index == None and self.parallel_events_index == None:
+                        self.queue_common_and_parallel_events()
                 return True
 
             if self.common_events_index != None and self.common_events_index < len(self.common_events_data()):

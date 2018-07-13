@@ -7,6 +7,7 @@ init python:
             self.list_index = 0
             self.new_map_id = None
             self.choices_to_hide = []
+            self.branch = {}
 
         def common(self):
             return self.event_data.has_key('switchId')
@@ -179,7 +180,7 @@ init python:
             for i in xrange(start_index, end_index + 1):
                 new_indent = self.page['list'][i]['indent']
                 if new_indent != indent:
-                    self.state.branch[indent] = None
+                    self.branch[indent] = None
                     indent = new_indent
             self.list_index = index
 
@@ -255,8 +256,15 @@ init python:
                 renpy.say(None, "Remaining non-evaluatable fancypants value statement: %s" % script_string)
                 return 0
 
+        def migrate_global_branch_data(self):
+            if not hasattr(self, 'branch') and hasattr(game_state, 'branch'):
+                for event in game_state.events:
+                    event.branch = game_state.branch
+                del game_state.branch
+
         def do_next_thing(self):
             if not self.done():
+                self.migrate_global_branch_data()
                 command = self.page['list'][self.list_index]
 
                 if noisy_events:
@@ -292,7 +300,7 @@ init python:
                         self.choices_to_hide = []
 
                     result = renpy.display_menu([(self.replace_names(text), index) for index, text in enumerate(choice_texts) if index not in self.choices_to_hide])
-                    self.state.branch[command['indent']] = result
+                    self.branch[command['indent']] = result
                     self.choices_to_hide = []
 
                 # Input number
@@ -330,7 +338,7 @@ init python:
                 # Conditional branch
                 elif command['code'] == 111:
                     branch_result = self.conditional_branch_result(command['parameters'])
-                    self.state.branch[command['indent']] = branch_result
+                    self.branch[command['indent']] = branch_result
                     if not branch_result:
                         self.skip_branch(command['indent'])
 
@@ -666,7 +674,7 @@ init python:
                 # Battle
                 elif command['code'] == 301:
                     result = renpy.display_menu([("A battle is happening!", None), ("You Win!", 0), ("You Escape!", 1), ("You Lose!", 2)])
-                    self.state.branch[command['indent']] = result
+                    self.branch[command['indent']] = result
 
                 # Shop
                 elif command['code'] == 302:
@@ -746,17 +754,17 @@ init python:
 
                 # On Battle Win
                 elif command['code'] == 601:
-                    if self.state.branch[command['indent']] != 0:
+                    if self.branch[command['indent']] != 0:
                         self.skip_branch(command['indent'])
 
                 # On Battle Escape
                 elif command['code'] == 602:
-                    if self.state.branch[command['indent']] != 1:
+                    if self.branch[command['indent']] != 1:
                         self.skip_branch(command['indent'])
 
                 # On Battle Lose
                 elif command['code'] == 603:
-                    if self.state.branch[command['indent']] != 2:
+                    if self.branch[command['indent']] != 2:
                         self.skip_branch(command['indent'])
 
                 # Dunno, probably battle related?
@@ -771,12 +779,12 @@ init python:
 
                 # When [**]
                 elif command['code'] == 402:
-                    if self.state.branch[command['indent']] != command['parameters'][0]:
+                    if self.branch[command['indent']] != command['parameters'][0]:
                         self.skip_branch(command['indent'])
 
                 # When Cancel
                 elif command['code'] == 403:
-                    if self.state.branch[command['indent']] >= 0:
+                    if self.branch[command['indent']] >= 0:
                         self.skip_branch(command['indent'])
 
                 # TODO: unknown
@@ -789,7 +797,7 @@ init python:
 
                 # Else
                 elif command['code'] == 411:
-                    if self.state.branch[command['indent']] != False:
+                    if self.branch[command['indent']] != False:
                         self.skip_branch(command['indent'])
 
                 # Seems unimplemented?
