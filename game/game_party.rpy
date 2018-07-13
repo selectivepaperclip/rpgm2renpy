@@ -4,9 +4,10 @@ init python:
         MAX_ITEMS = 99
 
         def __init__(self):
-            # TODO: doesn't account for weapons and armor items
             self.members = [1]
             self.items = {}
+            self.armors = {}
+            self.weapons = {}
             self.gold = 0
 
         def __setstate__(self, d):
@@ -14,8 +15,15 @@ init python:
             if not hasattr(self, 'gold'):
                 self.gold = 0
 
+        def migrate_missing_properties(self):
+            if not hasattr(self, 'armors'):
+                self.armors = {}
+            if not hasattr(self, 'weapons'):
+                self.weapons = {}
+
         def num_items(self, item):
-            return self.items.get(item['id'], 0)
+            self.migrate_missing_properties()
+            return self.storage_attribute_for_item(item).get(item['id'], 0)
 
         def item_choices(self, type):
             result = []
@@ -35,10 +43,12 @@ init python:
             self.gold = max(0, min(self.gold - amount, GameParty.MAX_GOLD))
 
         def gain_item(self, item, amount):
-            existing_value = self.items.get(item['id'], 0)
-            self.items[item['id']] = max(0, min(existing_value + amount, GameParty.MAX_ITEMS))
-            if self.items[item['id']] == 0:
-                del self.items[item['id']]
+            storage_attribute = self.storage_attribute_for_item(item)
+
+            existing_value = storage_attribute.get(item['id'], 0)
+            storage_attribute[item['id']] = max(0, min(existing_value + amount, GameParty.MAX_ITEMS))
+            if storage_attribute[item['id']] == 0:
+                del storage_attribute[item['id']]
 
         def add_actor(self, actor_index):
             if actor_index not in self.members:
@@ -50,3 +60,11 @@ init python:
 
         def has_actor(self, actor):
             return actor['id'] in self.members
+
+        def storage_attribute_for_item(self, item):
+            if 'wtypeId' in item:
+                return self.weapons
+            elif 'atypeId' in item:
+                return self.armors
+            else:
+                return self.items

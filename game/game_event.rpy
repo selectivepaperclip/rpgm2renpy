@@ -141,14 +141,16 @@ init python:
                 return self.state.party.has_item(self.state.items.by_id(params[1]))
             # Weapon
             elif operation == 9:
-                renpy.say(None, "Conditional statements for Weapon not implemented")
-                return False
-                #result = $gameParty.hasItem($dataWeapons[this._params[1]], this._params[2]);
+                if params[2]:
+                    # TODO: include_equip option is not implemented, because equipping is not implemented
+                    pass
+                return self.state.party.has_item(self.state.weapons.by_id(params[1]))
             # Armor
             elif operation == 10:
-                renpy.say(None, "Conditional statements for Armor not implemented")
-                return False
-                #result = $gameParty.hasItem($dataArmors[this._params[1]], this._params[2]);
+                if params[2]:
+                    # TODO: include_equip option is not implemented, because equipping is not implemented
+                    pass
+                return self.state.party.has_item(self.state.armors.by_id(params[1]))
             # Button
             elif operation == 11:
                 renpy.say(None, "Conditional statements for Button not implemented")
@@ -683,7 +685,8 @@ init python:
                     self.state.shop_params['purchase_only'] = command['parameters'][4]
                     while self.page['list'][self.list_index + 1]['code'] in [605]:
                         self.list_index += 1
-                        self.state.shop_params['goods'].append(self.page['list'][self.list_index]['parameters'])
+                        next_command = self.page['list'][self.list_index]
+                        self.state.shop_params['goods'].append(next_command['parameters'])
 
                 # Get actor name
                 elif command['code'] == 303:

@@ -26,6 +26,8 @@ init python:
             self.party = GameParty()
             self.actors = GameActors()
             self.items = GameItems()
+            self.armors = GameArmors()
+            self.weapons = GameWeapons()
             self.picture_since_last_pause = False
             self.shown_pictures = {}
 
@@ -183,20 +185,43 @@ init python:
             self.events.append(GameEvent(self, common_event, common_event))
             return True
 
+        def migrate_missing_shop_data(self):
+            if not hasattr(self, 'armors'):
+                self.armors = GameArmors()
+            if not hasattr(self, 'weapons'):
+                self.weapons = GameWeapons()
+
         def show_shop_ui(self):
+            self.migrate_missing_shop_data()
+
             shop_params = self.shop_params
             self.shop_params = None
             shop_items = []
             for item_params in shop_params['goods']:
                 type, item_id, where_is_price, price_override = item_params[0:4]
-                if type != 0:
-                    renpy.say(None, "Purchasing item type %s is not supported!")
-                item = self.items.by_id(item_id)
-                if item:
-                    if where_is_price != 0:
-                        item = item.copy()
-                        item['price'] = price_override
-                    shop_items.append(item)
+                if type == 0:
+                    item = self.items.by_id(item_id)
+                    if item:
+                        if where_is_price != 0:
+                            item = item.copy()
+                            item['price'] = price_override
+                        shop_items.append(item)
+                elif type == 1:
+                    weapon = self.weapons.by_id(item_id)
+                    if weapon:
+                        if where_is_price != 0:
+                            weapon = weapon.copy()
+                            weapon['price'] = price_override
+                        shop_items.append(weapon)
+                elif type == 2:
+                    armor = self.armors.by_id(item_id)
+                    if armor:
+                        if where_is_price != 0:
+                            armor = armor.copy()
+                            armor['price'] = price_override
+                        shop_items.append(armor)
+                else:
+                    renpy.say(None, "Purchasing item type %s is not supported!" % type)
             renpy.call_screen(
                 "shopscreen",
                 shop_items = shop_items,
