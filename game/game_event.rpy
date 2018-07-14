@@ -62,7 +62,9 @@ init python:
             elif operation == 4:
                 actor = self.state.actors.by_index(params[1])
                 if actor:
-                    n = params[3]
+                    n = None
+                    if len(params) > 3:
+                        n = params[3]
                     if params[2] == 0: # In the Party
                         return self.state.party.has_actor(actor)
                     elif params[2] == 1: # Name
@@ -287,7 +289,7 @@ init python:
 
                     text_to_show = "\n".join(accumulated_text).strip()
                     if len(text_to_show) > 0:
-                        renpy.say(None, text_to_show)
+                        renpy.say(None, re.sub('%', '%%', text_to_show))
                     else:
                         renpy.pause()
 
@@ -418,6 +420,11 @@ init python:
                                 renpy.say(None, ("Variable control operand 3 not implemented for type 3 (MP), plz implement"))
                             else: # Parameter
                                 renpy.say(None, ("Variable control operand 3 not implemented for actor parameter, plz implement"))
+                        elif game_data_operand_type == 7: # Other
+                            if game_data_operand_param1 == 2: # Gold
+                                value = self.state.party.gold
+                            else:
+                                renpy.say(None, ("Variable control operand 7 not implemented for param %s, plz implement" % game_data_operand_param1))
                         else:
                             renpy.say(None, ("Variable control operand 3 not implemented for type %s, plz implement" % game_data_operand_type))
 
