@@ -598,8 +598,11 @@ init python:
                     pass
 
                 # Fade in/out/shake/etc
-                elif command['code'] in [221, 222, 223, 224, 225]:
+                elif command['code'] in [221, 222, 223, 225]:
                     pass
+
+                elif command['code'] == 224: # Flash screen
+                    renpy.pause()
 
                 # Pause
                 elif command['code'] == 230:
