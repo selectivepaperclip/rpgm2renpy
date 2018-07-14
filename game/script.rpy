@@ -40,6 +40,9 @@ init python:
     def scale_movie(path):
         return Movie(play=path, size=(config.screen_width, config.screen_height))
 
+    def supported_image(ext):
+        return ext.lower() in [ ".jpg", ".jpeg", ".png", ".webp" ]
+
     with rpgm_file('www/data/System.json') as f:
         system_data = json.load(f)
         title_screen_file_path = rpgm_path('www/img/titles1/' + system_data['title1Name'] + '.png')
@@ -48,12 +51,14 @@ init python:
 
     pictures_path = rpgm_path("www/img/pictures/")
     for filename in os.listdir(pictures_path):
-        image_name = os.path.splitext(os.path.basename(filename))[0]
-        if renpy.has_image(image_name, exact=True):
+        base, ext = os.path.splitext(os.path.basename(filename))
+        if not supported_image(ext):
             continue
-        normal_images[image_name] = pictures_path + filename
+        if renpy.has_image(base, exact=True):
+            continue
+        normal_images[base] = pictures_path + filename
 
-        renpy.image(image_name, scale_image(pictures_path + filename))
+        renpy.image(base, scale_image(pictures_path + filename))
 
     movies_path = rpgm_path("www/movies/")
     if os.path.exists(movies_path):
@@ -66,12 +71,18 @@ init python:
 
     tilesets_path = rpgm_path("www/img/tilesets/")
     for filename in os.listdir(tilesets_path):
-        image_name = os.path.splitext(os.path.basename(filename))[0].replace(".", "_")
+        base, ext = os.path.splitext(os.path.basename(filename))
+        if not supported_image(ext):
+            continue
+        image_name = base.replace(".", "_")
         tile_images[image_name] = tilesets_path + filename
 
     characters_path = rpgm_path("www/img/characters/")
     for filename in os.listdir(characters_path):
-        image_name = os.path.splitext(os.path.basename(filename))[0].replace(".", "_")
+        base, ext = os.path.splitext(os.path.basename(filename))
+        if not supported_image(ext):
+            continue
+        image_name = base.replace(".", "_")
         character_images[image_name] = characters_path + filename
 
 label start:
