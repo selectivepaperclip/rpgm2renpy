@@ -260,6 +260,38 @@ init python:
                 renpy.say(None, "Remaining non-evaluatable fancypants value statement: %s" % script_string)
                 return 0
 
+        def show_parallel_event_animations(self, switch_id):
+            for newly_activated_event in self.state.map.parallel_events_activated_by_switch(switch_id):
+                picture_transitions = []
+                accumulated_wait = 0
+                current_image = None
+                picture_id = None
+                not_an_animation = False
+                for newly_activated_command in newly_activated_event['list']:
+                    # TODO: isn't responsive to conditionals in event
+                    if newly_activated_command['code'] == 230:
+                        accumulated_wait += newly_activated_command['parameters'][0]
+                    elif newly_activated_command['code'] == 231:
+                        picture_id = newly_activated_command['parameters'][0]
+                        image_name = newly_activated_command['parameters'][1]
+                        if current_image and accumulated_wait > 0:
+                            picture_transitions.append(current_image)
+                            picture_transitions.append(accumulated_wait * 1/30.0)
+                            picture_transitions.append(None)
+
+                        current_image = image_name
+                        accumulated_wait = 0
+                    elif newly_activated_command['code'] == 101:
+                        not_an_animation = True
+                if not_an_animation:
+                    continue
+                if current_image and accumulated_wait > 0:
+                    picture_transitions.append(current_image)
+                    picture_transitions.append(accumulated_wait * 1/30.0)
+                    picture_transitions.append(None)
+                if len(picture_transitions) > 0:
+                    game_state.show_picture(picture_id, {"image_name": anim.TransitionAnimation(*picture_transitions)})
+
         def migrate_global_branch_data(self):
             if not hasattr(self, 'branch') and hasattr(game_state, 'branch'):
                 for event in game_state.events:
@@ -393,7 +425,10 @@ init python:
                 elif command['code'] == 121:
                     start, end, value = command['parameters'][0:3]
                     for i in xrange(start, end + 1):
-                        self.state.switches.set_value(i, value == 0)
+                        switch_on = (value == 0)
+                        self.state.switches.set_value(i, switch_on)
+                        if switch_on:
+                            self.show_parallel_event_animations(i)
 
                 # Control Variables
                 elif command['code'] == 122:
