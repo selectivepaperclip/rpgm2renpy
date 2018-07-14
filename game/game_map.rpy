@@ -387,6 +387,10 @@ init python:
                                 if re.search("^[!$]+", img_base_filename) and img_base_filename[0] == '$':
                                     is_big_character = True
 
+                                is_object_character = False
+                                if re.search("^[!$]+", img_base_filename) and img_base_filename[0] == '!':
+                                    is_object_character = True
+
                                 if not img_base_filename in character_image_sizes:
                                     character_image_sizes[img_base_filename] = renpy.image_size(character_images[img_base_filename])
                                 img_size = character_image_sizes[img_base_filename]
@@ -410,7 +414,8 @@ init python:
                                 sy = (character_block_y + character_pattern_y) * ph
 
                                 img = im.Crop(character_images[img_base_filename], (sx, sy, pw, ph))
-                                result.append((e['x'], e['y'], img))
+                                shift_y = 0 if is_object_character else 6
+                                result.append((e['x'], e['y'], img, pw, ph, shift_y))
                             elif image_data['tileId'] != 0:
                                 tileset_names = self.state.tilesets()[self.data()['tilesetId']]['tilesetNames']
                                 set_number = 5 + (image_data['tileId'] // 256)

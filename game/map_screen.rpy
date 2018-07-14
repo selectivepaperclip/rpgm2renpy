@@ -61,13 +61,19 @@ screen mapscreen(
                     background Color("#0f0", alpha = 0.5)
 
             if background_image:
-                for x, y, img in sprites:
-                    button:
-                        xpos x_offset + int(x * GameMap.TILE_WIDTH)
-                        xsize GameMap.TILE_WIDTH
-                        ypos y_offset + int(y * GameMap.TILE_HEIGHT)
-                        ysize GameMap.TILE_HEIGHT
-                        add img
+                for sprite_data in sprites:
+                    python:
+                        x, y, img = sprite_data[0:3]
+                        screen_x = x * GameMap.TILE_WIDTH
+                        screen_y = y * GameMap.TILE_HEIGHT
+                        if len(sprite_data) > 3:
+                            pw, ph, shift_y = sprite_data[3:6]
+                            screen_x += (GameMap.TILE_WIDTH / 2) - (pw / 2)
+                            screen_y += (GameMap.TILE_HEIGHT) - (ph + shift_y)
+
+                    add img:
+                        xpos x_offset + int(screen_x)
+                        ypos y_offset + int(screen_y)
 
     for (id, args) in game_state.pictures():
         if ('opacity' not in args) or (args['opacity'] != 0):
