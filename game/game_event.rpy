@@ -382,6 +382,10 @@ init python:
                 elif command['code'] == 112:
                     pass
 
+                elif command['code'] == 115: # Exit Event Processing
+                    self.list_index = len(self.page['list']) - 1
+                    return
+
                 # Common Event
                 elif command['code'] == 117:
                     common_event = self.state.common_events_data()[command['parameters'][0]]
