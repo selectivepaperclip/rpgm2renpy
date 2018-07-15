@@ -444,12 +444,15 @@ init python:
                             return GameEvent(self.state, e, page)
             return None
 
+        def boring_auto_trigger_page(self, page):
+            return [command['code'] for command in page['list']] == [0]
+
         def find_auto_trigger_event(self):
             for e in self.data()['events']:
                 if e:
                     for page in reversed(e['pages']):
                         if self.meets_conditions(e, page['conditions']):
-                            if page['trigger'] == 3:
+                            if page['trigger'] == 3 and not self.boring_auto_trigger_page(page):
                                 return GameEvent(self.state, e, page)
                             else:
                                 break
