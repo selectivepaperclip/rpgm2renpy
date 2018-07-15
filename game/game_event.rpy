@@ -304,7 +304,7 @@ init python:
                 command = self.page['list'][self.list_index]
 
                 if noisy_events:
-                    print("map %s, event %s, page %s, command %s (%s)" % (game_state.map.map_id, self.event_data['id'], self.event_data['pages'].index(self.page), self.list_index, command['code']))
+                    print("map %s, event %s, page %s, command %s (%s)" % (game_state.map.map_id, self.event_data['id'], self.event_data['pages'].index(self.page) if ('pages' in self.event_data) else 'n/a', self.list_index, command['code']))
 
                 # Do nothing
                 if command['code'] == 0:
