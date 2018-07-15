@@ -614,15 +614,7 @@ init python:
 
                 # Set movement route
                 elif command['code'] == 205:
-                    # If a movement route is set on 'wait' mode, and this is
-                    # a parallel (background) command, finish the current
-                    # event so that nothing else afterward will run.
-
-                    # This has the effect that the character stays at the spawn
-                    # point, but ensures that if the movement is in an infinite loop
-                    # Renpy doesn't loop forever.
-                    if self.parallel() and command['parameters'][1]['wait']:
-                        self.list_index = len(self.page['list']) - 1
+                    pass
 
                 # Change Transparency
                 elif command['code'] == 211:
