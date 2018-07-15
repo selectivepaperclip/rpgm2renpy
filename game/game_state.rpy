@@ -152,7 +152,10 @@ init python:
                 if event_str != "" and event_str != "0":
                     match = re.match("Key (\w)", key_desc)
                     if match:
-                        result.append((match.groups()[0].lower(), event_str))
+                        activation_key = match.groups()[0]
+                        result.append((activation_key.lower(), event_str))
+                        if activation_key.upper() != activation_key.lower():
+                            result.append((activation_key.upper(), event_str))
             return result
 
         def queue_common_and_parallel_events(self):
