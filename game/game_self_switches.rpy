@@ -13,5 +13,5 @@ init python:
                 del self.switch_values[key]
 
         def print_values(self):
-            for key, value in self.switch_values.iteritems():
+            for key, value in sorted(self.switch_values.iteritems()):
                 print "%s: %s" % (key ,value)
