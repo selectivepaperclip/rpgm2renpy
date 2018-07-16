@@ -1,10 +1,33 @@
 init python:
     class MapClickable:
-        def __init__(self, x, y, label = None, special = False):
+        def __init__(self, x, y, label = None, special = False, clicky = False):
             self.x = x
             self.y = y
             self.label = label
             self.special = special
+            self.reachable = True
+            self.clicky = clicky
+
+        def reachable_or_clickable(self):
+            return (self.reachable if hasattr(self, 'reachable') else True) or (self.clicky if hasattr(self, 'clicky') else False)
+
+        def map_color(self):
+            if self.reachable_or_clickable():
+                return "#f00"
+            else:
+                return "#ee9090"
+
+        def tooltip(self):
+            parts = []
+            if self.label:
+                parts.append(self.label)
+            if not self.reachable_or_clickable():
+                parts.append("(possibly unreachable)")
+            if self.special:
+                parts.append("(weightSwitch)")
+            if len(parts) > 0:
+                return ' '.join(parts)
+            return None
 
     class GameTile:
         def __init__(self, tile_id = None, sx = None, sy = None, dx = None, dy = None, w = None, h = None, set_number = None):
@@ -291,16 +314,39 @@ init python:
         def is_visible_tile(self, tile_id):
             return tile_id > 0 and tile_id < GameMap.TILE_ID_MAX
 
+        def forced_passible(self, x, y):
+            if GameIdentifier().is_milfs_villa():
+                if self.map_id == 1:
+                    if x == 30 and y == 10:
+                        return True
+
+                    if x == 29 and y in [12, 13, 14]:
+                        return True
+            return False
+
+        def tile_id(self, x, y, z):
+            try:
+                return self.data()['data'][(z * self.height() + y) * self.width() + x]
+            except IndexError:
+                return 0
+
         def is_impassible(self, x, y):
             direction_bits = [1, 2, 4, 8]
+
+            if self.forced_passible(x, y):
+                return False
 
             if self.tile_region(x, y) == 1:
                 return True
 
-            tile_ids = [self.data()['data'][(z * self.height() + y) * self.width() + x] for z in xrange(0, 4)]
+            tile_ids = [self.tile_id(x, y, z) for z in xrange(3, -1, -1)]
             for tile_id in tile_ids:
                 flag = self.flags(tile_id)
-                if any([(flag & direction_bit) == direction_bit for direction_bit in direction_bits]):
+                if ((flag & 0x10) != 0):
+                    continue
+                if any([(flag & direction_bit) == 0 for direction_bit in direction_bits]):
+                    return False
+                if all([(flag & direction_bit) == direction_bit for direction_bit in direction_bits]):
                     return True
 
             return False
@@ -337,7 +383,7 @@ init python:
 
         def tile_region(self, x, y):
             region_z = 5
-            return self.data()['data'][(region_z * self.height() + y) * self.width() + x]
+            return self.tile_id(x, y, region_z)
 
         def tiles(self):
             result = []
@@ -535,23 +581,81 @@ init python:
                         return game_state.switches.value(59) != True
             return False
 
+        def adjacent_coords(self, x, y, max_x, max_y):
+            result = []
+            if x > 0:
+                result.append((x - 1, y))
+            if y > 0:
+                result.append((x, y - 1))
+            if x < max_x:
+                result.append((x + 1, y))
+            if y < max_y:
+                result.append((x, y + 1))
+            return result
+
+        def assign_reachability(self, player_x, player_y, event_coords):
+            # 0 = unknown
+            # 1 = impassible
+            # 2 = event
+            # 3 = passible
+
+            reachability_grid = [[0 for x in xrange(self.width())] for y in xrange(self.height())]
+            impassible_tiles = self.impassible_tiles()
+            for coord in impassible_tiles:
+                x, y = coord
+                reachability_grid[y][x] = 1
+
+            for map_clickable in event_coords:
+                reachability_grid[map_clickable.y][map_clickable.x] = 2
+
+            max_x = self.width() - 1
+            max_y = self.height() - 1
+
+            coords_to_mark = [(player_x, player_y)]
+            while len(coords_to_mark) > 0:
+                mx, my = coords_to_mark.pop()
+                reachability_grid[my][mx] = 3
+                for adjacent_coord in self.adjacent_coords(mx, my, max_x, max_y):
+                    ax, ay = adjacent_coord
+                    if reachability_grid[ay][ax] == 0:
+                        coords_to_mark.append(adjacent_coord)
+
+            # for row in reachability_grid:
+            #     print row
+
+            for map_clickable in event_coords:
+                map_clickable.reachable = False
+                for adjacent_coord in self.adjacent_coords(map_clickable.x, map_clickable.y, max_x, max_y):
+                    ax, ay = adjacent_coord
+                    if reachability_grid[ay][ax] == 3:
+                        map_clickable.reachable = True
+                        break
+
         def map_options(self, player_x, player_y, only_special = False):
             coords = []
-            clicky = self.is_clicky(player_x, player_y)
+            clicky_screen = self.is_clicky(player_x, player_y)
             for e in self.data()['events']:
                 if e:
                     for page in reversed(e['pages']):
                         if page['trigger'] < 3 and self.meets_conditions(e, page['conditions']):
-                            map_clickable = MapClickable(e['x'], e['y'], self.page_label(page), self.event_is_special(e))
+                            map_clickable = MapClickable(
+                                e['x'],
+                                e['y'],
+                                label = self.page_label(page),
+                                special = self.event_is_special(e),
+                                clicky = self.clicky_event(e, page)
+                            )
                             if self.hide_buggy_event(e, page):
                                 break
-                            if clicky:
+                            if clicky_screen:
                                 parameters = page['list'][0]['parameters']
                                 if len(parameters) == 1 and parameters[0] == 'click_activate!':
                                     coords.append(map_clickable)
                             elif self.has_commands(page):
                                 coords.append(map_clickable)
                             break
+
+            self.assign_reachability(player_x, player_y, coords)
 
             return coords
 
