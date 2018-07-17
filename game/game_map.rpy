@@ -476,7 +476,7 @@ init python:
             return result
 
         def event_is_special(self, e):
-            return re.search('weightSwitch', e['note'])
+            return bool(re.search('weightSwitch', e['note']))
 
         def find_event_for_location(self, x, y, only_special = False):
             for e in self.data()['events']:
