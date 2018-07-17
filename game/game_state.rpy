@@ -9,6 +9,17 @@ init python:
         DOWN_LEFT = 1
         DOWN_RIGHT = 3
 
+        @classmethod
+        def reverse_direction(cls, direction):
+            if direction == GameDirection.UP:
+                return GameDirection.DOWN
+            elif direction == GameDirection.DOWN:
+                return GameDirection.UP
+            elif direction == GameDirection.LEFT:
+                return GameDirection.RIGHT
+            elif direction == GameDirection.RIGHT:
+                return GameDirection.LEFT
+
     class GameState(SelectivelyPickle):
         def __init__(self):
             self.common_events_index = None
@@ -301,6 +312,8 @@ init python:
             self.migrate_player_x()
             self.skip_bad_events()
             if len(self.events) > 0:
+                self.map.clear_reachability_grid_cache()
+
                 this_event = self.events[-1]
                 new_event = this_event.do_next_thing()
                 if new_event:
@@ -353,10 +366,10 @@ init python:
                 return True
 
             if mapdest:
-                map_event = self.map.find_event_for_location(mapdest[0], mapdest[1])
+                map_event = self.map.find_event_for_location(mapdest.x, mapdest.y)
                 if not map_event:
-                    map_event = self.map.find_event_for_location(mapdest[0], mapdest[1], only_special = True)
-                if not self.map.clicky_event(map_event.event_data, map_event.page):
+                    map_event = self.map.find_event_for_location(mapdest.x, mapdest.y, only_special = True)
+                if (not self.map.clicky_event(map_event.event_data, map_event.page)) and (self.player_x != map_event.event_data['x'] or self.player_y != map_event.event_data['y']):
                     if map_event.page['through'] == True and map_event.page['priorityType'] > 0:
                         new_x = map_event.event_data['x']
                         new_y = map_event.event_data['y']
@@ -364,14 +377,19 @@ init python:
                         self.player_x = new_x
                         self.player_y = new_y
                     else:
-                        first_open_square = self.map.first_open_adjacent_square(map_event.event_data['x'], map_event.event_data['y'])
-                        if first_open_square:
-                            self.player_direction = self.determine_direction(map_event.event_data['x'], map_event.event_data['y'])
-                            self.player_x, self.player_y = first_open_square
+                        if hasattr(mapdest, 'reachable') and mapdest.reachable:
+                            reachability_grid = self.map.reachability_grid_for_current_position()
+                            adjacent_square, self.player_direction = self.map.last_square_before_dest(self.player_x, self.player_y, map_event.event_data['x'], map_event.event_data['y'])
+                            self.player_x, self.player_y = adjacent_square
+                        else:
+                            first_open_square = self.map.first_open_adjacent_square(map_event.event_data['x'], map_event.event_data['y'])
+                            if first_open_square:
+                                self.player_direction = self.determine_direction(map_event.event_data['x'], map_event.event_data['y'])
+                                self.player_x, self.player_y = first_open_square
 
                 self.events.append(map_event)
                 if debug_events:
-                    renpy.say(None, "%d,%d" % mapdest)
+                    renpy.say(None, "%d,%d" % (mapdest.x, mapdest.y))
                 return True
 
             return False
@@ -381,7 +399,8 @@ init python:
 
             coordinates = []
             if not in_interaction:
-              coordinates = self.map.map_options(self.player_x, self.player_y)
+                coordinates = self.map.map_options(self.player_x, self.player_y)
+                self.map.assign_reachability(self.player_x, self.player_y, coordinates)
 
             x_offset = 0
             y_offset = 0
@@ -438,7 +457,7 @@ init python:
             hud_pics = self.orange_hud_pictures()
             hud_lines = self.orange_hud_lines()
 
-            if draw_impassible_tiles:
+            if not in_interaction and draw_impassible_tiles:
                 impassible_tiles=self.map.impassible_tiles()
             else:
                 impassible_tiles = []

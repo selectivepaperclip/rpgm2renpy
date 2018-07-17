@@ -100,7 +100,7 @@ screen mapscreen(
                     hover_background Color("#00f", alpha = 0.5)
                     tooltip coord.tooltip()
                     hovered SetVariable("hover_coord", coord)
-                    action SetVariable("mapdest", (coord.x, coord.y)), Jump("game")
+                    action SetVariable("mapdest", coord), Jump("game")
 
     for hud_pic in hud_pics:
         add hud_pic['image']:

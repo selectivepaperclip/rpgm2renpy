@@ -317,10 +317,27 @@ init python:
         def forced_passible(self, x, y):
             if GameIdentifier().is_milfs_villa():
                 if self.map_id == 1:
+                    # Opening scene roof
                     if x == 30 and y == 10:
                         return True
 
                     if x == 29 and y in [12, 13, 14]:
+                        return True
+                elif self.map_id == 3:
+                    # Main house roof
+                    if x in [44, 45, 50, 51] and y == 19:
+                        return True
+
+                    if x == 40 and y in [15, 16, 17, 18]:
+                        return True
+
+                    if x == 39 and y == 12:
+                        return True
+
+                    if x == 30 and y == 12:
+                        return True
+
+                    if x == 23 and y in [16, 17, 18]:
                         return True
             return False
 
@@ -330,8 +347,11 @@ init python:
             except IndexError:
                 return 0
 
-        def is_impassible(self, x, y):
-            direction_bits = [1, 2, 4, 8]
+        def is_impassible(self, x, y, direction = None):
+            if direction:
+                direction_bits = [1 << direction / 2 - 1]
+            else:
+                direction_bits = [1, 2, 4, 8]
 
             if self.forced_passible(x, y):
                 return False
@@ -358,13 +378,39 @@ init python:
             return self.data()['width']
 
         def impassible_tiles(self):
+            reachability_grid = self.reachability_grid_for_current_position()
             result = []
             for x in xrange(0, self.width()):
                 for y in xrange(0, self.height()):
-                    if self.is_impassible(x, y):
+                    if reachability_grid[y][x] == 0:
                         result.append((x, y))
 
             return result
+
+        def last_square_before_dest(self, current_x, current_y, dest_x, dest_y):
+            reachability_grid = self.reachability_grid_for_current_position()
+            frontier = [(current_x, current_y)]
+            visited = {(current_x, current_y): True}
+
+            max_x = self.width() - 1
+            max_y = self.height() - 1
+
+            while len(frontier) > 0:
+                current = frontier.pop()
+
+                for adjacent_coord in self.adjacent_coords(current[0], current[1], max_x, max_y):
+                    ax, ay, adirection = adjacent_coord
+                    if (ax, ay) in visited:
+                        continue
+                    visited[(ax, ay)] = True
+
+                    if ax == dest_x and ay == dest_y:
+                        return (current, adirection)
+
+                    if reachability_grid[ay][ax] == 3 and (not self.is_impassible(current[0], current[1], adirection) and not self.is_impassible(ax, ay, GameDirection.reverse_direction(adirection))):
+                        frontier.append((ax, ay))
+
+            return None
 
         def first_open_adjacent_square(self, around_x ,around_y):
             directions = [(0, -1), (0, 1), (-1, 0), (1, 0)]
@@ -379,7 +425,16 @@ init python:
             if event_on_player:
                 return False
 
-            return self.first_open_adjacent_square(x, y) != None
+            max_x = self.width() - 1
+            max_y = self.height() - 1
+
+            reachability_grid = self.reachability_grid_for_current_position()
+            for adjacent_coord in self.adjacent_coords(game_state.player_x, game_state.player_y, max_x, max_y):
+                ax, ay, adirection = adjacent_coord
+                if reachability_grid[ay][ax] == 3 and (not self.is_impassible(game_state.player_x, game_state.player_y, adirection) and not self.is_impassible(ax, ay, GameDirection.reverse_direction(adirection))):
+                    return True
+
+            return False
 
         def tile_region(self, x, y):
             region_z = 5
@@ -584,26 +639,27 @@ init python:
         def adjacent_coords(self, x, y, max_x, max_y):
             result = []
             if x > 0:
-                result.append((x - 1, y))
+                result.append((x - 1, y, GameDirection.LEFT))
             if y > 0:
-                result.append((x, y - 1))
+                result.append((x, y - 1, GameDirection.UP))
             if x < max_x:
-                result.append((x + 1, y))
+                result.append((x + 1, y, GameDirection.RIGHT))
             if y < max_y:
-                result.append((x, y + 1))
+                result.append((x, y + 1, GameDirection.DOWN))
             return result
 
-        def assign_reachability(self, player_x, player_y, event_coords):
-            # 0 = unknown
-            # 1 = impassible
+        def reachability_grid_for_current_position(self):
+            return self.reachability_grid(game_state.player_x, game_state.player_y, self.map_options(game_state.player_x, game_state.player_y, ignore_clicky = True))
+
+        def reachability_grid(self, player_x, player_y, event_coords):
+            if hasattr(self, '_reachability_grid_cache') and (player_x, player_y) in self._reachability_grid_cache:
+                return self._reachability_grid_cache[(player_x, player_y)]
+
+            # 0 = unknown / impassible
             # 2 = event
             # 3 = passible
 
             reachability_grid = [[0 for x in xrange(self.width())] for y in xrange(self.height())]
-            impassible_tiles = self.impassible_tiles()
-            for coord in impassible_tiles:
-                x, y = coord
-                reachability_grid[y][x] = 1
 
             for map_clickable in event_coords:
                 reachability_grid[map_clickable.y][map_clickable.x] = 2
@@ -616,24 +672,39 @@ init python:
                 mx, my = coords_to_mark.pop()
                 reachability_grid[my][mx] = 3
                 for adjacent_coord in self.adjacent_coords(mx, my, max_x, max_y):
-                    ax, ay = adjacent_coord
-                    if reachability_grid[ay][ax] == 0:
-                        coords_to_mark.append(adjacent_coord)
+                    ax, ay, adirection = adjacent_coord
+                    if reachability_grid[ay][ax] == 0 and (not self.is_impassible(mx, my, adirection) and not self.is_impassible(ax, ay, GameDirection.reverse_direction(adirection))):
+                        coords_to_mark.append(adjacent_coord[0:2])
 
             # for row in reachability_grid:
             #     print row
 
+            if not hasattr(self, '_reachability_grid_cache'):
+                self._reachability_grid_cache = {}
+            self._reachability_grid_cache[(player_x, player_y)] = reachability_grid
+
+            return reachability_grid
+
+        def clear_reachability_grid_cache(self):
+            self._reachability_grid_cache = {}
+
+        def assign_reachability(self, player_x, player_y, event_coords):
+            reachability_grid = self.reachability_grid(player_x, player_y, event_coords)
+
+            max_x = self.width() - 1
+            max_y = self.height() - 1
+
             for map_clickable in event_coords:
                 map_clickable.reachable = False
                 for adjacent_coord in self.adjacent_coords(map_clickable.x, map_clickable.y, max_x, max_y):
-                    ax, ay = adjacent_coord
+                    ax, ay, adirection = adjacent_coord
                     if reachability_grid[ay][ax] == 3:
                         map_clickable.reachable = True
                         break
 
-        def map_options(self, player_x, player_y, only_special = False):
+        def map_options(self, player_x, player_y, only_special = False, ignore_clicky = False):
             coords = []
-            clicky_screen = self.is_clicky(player_x, player_y)
+            clicky_screen = not ignore_clicky and self.is_clicky(player_x, player_y)
             for e in self.data()['events']:
                 if e:
                     for page in reversed(e['pages']):
@@ -654,8 +725,6 @@ init python:
                             elif self.has_commands(page):
                                 coords.append(map_clickable)
                             break
-
-            self.assign_reachability(player_x, player_y, coords)
 
             return coords
 
