@@ -599,7 +599,24 @@ init python:
 
                 # Set movement route
                 elif command['code'] == 205:
-                    pass
+                    character_index, route = command['parameters']
+                    if character_index < 0: # Player Character
+                        if route['wait'] == True:
+                          for route_part in route['list']:
+                              if route_part['code'] == 12: # Move Forward
+                                  print "Moving forward from direction %s" % game_state.player_direction
+                                  if game_state.player_direction == GameDirection.UP:
+                                      game_state.player_y -= 1
+                                  elif game_state.player_direction == GameDirection.DOWN:
+                                      game_state.player_y += 1
+                                  elif game_state.player_direction == GameDirection.LEFT:
+                                      game_state.player_x -= 1
+                                  elif game_state.player_direction == GameDirection.RIGHT:
+                                      game_state.player_x += 1
+                              elif route_part['code'] == 29: # Change Speed
+                                  pass
+                              elif route_part['code'] == 0:
+                                  pass
 
                 # Change Transparency
                 elif command['code'] == 211:
