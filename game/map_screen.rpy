@@ -52,14 +52,6 @@ screen mapscreen(
                     ysize GameMap.TILE_HEIGHT
                     background Color("#00f", alpha = 0.5)
 
-            for coord in impassible_tiles:
-                button:
-                    xpos x_offset + int(coord[0] * GameMap.TILE_WIDTH)
-                    xsize GameMap.TILE_WIDTH
-                    ypos y_offset + int(coord[1] * GameMap.TILE_HEIGHT)
-                    ysize GameMap.TILE_HEIGHT
-                    background Color("#000", alpha = 0.9)
-
             if background_image:
                 for sprite_data in sprites:
                     python:
@@ -90,6 +82,16 @@ screen mapscreen(
         draggable (not in_interaction)
         scrollbars (not in_interaction)
         fixed at mapzoom(mapfactor):
+            for coord in impassible_tiles:
+                button:
+                    xpos x_offset + int(coord[0] * GameMap.TILE_WIDTH)
+                    xsize GameMap.TILE_WIDTH
+                    ypos y_offset + int(coord[1] * GameMap.TILE_HEIGHT)
+                    ysize GameMap.TILE_HEIGHT
+                    background Color("#000", alpha = 0.9)
+                    tooltip("(%s, %s)" % coord)
+                    action NullAction()
+
             for i, coord in enumerate(coords):
                 button:
                     xpos x_offset + int(coord.x * GameMap.TILE_WIDTH)
