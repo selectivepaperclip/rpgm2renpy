@@ -1,4 +1,4 @@
-init -10 python:
+init -15 python:
     class SelectivelyPickle:
         def __getstate__(self):
             map_pickle_values = [(k, v) for k, v in self.__dict__.iteritems() if not k.startswith('_')]

@@ -102,14 +102,7 @@ init python:
             return self._tilesets
 
         def plugins(self):
-            if not hasattr(self, '_plugins'):
-                with rpgm_file('www/js/plugins.js') as f:
-                    # the plugins.js file starts with "var $plugins = ["
-                    # delete everything before the first [
-                    content = f.read()
-                    self._plugins = json.loads(content[content.find('['):].rstrip().rstrip(';'))
-
-            return self._plugins
+            return rpgm_plugins_loader.json()
 
         def orange_hud_pictures(self):
             plugins = self.plugins()

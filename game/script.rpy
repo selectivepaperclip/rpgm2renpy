@@ -16,6 +16,17 @@ define viewport_yadjustment = ui.adjustment()
 init -10 python:
     build.classify('rpgmdata', 'all')
 
+    class PluginsLoader(SelectivelyPickle):
+        def json(self):
+            if not hasattr(self, '_json'):
+                with rpgm_file('www/js/plugins.js') as f:
+                    # the plugins.js file starts with "var $plugins = ["
+                    # delete everything before the first [
+                    content = f.read()
+                    self._json = json.loads(content[content.find('['):].rstrip().rstrip(';'))
+
+            return self._json
+
     rpgm_dir = os.path.join(renpy.config.basedir, 'rpgmdata').replace('\\', '/')
     if not os.path.exists(rpgm_dir):
         rpgm_dir = os.path.join(renpy.config.gamedir, 'unpacked').replace('\\', '/')
@@ -25,6 +36,8 @@ init -10 python:
 
     def rpgm_file(filename):
         return renpy.file(rpgm_path(filename))
+
+    rpgm_plugins_loader = PluginsLoader()
 
 init python:
     import re
