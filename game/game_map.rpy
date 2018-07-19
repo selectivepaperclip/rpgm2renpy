@@ -1,4 +1,7 @@
 init python:
+    import time
+    from Queue import PriorityQueue
+
     class MapClickable:
         def __init__(self, x, y, label = None, special = False, clicky = False):
             self.x = x
@@ -388,15 +391,22 @@ init python:
             return result
 
         def last_square_before_dest(self, current_x, current_y, dest_x, dest_y):
+            if profile_timings:
+                started = time.time()
+
             reachability_grid = self.reachability_grid_for_current_position()
-            frontier = [(current_x, current_y)]
-            visited = {(current_x, current_y): True}
+            frontier = PriorityQueue()
+            start = (current_x, current_y)
+            frontier.put((0, start))
+            total_locations_evaluated = 0
+            visited = {start: True}
 
             max_x = self.width() - 1
             max_y = self.height() - 1
 
-            while len(frontier) > 0:
-                current = frontier.pop()
+            while not frontier.empty():
+                priority, current = frontier.get()
+                total_locations_evaluated += 1
 
                 for adjacent_coord in self.adjacent_coords(current[0], current[1], max_x, max_y):
                     ax, ay, adirection = adjacent_coord
@@ -405,10 +415,13 @@ init python:
                     visited[(ax, ay)] = True
 
                     if ax == dest_x and ay == dest_y:
+                        if profile_timings:
+                            print "pathfinding took %s, evaluating %s locations" % (time.time() - started, total_locations_evaluated)
                         return (current, adirection)
 
                     if reachability_grid[ay][ax] == 3 and (not self.is_impassible(current[0], current[1], adirection) and not self.is_impassible(ax, ay, GameDirection.reverse_direction(adirection))):
-                        frontier.append((ax, ay))
+                        priority = abs(dest_x - ax) + abs(dest_y - ay)
+                        frontier.put((priority, (ax, ay)))
 
             return None
 
@@ -655,6 +668,8 @@ init python:
             if hasattr(self, '_reachability_grid_cache') and (player_x, player_y) in self._reachability_grid_cache:
                 return self._reachability_grid_cache[(player_x, player_y)]
 
+            if profile_timings:
+                started = time.time()
             # 0 = unknown / impassible
             # 2 = event
             # 3 = passible
@@ -682,6 +697,8 @@ init python:
             if not hasattr(self, '_reachability_grid_cache'):
                 self._reachability_grid_cache = {}
             self._reachability_grid_cache[(player_x, player_y)] = reachability_grid
+            if profile_timings:
+                print "Reachability grid took %s" % (time.time() - started)
 
             return reachability_grid
 
