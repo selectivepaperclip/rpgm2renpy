@@ -9,9 +9,13 @@ init offset = -2
 ## Calling gui.init resets the styles to sensible default values, and sets the
 ## width and height of the game.
 init python:
-    resolution_plugin = next((plugin_data for plugin_data in rpgm_plugins_loader.json() if plugin_data['name'].startswith('Resolution')), None)
+    plugins_json = rpgm_plugins_loader.json()
+    resolution_plugin = next((plugin_data for plugin_data in plugins_json if plugin_data['name'].startswith('Resolution')), None)
+    screen_resolution_plugin = next((plugin_data for plugin_data in plugins_json if plugin_data['name'].startswith('ScreenResolution')), None)
     if resolution_plugin:
         gui.init(int(resolution_plugin['parameters']['Screen Width']), int(resolution_plugin['parameters']['Screen Height']))
+    elif screen_resolution_plugin:
+        gui.init(int(screen_resolution_plugin['parameters']['Screen Width']), int(screen_resolution_plugin['parameters']['Screen Height']))
     else:
         gui.init(1280, 720)
 
