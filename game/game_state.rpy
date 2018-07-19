@@ -394,6 +394,8 @@ init python:
             if not in_interaction:
                 coordinates = self.map.map_options(self.player_x, self.player_y)
                 self.map.assign_reachability(self.player_x, self.player_y, coordinates)
+                if hide_unreachable_events:
+                    coordinates = [map_clickable for map_clickable in coordinates if map_clickable.reachable]
 
             x_offset = 0
             y_offset = 0

@@ -11,6 +11,7 @@ define mapdest = None
 define keyed_common_event = None
 define draw_impassible_tiles = False
 define show_synthesis = None
+define hide_unreachable_events = False
 define viewport_xadjustment = ui.adjustment()
 define viewport_yadjustment = ui.adjustment()
 
@@ -105,6 +106,8 @@ label start:
         game_state.set_game_start_events()
         if GameIdentifier().is_ics2():
             GameSkips().ics2_skip_unpacking()
+        if GameIdentifier().is_taboo_request():
+            hide_unreachable_events = True
 
 label game:
     $ end_game = False
