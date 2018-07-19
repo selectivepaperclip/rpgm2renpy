@@ -103,6 +103,8 @@ label start:
     python:
         game_state = GameState()
         game_state.set_game_start_events()
+        if GameIdentifier().is_ics2():
+            GameSkips().ics2_skip_unpacking()
 
 label game:
     $ end_game = False
