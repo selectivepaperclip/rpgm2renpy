@@ -32,7 +32,7 @@ define gui.show_name = True
 
 ## The version of the game.
 
-define config.version = "0.2.0"
+define config.version = "0.3.0"
 
 
 ## Text that is placed on the game's about screen. Place the text between the
@@ -160,8 +160,9 @@ python early:
 ##
 ## The icon displayed on the taskbar or dock.
 
-define config.window_icon = "gui/window_icon.png"
-
+init python:
+    package_json = rpgm_plugins_loader.package_json()
+    config.window_icon = rpgm_path(package_json['window']['icon'])
 
 ## Build configuration #########################################################
 ##

@@ -19,6 +19,13 @@ init -10 python:
     build.classify('rpgmdata', 'all')
 
     class PluginsLoader(SelectivelyPickle):
+        def package_json(self):
+            if not hasattr(self, '_package_json'):
+                with rpgm_file('package.json') as f:
+                    self._package_json = json.load(f)
+
+            return self._package_json
+
         def json(self):
             if not hasattr(self, '_json'):
                 with rpgm_file('www/js/plugins.js') as f:
