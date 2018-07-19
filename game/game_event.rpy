@@ -318,8 +318,12 @@ init python:
                         command = self.page['list'][self.list_index]
                         text = self.replace_names(command['parameters'][0])
                         accumulated_text.append(text)
+                        if text.endswith(":") or text.endswith('.'):
+                            accumulated_text.append("\n")
+                        if text.endswith(","):
+                            accumulated_text.append(" ")
 
-                    text_to_show = "\n".join(accumulated_text).strip()
+                    text_to_show = "".join(accumulated_text).strip()
                     if len(text_to_show) > 0:
                         renpy.say(None, re.sub('%', '%%', text_to_show))
                     else:
