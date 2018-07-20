@@ -3,6 +3,7 @@ screen mapscreen(
     mapfactor = None,
     hud_pics = [],
     hud_lines = [],
+    hud_groups = [],
     player_position = None,
     map_name = None,
     sprites = None,
@@ -18,6 +19,7 @@ screen mapscreen(
     x_offset = None,
     y_offset = None,
     in_interaction = False,
+    switch_toggler_buttons = [],
     show_synthesis_button = False):
     #key "viewport_wheelup" action [
     #    SetVariable('mapfactor', mapfactor * 1.5),
@@ -104,6 +106,14 @@ screen mapscreen(
                     hovered SetVariable("hover_coord", coord)
                     action SetVariable("mapdest", coord), Jump("game")
 
+    for hud_group in hud_groups:
+        button:
+            xpos int(hud_group['parameters']['HudX'])
+            ypos int(hud_group['parameters']['HudY'])
+            xsize int(hud_group['parameters']['HudWidth'])
+            ysize int(hud_group['parameters']['HudHeight'])
+            background Color("#191970", alpha = 0.95)
+
     for hud_pic in hud_pics:
         add hud_pic['image']:
             xpos hud_pic['X']
@@ -115,6 +125,13 @@ screen mapscreen(
 
     if background_image and show_synthesis_button:
         textbutton "Combine Items" xalign 0.98 ypos 140 background "#000" action SetVariable("show_synthesis", True), Jump("game")
+
+    for switch_toggler in switch_toggler_buttons:
+        textbutton switch_toggler['text']:
+            xpos 5
+            ypos 5
+            background "#000"
+            action Function(game_state.switches.set_value, switch_toggler['switch_id'], not game_state.switches.value(switch_toggler['switch_id'])), Jump("game")
 
     $ tooltip = GetTooltip()
     if tooltip:

@@ -119,45 +119,102 @@ init python:
             text = re.sub(r'\\C\[(\d+)\]', '', text, flags=re.IGNORECASE)
             return text
 
+        def orange_hud_group_map(self):
+            if hasattr(self, '_orange_hud_group_map'):
+                return self._orange_hud_group_map
+
+            plugins = self.plugins()
+            group_data_list = [plugin_data for plugin_data in plugins if plugin_data['name'].startswith('OrangeHudGroup')]
+
+            groups = {}
+            for group_data in group_data_list:            
+                groups[group_data['parameters']['GroupName']] = group_data
+            main_group = next((plugin_data for plugin_data in plugins if plugin_data['name'] == 'OrangeHud'), None)
+            if main_group:
+                groups['main'] = main_group
+            self._orange_hud_group_map = groups
+
+            return self._orange_hud_group_map
+
+        def orange_hud_groups(self):
+            groups = []
+            for group_name, group_data in self.orange_hud_group_map().iteritems():
+                if group_name == 'main' and int(group_data['parameters']['HudX']) == 0:
+                    continue
+                group_switch_id = int(group_data['parameters']['SwitchId'])
+                if group_switch_id < 1 or self.switches.value(group_switch_id) == True:
+                    groups.append(group_data)
+            return groups
+
         def orange_hud_pictures(self):
             plugins = self.plugins()
-            pic_data_list = [plugin_data for plugin_data in plugins if plugin_data['name'].startswith('OrangeHudVariablePicture')]
+            pic_data_list = [plugin_data for plugin_data in plugins if plugin_data['name'].startswith('OrangeHudVariablePicture') or plugin_data['name'].startswith('OrangeHudFixedPicture')]
 
+            group_map = self.orange_hud_group_map()
             pics = []
             for pic_data in pic_data_list:
-                if self.switches.value(int(pic_data['parameters']['SwitchId']) == True):
-                    pics.append({
-                        'X': int(pic_data['parameters']['X']),
-                        'Y': int(pic_data['parameters']['Y']),
-                        'image': pic_data['parameters']['Pattern'].replace('%1', str(self.variables.value(int(pic_data['parameters']['VariableId']))))
-                    })
+                pic_params = pic_data['parameters']
+                switch_id = int(pic_params['SwitchId'])
+                group = group_map.get(pic_params['GroupName'], None)
+                if group:
+                    group_switch_id = int(group['parameters']['SwitchId'])
+                    if group_switch_id > 0 and self.switches.value(group_switch_id) == False:
+                        continue
+                if switch_id < 1 or self.switches.value(switch_id) == True:
+                    x = int(pic_params['X']) if len(pic_params['X']) > 0 else 0
+                    y = int(pic_params['Y']) if len(pic_params['Y']) > 0 else 0
+                    if group:
+                        padding = int(group_map['main']['parameters']['WindowPadding'])
+                        x += int(group['parameters']['HudX']) + padding
+                        y += int(group['parameters']['HudY']) + padding
 
-            fixed_pic_data_list = [plugin_data for plugin_data in plugins if plugin_data['name'].startswith('OrangeHudFixedPicture')]
-            for pic_data in fixed_pic_data_list:
-                if self.switches.value(int(pic_data['parameters']['SwitchId']) == True):
+                    image = None
+                    if 'Pattern' in pic_params:
+                        image = pic_params['Pattern'].replace('%1', str(self.variables.value(int(pic_params['VariableId']))))
+                    if 'FileName' in pic_params:
+                        image = pic_params['FileName']
+
                     pics.append({
-                        'X': int(pic_data['parameters']['X']),
-                        'Y': int(pic_data['parameters']['Y']),
-                        'image': pic_data['parameters']['FileName']
+                        'X': x,
+                        'Y': y,
+                        'image': image
                     })
 
             return pics
 
         def orange_hud_lines(self):
             plugins = self.plugins()
-            line_data_list = [plugin_data for plugin_data in plugins if plugin_data['name'].startswith('OrangeHudLine')]
+            line_data_list = [plugin_data for plugin_data in plugins if plugin_data['name'].startswith('OrangeHudLine') or plugin_data['name'].startswith('OrangeHudGold')]
 
+            group_map = self.orange_hud_group_map()
             lines = []
             for line_data in line_data_list:
-                if self.switches.value(int(line_data['parameters']['SwitchId']) == True):
-                    replaced_text = line_data['parameters']['Pattern'].replace('%1', str(self.variables.value(int(line_data['parameters']['VariableId']))))
+                line_params = line_data['parameters']
+                switch_id = int(line_params['SwitchId'])
+                group = group_map.get(line_params['GroupName'], None)
+                if group:
+                    group_switch_id = int(group['parameters']['SwitchId'])
+                    if group_switch_id > 0 and self.switches.value(group_switch_id) == False:
+                        continue
+                if switch_id < 1 or self.switches.value(switch_id) == True:
+                    if line_data['name'] == 'OrangeHudGold':
+                        replaced_text = line_params['Pattern'].replace('%1', str(self.party.gold))
+                    else:
+                        replaced_text = line_params['Pattern'].replace('%1', str(self.variables.value(int(line_params['VariableId']))))
                     # Remove color codes, e.g. \c[24] - for my_summer
                     replaced_text = re.sub(r'\\C\[(\d+)\]', '', replaced_text, flags=re.IGNORECASE)
+                    x = int(line_params['X']) if len(line_params['X']) > 0 else 0
+                    y = int(line_params['Y']) if len(line_params['Y']) > 0 else 0
+                    if group:
+                        padding = int(group_map['main']['parameters']['WindowPadding'])
+                        x += int(group['parameters']['HudX']) + padding
+                        y += int(group['parameters']['HudY']) + padding
                     lines.append({
-                        'X': int(line_data['parameters']['X']),
-                        'Y': int(line_data['parameters']['Y']),
+                        'X': x,
+                        'Y': y,
                         'text': replaced_text
                     })
+
             return lines
 
         def common_events_keymap(self):
@@ -466,6 +523,7 @@ init python:
 
             hud_pics = self.orange_hud_pictures()
             hud_lines = self.orange_hud_lines()
+            hud_groups = self.orange_hud_groups()
 
             if not in_interaction and draw_impassible_tiles:
                 impassible_tiles=self.map.impassible_tiles()
@@ -475,6 +533,10 @@ init python:
             viewport_xadjustment.set_value(x_initial)
             viewport_yadjustment.set_value(y_initial)
 
+            switch_toggler_buttons = []
+            if GameIdentifier().is_my_summer():
+                switch_toggler_buttons.append({"text": 'Toggle Status', "switch_id": 2})
+
             renpy.show_screen(
                 "mapscreen",
                 _layer="maplayer",
@@ -483,6 +545,7 @@ init python:
                 player_position=(self.player_x, self.player_y),
                 hud_pics=hud_pics,
                 hud_lines=hud_lines,
+                hud_groups=hud_groups,
                 map_name=self.map.name(),
                 sprites=self.map.sprites(),
                 impassible_tiles=impassible_tiles,
@@ -495,5 +558,6 @@ init python:
                 x_offset=x_offset,
                 y_offset=y_offset,
                 in_interaction=in_interaction,
+                switch_toggler_buttons=switch_toggler_buttons,
                 show_synthesis_button=(not in_interaction) and GameIdentifier().is_milfs_villa()
             )

@@ -6,3 +6,6 @@ init python:
             return game_state.system_data()['gameTitle'] == 'Incest Story 2 v1.0 Final'
         def is_taboo_request(self):
             return game_state.system_data()['gameTitle'] == 'Taboo Request'
+        def is_my_summer(self):
+            return game_state.system_data()['gameTitle'] == 'My Summer with Mom & Sis v1.00'
+
