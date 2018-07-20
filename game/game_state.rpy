@@ -104,6 +104,21 @@ init python:
         def plugins(self):
             return rpgm_plugins_loader.json()
 
+        def replace_names(self, text):
+            # Replace statements from actor numbers, e.g. \N[2] with their actor name
+            text = re.sub(r'\\N\[(\d+)\]', lambda m: self.actors.by_index(int(m.group(1)))['name'], text, flags=re.IGNORECASE)
+            # Replace statements from variable ids, e.g. \V[2] with their value
+            text = re.sub(r'\\V\[(\d+)\]', lambda m: str(self.variables.value(int(m.group(1)))), text, flags=re.IGNORECASE)
+            # Replace statements from literal strings, e.g. \n<Doug> with that string followed by a colon
+            text = re.sub(r'\\n\<(.*?)\>', lambda m: ("%s: " % m.group(1)), text)
+            # Remove statements with image replacements, e.g. \I[314]
+            text = re.sub(r'\\I\[(\d+)\]', '', text, flags=re.IGNORECASE)
+            # Remove font size increase statements, e.g. \{
+            text = re.sub(r'\\{', '', text)
+            # Remove fancy characters from GALV_VisualNovelChoices.js
+            text = re.sub(r'\\C\[(\d+)\]', '', text, flags=re.IGNORECASE)
+            return text
+
         def orange_hud_pictures(self):
             plugins = self.plugins()
             pic_data_list = [plugin_data for plugin_data in plugins if plugin_data['name'].startswith('OrangeHudVariablePicture')]

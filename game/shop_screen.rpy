@@ -18,7 +18,9 @@ screen shopscreen(shop_items = None, purchase_only = None):
 
             grid 3 len(shop_items):
                 for item in shop_items:
-                    textbutton item['name'] text_color "#fff"
+                    textbutton item['name'] text_color "#fff":
+                        tooltip game_state.replace_names(item['description'])
+                        action NullAction()
                     textbutton "Own %s" % game_state.party.num_items(item) text_color "#fff"
                     textbutton ("Buy (%s)" % item['price']):
                         text_color "#fff"
@@ -27,3 +29,13 @@ screen shopscreen(shop_items = None, purchase_only = None):
                             Function(game_state.party.gain_item, item, 1),
                             Function(game_state.party.lose_gold, item['price'])
                         ]
+
+    $ tooltip = GetTooltip()
+    if tooltip:
+        $ mousepos = renpy.get_mouse_pos()
+        button:
+            xpos mousepos[0]
+            ypos mousepos[1]
+            background "#000"
+            text tooltip:
+                outlines [ (2, "#000", 0, 0) ]

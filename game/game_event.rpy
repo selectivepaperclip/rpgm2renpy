@@ -188,21 +188,6 @@ init python:
                     indent = new_indent
             self.list_index = index
 
-        def replace_names(self, text):
-            # Replace statements from actor numbers, e.g. \N[2] with their actor name
-            text = re.sub(r'\\N\[(\d+)\]', lambda m: self.state.actors.by_index(int(m.group(1)))['name'], text, flags=re.IGNORECASE)
-            # Replace statements from variable ids, e.g. \V[2] with their value
-            text = re.sub(r'\\V\[(\d+)\]', lambda m: str(self.state.variables.value(int(m.group(1)))), text, flags=re.IGNORECASE)
-            # Replace statements from literal strings, e.g. \n<Doug> with that string followed by a colon
-            text = re.sub(r'\\n\<(.*?)\>', lambda m: ("%s: " % m.group(1)), text)
-            # Remove statements with image replacements, e.g. \I[314]
-            text = re.sub(r'\\I\[(\d+)\]', '', text, flags=re.IGNORECASE)
-            # Remove font size increase statements, e.g. \{
-            text = re.sub(r'\\{', '', text)
-            # Remove fancy characters from GALV_VisualNovelChoices.js
-            text = re.sub(r'\\C\[(\d+)\]', '', text, flags=re.IGNORECASE)
-            return text
-
         def hide_choice(self, choice_id):
             if not hasattr(self, 'choices_to_hide'):
                 self.choices_to_hide = []
@@ -317,7 +302,7 @@ init python:
                     while len(self.page['list']) > self.list_index + 1 and self.page['list'][self.list_index + 1]['code'] == 401:
                         self.list_index += 1
                         command = self.page['list'][self.list_index]
-                        text = self.replace_names(command['parameters'][0])
+                        text = game_state.replace_names(command['parameters'][0])
                         # If the previous line didn't end with a space, add a space before joining to the next line
                         if len(accumulated_text) > 0 and not re.match(ends_with_whitespace_pattern, accumulated_text[-1]):
                             accumulated_text.append(' ')
@@ -342,7 +327,7 @@ init python:
                     if not hasattr(self, 'choices_to_hide'):
                         self.choices_to_hide = []
 
-                    result = renpy.display_menu([(self.replace_names(text), index) for index, text in enumerate(choice_texts) if index not in self.choices_to_hide])
+                    result = renpy.display_menu([(game_state.replace_names(text), index) for index, text in enumerate(choice_texts) if index not in self.choices_to_hide])
                     self.branch[command['indent']] = result
                     self.choices_to_hide = []
 
