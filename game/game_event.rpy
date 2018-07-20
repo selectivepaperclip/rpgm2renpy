@@ -497,24 +497,23 @@ init python:
                             #    break;
                             renpy.say(None, ("Variable control operand 3 not implemented for type %s, plz implement" % game_data_operand_type))
                         elif game_data_operand_type == 5: # Character
-                            #case 5:  // Character
-                            #    var character = this.character(param1);
-                            #    if (character) {
-                            #        switch (param2) {
-                            #        case 0:  // Map X
-                            #            return character.x;
-                            #        case 1:  // Map Y
-                            #            return character.y;
-                            #        case 2:  // Direction
-                            #            return character.direction();
-                            #        case 3:  // Screen X
-                            #            return character.screenX();
-                            #        case 4:  // Screen Y
-                            #            return character.screenY();
-                            #        }
-                            #    }
-                            #    break;
-                            renpy.say(None, ("Variable control operand 3 not implemented for type %s, plz implement" % game_data_operand_type))
+                            # param1 is character ID
+                            if game_data_operand_param1 >= 0:
+                                renpy.say(None, ("Variable control operand 3 param 5 only implemented for player character!"))
+                            else:
+                                if game_data_operand_param2 == 0: # Map X
+                                    value = game_state.player_x
+                                elif game_data_operand_param2 == 1: # Map Y
+                                    value = game_state.player_y
+                                elif game_data_operand_param2 == 2: # Direction
+                                    # return character.direction();
+                                    renpy.say(None, ("Variable control operand 3 not implemented for param 5-%s, plz implement" % game_data_operand_param2))
+                                elif game_data_operand_param2 == 3: # Screen X
+                                    # return character.screenX();
+                                    renpy.say(None, ("Variable control operand 3 not implemented for param 5-%s, plz implement" % game_data_operand_param2))
+                                elif game_data_operand_param2 == 4: # Screen Y
+                                    # return character.screenY();
+                                    renpy.say(None, ("Variable control operand 3 not implemented for param 5-%s, plz implement" % game_data_operand_param2))
                         elif game_data_operand_type == 6: # Party
                             #    actor = $gameParty.members()[param1];
                             #    return actor ? actor.actorId() : 0;
