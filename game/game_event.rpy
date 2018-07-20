@@ -312,16 +312,19 @@ init python:
 
                 # Show text
                 elif command['code'] == 101:
+                    ends_with_whitespace_pattern = re.compile("\s$")
                     accumulated_text = []
                     while len(self.page['list']) > self.list_index + 1 and self.page['list'][self.list_index + 1]['code'] == 401:
                         self.list_index += 1
                         command = self.page['list'][self.list_index]
                         text = self.replace_names(command['parameters'][0])
+                        # If the previous line didn't end with a space, add a space before joining to the next line
+                        if len(accumulated_text) > 0 and not re.match(ends_with_whitespace_pattern, accumulated_text[-1]):
+                            accumulated_text.append(' ')
                         accumulated_text.append(text)
+                        # Always put newlines after colons and periods
                         if text.endswith(":") or text.endswith('.'):
                             accumulated_text.append("\n")
-                        if text.endswith(","):
-                            accumulated_text.append(" ")
 
                     text_to_show = "".join(accumulated_text).strip()
                     if len(text_to_show) > 0:
