@@ -5,10 +5,12 @@
 ## may want to uncomment them when appropriate.
 
 python early:
+    config.searchpath = [ '', renpy.config.gamedir, renpy.config.commondir ]
+
     import json
-    rpgm_game_data_path = os.path.join(config.basedir, 'rpgm_game_data.json').replace('\\', '/')
+    rpgm_game_data_path = 'rpgm_game_data.json'
     rpgm_game_data = None
-    if os.path.exists(rpgm_game_data_path):
+    if os.path.exists(os.path.join(config.basedir, rpgm_game_data_path)):
         rpgm_game_data = json.load(renpy.file(rpgm_game_data_path))
     else:
         rpgm_game_data = {"short_name": renpy.file('game_name').read().strip()}
@@ -32,7 +34,7 @@ define gui.show_name = True
 
 ## The version of the game.
 
-define config.version = "0.3.0"
+define config.version = "0.3.1"
 
 
 ## Text that is placed on the game's about screen. Place the text between the

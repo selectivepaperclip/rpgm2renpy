@@ -36,9 +36,9 @@ init -10 python:
 
             return self._json
 
-    rpgm_dir = os.path.join(renpy.config.basedir, 'rpgmdata').replace('\\', '/')
-    if not os.path.exists(rpgm_dir):
-        rpgm_dir = os.path.join(renpy.config.gamedir, 'unpacked').replace('\\', '/')
+    rpgm_dir = 'rpgmdata'
+    if not os.path.exists(os.path.join(renpy.config.basedir, rpgm_dir)):
+        rpgm_dir = os.path.join('game', 'unpacked').replace('\\', '/')
 
     def rpgm_path(filename):
         return rpgm_dir + '/' + filename
@@ -68,11 +68,11 @@ init python:
     with rpgm_file('www/data/System.json') as f:
         system_data = json.load(f)
         title_screen_file_path = rpgm_path('www/img/titles1/' + system_data['title1Name'] + '.png')
-        if os.path.exists(title_screen_file_path):
+        if os.path.exists(os.path.join(config.basedir, title_screen_file_path)):
             gui.main_menu_background = scale_image(title_screen_file_path)
 
     pictures_path = rpgm_path("www/img/pictures/")
-    for filename in os.listdir(pictures_path):
+    for filename in os.listdir(os.path.join(config.basedir, pictures_path)):
         base, ext = os.path.splitext(os.path.basename(filename))
         if not supported_image(ext):
             continue
@@ -83,8 +83,8 @@ init python:
         renpy.image(base, scale_image(pictures_path + filename))
 
     movies_path = rpgm_path("www/movies/")
-    if os.path.exists(movies_path):
-        for filename in os.listdir(movies_path):
+    if os.path.exists(os.path.join(config.basedir, movies_path)):
+        for filename in os.listdir(os.path.join(config.basedir, movies_path)):
             image_name = os.path.splitext(os.path.basename(filename))[0]
             if renpy.has_image(image_name, exact=True):
                 continue
@@ -92,7 +92,7 @@ init python:
             renpy.image(image_name, scale_movie(movies_path + filename))
 
     tilesets_path = rpgm_path("www/img/tilesets/")
-    for filename in os.listdir(tilesets_path):
+    for filename in os.listdir(os.path.join(config.basedir, tilesets_path)):
         base, ext = os.path.splitext(os.path.basename(filename))
         if not supported_image(ext):
             continue
@@ -100,7 +100,7 @@ init python:
         tile_images[image_name] = tilesets_path + filename
 
     characters_path = rpgm_path("www/img/characters/")
-    for filename in os.listdir(characters_path):
+    for filename in os.listdir(os.path.join(config.basedir, characters_path)):
         base, ext = os.path.splitext(os.path.basename(filename))
         if not supported_image(ext):
             continue
