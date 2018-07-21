@@ -431,6 +431,13 @@ init python:
                 return True
 
             if mapdest:
+                # convert old-style mapdests that were x, y tuples to MapClickable objects
+                if not hasattr(mapdest, 'x'):
+                    mapdest =  MapClickable(
+                        mapdest[0],
+                        mapdest[1]
+                    )
+
                 map_event = self.map.find_event_for_location(mapdest.x, mapdest.y)
                 if not map_event:
                     map_event = self.map.find_event_for_location(mapdest.x, mapdest.y, only_special = True)
