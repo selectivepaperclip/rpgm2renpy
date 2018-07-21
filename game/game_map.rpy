@@ -412,7 +412,6 @@ init python:
                     ax, ay, adirection = adjacent_coord
                     if (ax, ay) in visited:
                         continue
-                    visited[(ax, ay)] = True
 
                     if ax == dest_x and ay == dest_y:
                         if profile_timings:
@@ -420,6 +419,7 @@ init python:
                         return (current, adirection)
 
                     if reachability_grid[ay][ax] == 3 and (not self.is_impassible(current[0], current[1], adirection) and not self.is_impassible(ax, ay, GameDirection.reverse_direction(adirection))):
+                        visited[(ax, ay)] = True
                         priority = abs(dest_x - ax) + abs(dest_y - ay)
                         frontier.put((priority, (ax, ay)))
 
