@@ -677,15 +677,19 @@ init python:
 
                     if picture_args:
                         picture_args['opacity'] = opacity
-                        if x != 0 or y != 0:
-                            if command['code'] == 231:
-                                picture_args['size'] = renpy.image_size(normal_images[picture_name])
-                            if origin == 0: # origin of 0 means x,y is topleft
-                                picture_args['x'] = x
-                                picture_args['y'] = y
-                            else: # origin of 1 means it's screen center
-                                picture_args['x'] = x - picture_args['size'][0] / 2
-                                picture_args['y'] = y - picture_args['size'][1] / 2
+                        if command['code'] == 231:
+                            if not picture_name in picture_image_sizes:
+                                picture_image_sizes[picture_name] = renpy.image_size(normal_images[picture_name])
+                            image_size = picture_image_sizes[picture_name]
+                            if image_size[0] > config.screen_width and image_size[1] > config.screen_height:
+                                image_size = (config.screen_width, config.screen_height)
+                            picture_args['size'] = image_size
+                        if origin == 0: # origin of 0 means x,y is topleft
+                            picture_args['x'] = x
+                            picture_args['y'] = y
+                        else: # origin of 1 means it's screen center
+                            picture_args['x'] = x - picture_args['size'][0] / 2
+                            picture_args['y'] = y - picture_args['size'][1] / 2
 
                         game_state.show_picture(picture_id, picture_args)
 

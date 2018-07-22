@@ -7,6 +7,7 @@ define normal_images = {}
 define character_images = {}
 define character_image_sizes = {}
 define image_sizes = {}
+define picture_image_sizes = {}
 define mapdest = None
 define keyed_common_event = None
 define draw_impassible_tiles = False
