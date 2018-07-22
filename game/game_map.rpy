@@ -728,7 +728,12 @@ init python:
             for e in self.data()['events']:
                 if e:
                     for page in reversed(e['pages']):
-                        if page['trigger'] < 3 and self.meets_conditions(e, page['conditions']):
+                        if self.meets_conditions(e, page['conditions']):
+                            # Allow trigger 3/4 (autorun/parallel) events to match so the pages under them don't get matched instead
+                            # But these events shouldn't actually show up on the map, they will be triggered by the event loop
+                            if page['trigger'] >= 3:
+                                break
+
                             map_clickable = MapClickable(
                                 e['x'],
                                 e['y'],
