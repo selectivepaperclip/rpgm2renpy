@@ -20,7 +20,9 @@ screen mapscreen(
     y_offset = None,
     in_interaction = False,
     switch_toggler_buttons = [],
-    show_synthesis_button = False):
+    common_event_queuers = [],
+    show_synthesis_button = False, # cruft from old savegames
+):
     #key "viewport_wheelup" action [
     #    SetVariable('mapfactor', mapfactor * 1.5),
     #    renpy.restart_interaction
@@ -123,8 +125,13 @@ screen mapscreen(
     for hud_line in hud_lines:
         text hud_line['text'] ypos hud_line['Y'] xpos hud_line['X']
 
-    if background_image and show_synthesis_button:
-        textbutton "Combine Items" xalign 0.98 ypos 140 background "#000" action SetVariable("show_synthesis", True), Jump("game")
+    if background_image:
+        for common_event_queuer in common_event_queuers:
+            textbutton common_event_queuer['text']:
+                xalign 0.98
+                ypos common_event_queuer['ypos']
+                background "#000"
+                action Function(game_state.queue_common_event, common_event_queuer['event_id']), Jump("game")
 
     for switch_toggler in switch_toggler_buttons:
         textbutton switch_toggler['text']:

@@ -1,5 +1,8 @@
 screen synthesisscreen(synthesizables = []):
+    modal True
     zorder 1
+    add Solid(Color("#000", alpha = 0.75))
+
     frame:
         xalign 0.1
         yalign 0.23

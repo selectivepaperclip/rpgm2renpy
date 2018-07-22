@@ -10,7 +10,6 @@ define image_sizes = {}
 define mapdest = None
 define keyed_common_event = None
 define draw_impassible_tiles = False
-define show_synthesis = None
 define hide_unreachable_events = False
 define show_noop_events = False
 define viewport_xadjustment = ui.adjustment()

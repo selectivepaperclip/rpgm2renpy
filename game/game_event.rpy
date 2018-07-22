@@ -176,6 +176,9 @@ init python:
             while self.page['list'][self.list_index + 1]['indent'] > current_indent:
                 self.list_index += 1
 
+        def finish_event(self):
+            self.list_index = len(self.page['list']) - 1
+
         def jump_to(self, index, current_indent):
             current_index = self.list_index
             start_index = min(index, current_index)
@@ -351,8 +354,17 @@ init python:
                     result = None
                     if len(choices) > 0:
                         item_options = [(text, index) for text, index in choices]
+                        screen_args = {}
+                        if GameIdentifier().is_my_summer():
+                            # only show the cancel button the status screen for my_summer, could be a little fragile
+                            current_event = self.state.events[-1]
+                            if current_event.common() and current_event.event_data['id'] == 1:
+                                screen_args["background"] = False
+                                screen_args["allow_cancel"] = True
+
                         result = renpy.display_menu(
                             sorted(item_options, key=lambda opt: opt[0]),
+                            scope = screen_args,
                             screen='inventory_choice_screen'
                         )
                     else:
@@ -375,7 +387,7 @@ init python:
                     pass
 
                 elif command['code'] == 115: # Exit Event Processing
-                    self.list_index = len(self.page['list']) - 1
+                    self.finish_event()
                     return
 
                 # Common Event
@@ -389,7 +401,7 @@ init python:
                     if self.parallel():
                         # This might be an endlessly looping animation in a parallel
                         # event. Bail out of the event.
-                        self.list_index = len(self.page['list']) - 1
+                        self.finish_event()
                         return
 
                     while self.list_index > 0:
@@ -661,20 +673,21 @@ init python:
                     if command['code'] == 231:
                         picture_args = {'image_name': picture_name}
                     else:
-                        picture_args = game_state.shown_pictures[picture_id]
+                        picture_args = game_state.shown_pictures.get(picture_id)
 
-                    picture_args['opacity'] = opacity
-                    if x != 0 or y != 0:
-                        if command['code'] == 231:
-                            picture_args['size'] = renpy.image_size(normal_images[picture_name])
-                        if origin == 0: # origin of 0 means x,y is topleft
-                            picture_args['x'] = x
-                            picture_args['y'] = y
-                        else: # origin of 1 means it's screen center
-                            picture_args['x'] = x - picture_args['size'][0] / 2
-                            picture_args['y'] = y - picture_args['size'][1] / 2
+                    if picture_args:
+                        picture_args['opacity'] = opacity
+                        if x != 0 or y != 0:
+                            if command['code'] == 231:
+                                picture_args['size'] = renpy.image_size(normal_images[picture_name])
+                            if origin == 0: # origin of 0 means x,y is topleft
+                                picture_args['x'] = x
+                                picture_args['y'] = y
+                            else: # origin of 1 means it's screen center
+                                picture_args['x'] = x - picture_args['size'][0] / 2
+                                picture_args['y'] = y - picture_args['size'][1] / 2
 
-                    game_state.show_picture(picture_id, picture_args)
+                        game_state.show_picture(picture_id, picture_args)
 
                 # Tint picture - TODO ?
                 elif command['code'] == 234:

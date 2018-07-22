@@ -373,6 +373,10 @@ init python:
             if len(self.events) == 0:
                 self.queue_parallel_events()
 
+        def queue_common_event(self, event_id):
+            common_event = self.common_events_data()[event_id]
+            self.events.append(GameEvent(self, common_event, common_event))
+
         def do_next_thing(self, mapdest, keyed_common_event):
             self.migrate_player_x()
             self.skip_bad_events()
@@ -422,11 +426,6 @@ init python:
 
             if keyed_common_event:
                 common_event = self.common_events_data()[int(keyed_common_event)]
-                self.events.append(GameEvent(self, common_event, common_event))
-                return True
-
-            if show_synthesis:
-                common_event = self.common_events_data()[1]
                 self.events.append(GameEvent(self, common_event, common_event))
                 return True
 
@@ -543,8 +542,12 @@ init python:
             viewport_yadjustment.set_value(y_initial)
 
             switch_toggler_buttons = []
-            if GameIdentifier().is_my_summer():
-                switch_toggler_buttons.append({"text": 'Toggle Status', "switch_id": 2})
+
+            common_event_queuers = []
+            if GameIdentifier().is_milfs_villa() and not in_interaction:
+                common_event_queuers.append({"text": 'Combine Items', "event_id": 1, "ypos": 140})
+            if GameIdentifier().is_my_summer() and self.switches.value(1) == True:
+                common_event_queuers.append({"text": 'Show Status', "event_id": 1, "ypos": 100})
 
             renpy.show_screen(
                 "mapscreen",
@@ -568,5 +571,5 @@ init python:
                 y_offset=y_offset,
                 in_interaction=in_interaction,
                 switch_toggler_buttons=switch_toggler_buttons,
-                show_synthesis_button=(not in_interaction) and GameIdentifier().is_milfs_villa()
+                common_event_queuers=common_event_queuers,
             )
