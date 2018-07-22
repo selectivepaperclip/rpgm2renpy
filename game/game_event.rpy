@@ -250,35 +250,39 @@ init python:
 
         def show_parallel_event_animations(self, switch_id):
             for newly_activated_event in self.state.map.parallel_events_activated_by_switch(switch_id):
-                picture_transitions = []
-                accumulated_wait = 0
-                current_image = None
-                picture_id = None
+                frame_data = {}
+                last_picture_id = None
                 not_an_animation = False
                 for newly_activated_command in newly_activated_event['list']:
                     # TODO: isn't responsive to conditionals in event
-                    if newly_activated_command['code'] == 230:
-                        accumulated_wait += newly_activated_command['parameters'][0]
-                    elif newly_activated_command['code'] == 231:
-                        picture_id = newly_activated_command['parameters'][0]
+                    if newly_activated_command['code'] == 231:
+                        last_picture_id = newly_activated_command['parameters'][0]
                         image_name = newly_activated_command['parameters'][1]
-                        if current_image and accumulated_wait > 0:
-                            picture_transitions.append(current_image)
-                            picture_transitions.append(accumulated_wait * 1/30.0)
-                            picture_transitions.append(None)
-
-                        current_image = image_name
-                        accumulated_wait = 0
+                        new_frame_data = {"wait": 0, "image_name": image_name}
+                        if last_picture_id in frame_data:
+                            frame_data[last_picture_id].append(new_frame_data)
+                        else:
+                            frame_data[last_picture_id] = [new_frame_data]
+                    elif newly_activated_command['code'] == 230:
+                        frame_data[last_picture_id][-1]['wait'] += newly_activated_command['parameters'][0]
                     elif newly_activated_command['code'] == 101:
                         not_an_animation = True
                 if not_an_animation:
                     continue
-                if current_image and accumulated_wait > 0:
-                    picture_transitions.append(current_image)
-                    picture_transitions.append(accumulated_wait * 1/30.0)
-                    picture_transitions.append(None)
-                if len(picture_transitions) > 0:
-                    game_state.show_picture(picture_id, {"image_name": anim.TransitionAnimation(*picture_transitions)})
+                    
+                for picture_id, picture_frames in frame_data.iteritems():
+                    if len(picture_frames) == 1:
+                        game_state.show_picture(picture_id, {"image_name": picture_frames[0]['image_name']})
+                        continue
+
+                    picture_transitions = []
+                    for picture_frame in picture_frames:
+                        picture_transitions.append(picture_frame['image_name'])
+                        picture_transitions.append(picture_frame['wait'] * 1/30.0)
+                        picture_transitions.append(None)
+
+                    if len(picture_transitions) > 1:
+                        game_state.show_picture(picture_id, {"image_name": anim.TransitionAnimation(*picture_transitions)})
 
         def migrate_global_branch_data(self):
             if not hasattr(self, 'branch') and hasattr(game_state, 'branch'):
