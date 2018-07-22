@@ -3,18 +3,21 @@ init python:
     from Queue import PriorityQueue
 
     class MapClickable:
-        def __init__(self, x, y, label = None, special = False, clicky = False):
+        def __init__(self, x, y, label = None, special = False, clicky = False, has_commands = True):
             self.x = x
             self.y = y
             self.label = label
             self.special = special
             self.reachable = True
             self.clicky = clicky
+            self.has_commands = has_commands
 
         def reachable_or_clickable(self):
             return (self.reachable if hasattr(self, 'reachable') else True) or (self.clicky if hasattr(self, 'clicky') else False)
 
         def map_color(self):
+            if hasattr(self, 'has_commands') and not self.has_commands:
+                return "#000"
             if self.reachable_or_clickable():
                 return "#f00"
             else:
@@ -731,7 +734,8 @@ init python:
                                 e['y'],
                                 label = self.page_label(page),
                                 special = self.event_is_special(e),
-                                clicky = self.clicky_event(e, page)
+                                clicky = self.clicky_event(e, page),
+                                has_commands = self.has_commands(page)
                             )
                             if self.hide_buggy_event(e, page):
                                 break
@@ -739,7 +743,7 @@ init python:
                                 parameters = page['list'][0]['parameters']
                                 if len(parameters) == 1 and parameters[0] == 'click_activate!':
                                     coords.append(map_clickable)
-                            elif self.has_commands(page):
+                            elif self.has_commands(page) or page['priorityType'] > 0:
                                 coords.append(map_clickable)
                             break
 

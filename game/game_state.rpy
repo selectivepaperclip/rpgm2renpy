@@ -475,6 +475,8 @@ init python:
                 self.map.assign_reachability(self.player_x, self.player_y, coordinates)
                 if hide_unreachable_events:
                     coordinates = [map_clickable for map_clickable in coordinates if map_clickable.reachable]
+                if not show_noop_events:
+                    coordinates = [map_clickable for map_clickable in coordinates if not hasattr(map_clickable, 'has_commands') or map_clickable.has_commands]
 
             x_offset = 0
             y_offset = 0
