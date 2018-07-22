@@ -806,9 +806,16 @@ init python:
 
                 # 'Plugin'
                 elif command['code'] == 356:
-                    if command['parameters'][0] == 'OpenSynthesis':
+                    split_params = command['parameters'][0].split(' ')
+                    plugin_command, plugin_command_args = split_params[0], split_params[1:]
+                    if plugin_command == 'OpenSynthesis':
                         self.list_index += 1
                         self.state.show_synthesis_ui()
+                    elif plugin_command == 'OuterSelfSwitch':
+                        value = plugin_command_args[0] == 'on'
+                        event_id = int(plugin_command_args[1])
+                        character = plugin_command_args[2]
+                        self.state.self_switches.set_value((self.state.map.map_id, event_id, character), value)
 
                 # When [**]
                 elif command['code'] == 402:
