@@ -552,8 +552,10 @@ init python:
                 # Control Self Switch
                 elif command['code'] == 123:
                     switch_id, value = command['parameters']
-                    key = (self.state.map.map_id, self.state.events[-1].event_data['id'], switch_id)
-                    self.state.self_switches.set_value(key, value == 0)
+                    last_non_common_event = next((e for e in reversed(self.state.events) if not e.common()), None)
+                    if last_non_common_event:
+                        key = (self.state.map.map_id, last_non_common_event.event_data['id'], switch_id)
+                        self.state.self_switches.set_value(key, value == 0)
 
                 # Change gold
                 elif command['code'] == 125:
