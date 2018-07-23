@@ -647,6 +647,12 @@ init python:
                                 delta_x += 1
                         elif route_part['code'] == 29: # Change Speed
                             pass
+                        elif route_part['code'] == 37: # Route Through On
+                            if character_index < 0: # Player Character
+                                game_state.everything_reachable = True
+                        elif route_part['code'] == 38: # Route Through Off
+                            if character_index < 0: # Player Character
+                                game_state.everything_reachable = False
                         elif route_part['code'] == 41: # Change image
                             if character_index < 0: # Player Character
                                 new_character_name, new_character_index = route_part['parameters']

@@ -41,6 +41,7 @@ init python:
             self.weapons = GameWeapons()
             self.picture_since_last_pause = False
             self.shown_pictures = {}
+            self.everything_reachable = False
 
         def __setstate__(self, d):
             self.__dict__.update(d)
@@ -66,6 +67,11 @@ init python:
                       image_name = ' '.join(displayable.children[0].name)
                       game_state.show_picture(picture_id, {'image_name': image_name})
                     renpy.hide(tag)
+
+        def everything_is_reachable(self):
+            if hasattr(self, 'everything_reachable'):
+                return self.everything_reachable
+            return False
 
         def show_picture(self, picture_id, args):
             self.migrate_shown_pictures()
@@ -453,7 +459,7 @@ init python:
                         self.player_direction = self.determine_direction(new_x, new_y)
                         self.player_x, self.player_y = new_x, new_y
                     else:
-                        if hasattr(mapdest, 'reachable') and mapdest.reachable:
+                        if hasattr(mapdest, 'reachable') and mapdest.reachable and not self.everything_is_reachable():
                             reachability_grid = self.map.reachability_grid_for_current_position()
                             adjacent_square, self.player_direction = self.map.last_square_before_dest(self.player_x, self.player_y, mapdest.x, mapdest.y)
                             self.player_x, self.player_y = adjacent_square
@@ -476,7 +482,8 @@ init python:
             coordinates = []
             if not in_interaction:
                 coordinates = self.map.map_options(self.player_x, self.player_y)
-                self.map.assign_reachability(self.player_x, self.player_y, coordinates)
+                if not game_state.everything_is_reachable():
+                    self.map.assign_reachability(self.player_x, self.player_y, coordinates)
                 if hide_unreachable_events:
                     coordinates = [map_clickable for map_clickable in coordinates if map_clickable.reachable]
                 if not show_noop_events:
