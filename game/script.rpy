@@ -143,6 +143,10 @@ label start:
             GameSkips().ics2_skip_unpacking()
         if GameIdentifier().is_taboo_request():
             hide_unreachable_events = True
+        if GameIdentifier().is_my_summer():
+            hide_unreachable_events = True
+        if GameIdentifier().is_visiting_sara():
+            hide_unreachable_events = True
 
 label game:
     $ end_game = False

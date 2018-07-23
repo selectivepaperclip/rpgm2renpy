@@ -373,6 +373,12 @@ init python:
                 if self.map.map_id == 27 and self.switches.value(129) == True and not self.self_switches.value((27, 14, "B")):
                     self.self_switches.set_value((27, 14, "A"), True)
                     self.self_switches.set_value((27, 14, "B"), True)
+            if GameIdentifier().is_my_summer():
+                # In the downstairs stealth scene, normally dad's view would sometimes shift to the right,
+                # but this requires parsing his 'moveRoute' which the engine doesn't currently do, and running
+                # it on some kind of a timer. Instead, let's just set him to always be looking right.
+                if self.map.map_id == 2 and self.switches.value(312) == True and not self.switches.value(314) == True:
+                    self.switches.set_value(314, True)
 
         def set_game_start_events(self):
             self.events = [e for e in [self.map.find_auto_trigger_event()] if e]

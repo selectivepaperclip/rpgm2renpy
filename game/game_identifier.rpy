@@ -8,4 +8,5 @@ init python:
             return game_state.system_data()['gameTitle'] == 'Taboo Request'
         def is_my_summer(self):
             return game_state.system_data()['gameTitle'] == 'My Summer with Mom & Sis v1.00'
-
+        def is_visiting_sara(self):
+            return game_state.system_data()['gameTitle'].startswith('Visiting Sara')
