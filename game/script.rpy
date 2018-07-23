@@ -66,11 +66,38 @@ init python:
     def supported_image(ext):
         return ext.lower() in [ ".jpg", ".jpeg", ".png", ".webp" ]
 
+    def mog_title_layer_image():
+        plugins = PluginsLoader().json()
+        mog_title_layers = next((plugin_data for plugin_data in plugins if plugin_data['name'] == 'MOG_TitleLayers'), None)
+        if mog_title_layers:
+            layer_data = {}
+            layer_line_regexp = re.compile('^L(\d+) (.*)$')
+            for key, value in mog_title_layers['parameters'].iteritems():
+                match = re.match(layer_line_regexp, key)
+                if match:
+                    layer_id = int(match.groups()[0])
+                    layer_key = match.groups()[1]
+                    if not layer_id in layer_data:
+                        layer_data[layer_id] = {}
+                    layer_data[layer_id][layer_key] = value
+            composite_args = [(config.screen_width, config.screen_height)]
+            for layer_id in sorted(layer_data.iterkeys()):
+                layer_values = layer_data[layer_id]
+                if layer_values['Visible'] == 'true':
+                    composite_args.append((0, 0))
+                    composite_args.append(rpgm_path('www/img/titles1/' + layer_values['File Name'] + '.png'))
+            return LiveComposite(*composite_args)
+        return None
+
     with rpgm_file('www/data/System.json') as f:
         system_data = json.load(f)
         title_screen_file_path = rpgm_path('www/img/titles1/' + system_data['title1Name'] + '.png')
         if os.path.exists(os.path.join(config.basedir, title_screen_file_path)):
             gui.main_menu_background = scale_image(title_screen_file_path)
+        else:
+            title_layer_image = mog_title_layer_image()
+            if title_layer_image:
+                gui.main_menu_background = title_layer_image
 
     pictures_path = rpgm_path("www/img/pictures/")
     for filename in os.listdir(os.path.join(config.basedir, pictures_path)):
