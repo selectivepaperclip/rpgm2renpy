@@ -517,61 +517,78 @@ init python:
                                 result.append(tile)
             return result
 
+        def character_sprite(self, image_data):
+            img_base_filename = image_data['characterName'].replace(".", "_")
+
+            is_big_character = False
+            if re.search("^[!$]+", img_base_filename) and img_base_filename[0] == '$':
+                is_big_character = True
+
+            is_object_character = False
+            if re.search("^[!$]+", img_base_filename) and img_base_filename[0] == '!':
+                is_object_character = True
+
+            if not img_base_filename in character_image_sizes:
+                character_image_sizes[img_base_filename] = renpy.image_size(character_images[img_base_filename])
+            img_size = character_image_sizes[img_base_filename]
+
+            pw = img_size[0] / 12
+            ph = img_size[1] / 8
+
+            n = image_data['characterIndex']
+
+            character_block_x = n % 4 * 3
+            character_block_y = (n // 4) * 4
+            character_pattern_x = image_data['pattern'] if (image_data['pattern'] < 3) else 1
+            character_pattern_y = (image_data['direction'] - 2) / 2
+            if is_big_character:
+                pw = img_size[0] / 3
+                ph = img_size[1] / 4
+                character_block_x = 0
+                character_block_y = 0
+
+            sx = (character_block_x + character_pattern_x) * pw
+            sy = (character_block_y + character_pattern_y) * ph
+
+            img = im.Crop(character_images[img_base_filename], (sx, sy, pw, ph))
+            shift_y = 0 if is_object_character else 6
+            return (img, pw, ph, shift_y)
+
+        def tile_sprite(self, image_data):
+            tileset_names = self.state.tilesets()[self.data()['tilesetId']]['tilesetNames']
+            set_number = 5 + (image_data['tileId'] // 256)
+            tileset_name = tileset_names[set_number]
+
+            sx = ((image_data['tileId'] // 128) % 2 * 8 + image_data['tileId'] % 8) * GameMap.TILE_WIDTH
+            sy = ((image_data['tileId'] % 256) // 8) % 16 * GameMap.TILE_HEIGHT
+
+            img = im.Crop(tile_images[tileset_name.replace(".", "_")], (sx, sy, GameMap.TILE_WIDTH, GameMap.TILE_HEIGHT))
+            return (img,)
+
         def sprites(self):
             result = []
+
+            player_character_actor = self.state.actors.by_index(1)
+            player_character_sprite_data = {
+                "characterName": player_character_actor['characterName'],
+                "characterIndex": player_character_actor['characterIndex'],
+                "pattern": 0,
+                "direction": game_state.player_direction
+            }
+            result.append((game_state.player_x, game_state.player_y) + self.character_sprite(player_character_sprite_data))
+
             for e in self.data()['events']:
                 if e:
                     for page in reversed(e['pages']):
                         if self.meets_conditions(e, page['conditions']):
+                            loc = self.event_location(e)
                             image_data = page['image']
                             if image_data['characterName'] != '':
-                                img_base_filename = image_data['characterName'].replace(".", "_")
-
-                                is_big_character = False
-                                if re.search("^[!$]+", img_base_filename) and img_base_filename[0] == '$':
-                                    is_big_character = True
-
-                                is_object_character = False
-                                if re.search("^[!$]+", img_base_filename) and img_base_filename[0] == '!':
-                                    is_object_character = True
-
-                                if not img_base_filename in character_image_sizes:
-                                    character_image_sizes[img_base_filename] = renpy.image_size(character_images[img_base_filename])
-                                img_size = character_image_sizes[img_base_filename]
-
-                                pw = img_size[0] / 12
-                                ph = img_size[1] / 8
-
-                                n = image_data['characterIndex']
-
-                                character_block_x = n % 4 * 3
-                                character_block_y = (n // 4) * 4
-                                character_pattern_x = image_data['pattern'] if (image_data['pattern'] < 3) else 1
-                                character_pattern_y = (image_data['direction'] - 2) / 2
-                                if is_big_character:
-                                    pw = img_size[0] / 3
-                                    ph = img_size[1] / 4
-                                    character_block_x = 0
-                                    character_block_y = 0
-
-                                sx = (character_block_x + character_pattern_x) * pw
-                                sy = (character_block_y + character_pattern_y) * ph
-
-                                img = im.Crop(character_images[img_base_filename], (sx, sy, pw, ph))
-                                shift_y = 0 if is_object_character else 6
-                                loc = self.event_location(e)
-                                result.append((loc[0], loc[1], img, pw, ph, shift_y))
+                                character_sprite_data = self.character_sprite(image_data)
+                                result.append(loc + character_sprite_data)
                             elif image_data['tileId'] != 0:
-                                tileset_names = self.state.tilesets()[self.data()['tilesetId']]['tilesetNames']
-                                set_number = 5 + (image_data['tileId'] // 256)
-                                tileset_name = tileset_names[set_number]
-
-                                sx = ((image_data['tileId'] // 128) % 2 * 8 + image_data['tileId'] % 8) * GameMap.TILE_WIDTH
-                                sy = ((image_data['tileId'] % 256) // 8) % 16 * GameMap.TILE_HEIGHT
-
-                                img = im.Crop(tile_images[tileset_name.replace(".", "_")], (sx, sy, GameMap.TILE_WIDTH, GameMap.TILE_HEIGHT))
-                                loc = self.event_location(e)
-                                result.append((loc[0], loc[1], img))
+                                tile_sprite_data = self.tile_sprite(image_data)
+                                result.append(loc + tile_sprite_data)
                             break
             return result
 

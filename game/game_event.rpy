@@ -647,6 +647,15 @@ init python:
                                 delta_x += 1
                         elif route_part['code'] == 29: # Change Speed
                             pass
+                        elif route_part['code'] == 41: # Change image
+                            if character_index < 0: # Player Character
+                                new_character_name, new_character_index = route_part['parameters']
+                                actor_index = 1
+                                self.state.actors.set_property(actor_index, 'characterName', new_character_name)
+                                self.state.actors.set_property(actor_index, 'characterIndex', new_character_index)
+                            else:
+                                # TODO: don't yet support changing other images
+                                pass
                         elif route_part['code'] == 0:
                             pass
 
@@ -816,7 +825,11 @@ init python:
 
                 # Change actor image
                 elif command['code'] == 322:
-                    pass
+                    actor_index, new_character_name, new_character_index, new_face_name, new_face_index = command['parameters'][0:5]
+                    self.state.actors.set_property(actor_index, 'characterName', new_character_name)
+                    self.state.actors.set_property(actor_index, 'characterIndex', new_character_index)
+                    self.state.actors.set_property(actor_index, 'faceName', new_face_name)
+                    self.state.actors.set_property(actor_index, 'faceIndex', new_face_index)
 
                 # Change actor nickname
                 elif command['code'] == 324:
