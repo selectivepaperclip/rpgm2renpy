@@ -673,8 +673,9 @@ init python:
                                 current_x, current_y = loc
 
                             new_x, new_y = current_x + delta_x, current_y + delta_y
-                            if reachability_grid[new_y][new_x] == 2 or not self.state.map.can_move_vector(current_x, current_y, delta_x, delta_y):
-                                  break
+                            if len(reachability_grid) > new_y and len(reachability_grid[new_y]) > new_x:
+                                if reachability_grid[new_y][new_x] == 2 or not self.state.map.can_move_vector(current_x, current_y, delta_x, delta_y):
+                                      break
 
                             if character_index < 0: # Player Character
                                 game_state.player_x, game_state.player_y = new_x, new_y
