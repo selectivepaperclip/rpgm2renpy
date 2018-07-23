@@ -394,6 +394,7 @@ init python:
                 if this_event.done():
                     if this_event.new_map_id:
                         self.map = self.map_registry.get_map(this_event.new_map_id)
+                        self.map.update_for_transfer()
                         self.player_x = this_event.new_x
                         self.player_y = this_event.new_y
                         self.queue_common_and_parallel_events()
@@ -437,16 +438,20 @@ init python:
                         mapdest[1]
                     )
 
+                if hasattr(mapdest, 'walk_destination') and mapdest.walk_destination:
+                    new_x, new_y = mapdest.x, mapdest.y
+                    self.player_direction = self.determine_direction(new_x, new_y)
+                    self.player_x, self.player_y = new_x, new_y
+                    return True
+
                 map_event = self.map.find_event_for_location(mapdest.x, mapdest.y)
                 if not map_event:
                     map_event = self.map.find_event_for_location(mapdest.x, mapdest.y, only_special = True)
                 if (not self.map.clicky_event(map_event.event_data, map_event.page)) and (self.player_x != mapdest.x or self.player_y != mapdest.y):
                     if map_event.page['through'] == True and map_event.page['priorityType'] > 0:
-                        new_x = mapdest.x
-                        new_y = mapdest.y
+                        new_x, new_y = mapdest.x, mapdest.y
                         self.player_direction = self.determine_direction(new_x, new_y)
-                        self.player_x = new_x
-                        self.player_y = new_y
+                        self.player_x, self.player_y = new_x, new_y
                     else:
                         if hasattr(mapdest, 'reachable') and mapdest.reachable:
                             reachability_grid = self.map.reachability_grid_for_current_position()

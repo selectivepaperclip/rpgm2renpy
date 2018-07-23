@@ -3,7 +3,7 @@ init python:
     from Queue import PriorityQueue
 
     class MapClickable:
-        def __init__(self, x, y, label = None, special = False, clicky = False, has_commands = True):
+        def __init__(self, x, y, label = None, special = False, clicky = False, has_commands = True, walk_destination = False):
             self.x = x
             self.y = y
             self.label = label
@@ -11,11 +11,22 @@ init python:
             self.reachable = True
             self.clicky = clicky
             self.has_commands = has_commands
+            self.walk_destination = walk_destination
+
+        def is_walk_destination(self):
+            if hasattr(self, 'walk_destination') and self.walk_destination:
+                return True
+            return False
 
         def reachable_or_clickable(self):
             return (self.reachable if hasattr(self, 'reachable') else True) or (self.clicky if hasattr(self, 'clicky') else False)
 
         def map_color(self):
+            if self.is_walk_destination():
+                if self.reachable_or_clickable():
+                    return "#ff8000"
+                else:
+                    return '#ffc387'
             if hasattr(self, 'has_commands') and not self.has_commands:
                 return "#000"
             if self.reachable_or_clickable():
@@ -149,6 +160,9 @@ init python:
         def __init__(self, state, map_id):
             self.state = state
             self.map_id = map_id
+
+        def update_for_transfer(self):
+            self.event_location_overrides = {}
 
         def data(self):
             if not hasattr(self, '_data'):
@@ -452,6 +466,19 @@ init python:
 
             return False
 
+        def can_move_vector(self, x, y, delta_x, delta_y):
+            new_x, new_y = x + delta_x, y + delta_y
+            if delta_x == 0 and delta_y == -1:
+                direction = GameDirection.UP
+            elif delta_x == 0 and delta_y == 1:
+                direction = GameDirection.DOWN
+            elif delta_x == -1 and delta_y == 0:
+                direction = GameDirection.LEFT
+            elif delta_x == 1 and delta_y == 0:
+                direction = GameDirection.RIGHT
+
+            return (not self.is_impassible(x, y, direction) and not self.is_impassible(new_x, new_y, GameDirection.reverse_direction(direction)))
+
         def tile_region(self, x, y):
             region_z = 5
             return self.tile_id(x, y, region_z)
@@ -532,7 +559,8 @@ init python:
 
                                 img = im.Crop(character_images[img_base_filename], (sx, sy, pw, ph))
                                 shift_y = 0 if is_object_character else 6
-                                result.append((e['x'], e['y'], img, pw, ph, shift_y))
+                                loc = self.event_location(e)
+                                result.append((loc[0], loc[1], img, pw, ph, shift_y))
                             elif image_data['tileId'] != 0:
                                 tileset_names = self.state.tilesets()[self.data()['tilesetId']]['tilesetNames']
                                 set_number = 5 + (image_data['tileId'] // 256)
@@ -542,7 +570,8 @@ init python:
                                 sy = ((image_data['tileId'] % 256) // 8) % 16 * GameMap.TILE_HEIGHT
 
                                 img = im.Crop(tile_images[tileset_name.replace(".", "_")], (sx, sy, GameMap.TILE_WIDTH, GameMap.TILE_HEIGHT))
-                                result.append((e['x'], e['y'], img))
+                                loc = self.event_location(e)
+                                result.append((loc[0], loc[1], img))
                             break
             return result
 
@@ -551,7 +580,10 @@ init python:
 
         def find_event_for_location(self, x, y, only_special = False):
             for e in self.data()['events']:
-                if e and e['x'] == x and e['y'] == y:
+                if not e:
+                    continue
+                loc = self.event_location(e)
+                if loc[0] == x and loc[1] == y:
                     for index, page in enumerate(reversed(e['pages'])):
                         if self.meets_conditions(e, page['conditions']) and page['trigger'] != 3:
                             if ((not only_special) and self.event_is_special(e)):
@@ -680,6 +712,8 @@ init python:
             reachability_grid = [[0 for x in xrange(self.width())] for y in xrange(self.height())]
 
             for map_clickable in event_coords:
+                if hasattr(map_clickable, 'walk_destination') and map_clickable.walk_destination:
+                    continue
                 reachability_grid[map_clickable.y][map_clickable.x] = 2
 
             max_x = self.width() - 1
@@ -722,9 +756,30 @@ init python:
                         map_clickable.reachable = True
                         break
 
+        def event_location(self, event_data):
+            if not hasattr(self, 'event_location_overrides'):
+                self.event_location_overrides = {}
+            if event_data['id'] in self.event_location_overrides:
+                return self.event_location_overrides[event_data['id']]
+            else:
+                return (event_data['x'], event_data['y'])
+
+        def override_event_location(self, event_data, loc):
+            if not hasattr(self, 'event_location_overrides'):
+                self.event_location_overrides = {}
+            self.event_location_overrides[event_data['id']] = loc
+
+        def make_surrounding_tiles_walkable(self, page):
+            if GameIdentifier().is_my_summer() and (self.map_id in [9, 10]) and (page['image']['characterName'] == 'Box' or page['image']['characterName'] == 'Box2'):
+                return True
+            return False
+
         def map_options(self, player_x, player_y, only_special = False, ignore_clicky = False):
             coords = []
             clicky_screen = not ignore_clicky and self.is_clicky(player_x, player_y)
+
+            pushable_locations = []
+
             for e in self.data()['events']:
                 if e:
                     for page in reversed(e['pages']):
@@ -734,9 +789,10 @@ init python:
                             if page['trigger'] >= 3:
                                 break
 
+                            loc = self.event_location(e)
                             map_clickable = MapClickable(
-                                e['x'],
-                                e['y'],
+                                loc[0],
+                                loc[1],
                                 label = self.page_label(page),
                                 special = self.event_is_special(e),
                                 clicky = self.clicky_event(e, page),
@@ -750,7 +806,29 @@ init python:
                                     coords.append(map_clickable)
                             elif self.has_commands(page) or page['priorityType'] > 0:
                                 coords.append(map_clickable)
+
+                                if self.has_commands(page) and self.make_surrounding_tiles_walkable(page):
+                                    pushable_locations.append(loc)
                             break
+
+            if len(pushable_locations) > 0:
+                existing_coords = {(map_clickable.x, map_clickable.y):True for map_clickable in coords}
+                for loc in pushable_locations:
+                    max_x = self.width() - 1
+                    max_y = self.height() - 1
+
+                    for adjacent_coord in self.adjacent_coords(loc[0], loc[1], max_x, max_y):
+                        ax, ay, adirection = adjacent_coord
+                        if (ax, ay) in existing_coords or (game_state.player_x == ax and game_state.player_y == ay):
+                            continue
+                        if (not self.is_impassible(loc[0], loc[1], adirection) and not self.is_impassible(ax, ay, GameDirection.reverse_direction(adirection))):
+                            map_clickable = MapClickable(
+                                ax,
+                                ay,
+                                walk_destination = True
+                            )
+                            existing_coords[(ax, ay)] = True
+                            coords.append(map_clickable)
 
             return coords
 

@@ -500,7 +500,19 @@ init python:
                         elif game_data_operand_type == 5: # Character
                             # param1 is character ID
                             if game_data_operand_param1 >= 0:
-                                renpy.say(None, ("Variable control operand 3 param 5 only implemented for player character!"))
+                                if game_data_operand_param2 == 0: # Map X
+                                    value = self.state.map.event_location(self.event_data)[0]
+                                elif game_data_operand_param2 == 1: # Map Y
+                                    value = self.state.map.event_location(self.event_data)[1]
+                                elif game_data_operand_param2 == 2: # Direction
+                                    # return character.direction();
+                                    renpy.say(None, ("Variable control operand 3 not implemented for param 5-%s, plz implement" % game_data_operand_param2))
+                                elif game_data_operand_param2 == 3: # Screen X
+                                    # return character.screenX();
+                                    renpy.say(None, ("Variable control operand 3 not implemented for param 5-%s, plz implement" % game_data_operand_param2))
+                                elif game_data_operand_param2 == 4: # Screen Y
+                                    # return character.screenY();
+                                    renpy.say(None, ("Variable control operand 3 not implemented for param 5-%s, plz implement" % game_data_operand_param2))
                             else:
                                 if game_data_operand_param2 == 0: # Map X
                                     value = game_state.player_x
@@ -608,24 +620,51 @@ init python:
 
                 # Set movement route
                 elif command['code'] == 205:
+                    reachability_grid = self.state.map.reachability_grid_for_current_position()
+
                     character_index, route = command['parameters']
-                    if character_index < 0: # Player Character
-                        if route['wait'] == True:
-                          for route_part in route['list']:
-                              if route_part['code'] == 12: # Move Forward
-                                  print "Moving forward from direction %s" % game_state.player_direction
-                                  if game_state.player_direction == GameDirection.UP:
-                                      game_state.player_y -= 1
-                                  elif game_state.player_direction == GameDirection.DOWN:
-                                      game_state.player_y += 1
-                                  elif game_state.player_direction == GameDirection.LEFT:
-                                      game_state.player_x -= 1
-                                  elif game_state.player_direction == GameDirection.RIGHT:
-                                      game_state.player_x += 1
-                              elif route_part['code'] == 29: # Change Speed
-                                  pass
-                              elif route_part['code'] == 0:
-                                  pass
+                    target = None
+                    for route_part in route['list']:
+                        delta_x = 0
+                        delta_y = 0
+                        if route_part['code'] == 1: # Move Down
+                            delta_y += 1
+                        elif route_part['code'] == 2: # Move Left
+                            delta_x -= 1
+                        elif route_part['code'] == 3: # Move Right
+                            delta_x += 1
+                        elif route_part['code'] == 4: # Move Up
+                            delta_y -= 1
+                        elif route_part['code'] == 12: # Move Forward
+                            current_direction = game_state.player_direction
+                            if current_direction == GameDirection.UP:
+                                delta_y -= 1
+                            elif current_direction == GameDirection.DOWN:
+                                delta_y += 1
+                            elif current_direction == GameDirection.LEFT:
+                                delta_x -= 1
+                            elif current_direction == GameDirection.RIGHT:
+                                delta_x += 1
+                        elif route_part['code'] == 29: # Change Speed
+                            pass
+                        elif route_part['code'] == 0:
+                            pass
+
+                        if delta_x != 0 or delta_y != 0:
+                            if character_index < 0: # Player Character
+                                current_x, current_y = game_state.player_x, game_state.player_y
+                            else:
+                                loc = self.state.map.event_location(self.event_data)
+                                current_x, current_y = loc
+
+                            new_x, new_y = current_x + delta_x, current_y + delta_y
+                            if reachability_grid[new_y][new_x] == 2 or not self.state.map.can_move_vector(current_x, current_y, delta_x, delta_y):
+                                  break
+
+                            if character_index < 0: # Player Character
+                                game_state.player_x, game_state.player_y = new_x, new_y
+                            else:
+                                self.state.map.override_event_location(self.event_data, (new_x, new_y))
 
                 # Change Transparency
                 elif command['code'] == 211:
