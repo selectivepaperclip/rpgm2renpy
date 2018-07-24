@@ -272,12 +272,12 @@ init python:
                     
                 for picture_id, picture_frames in frame_data.iteritems():
                     if len(picture_frames) == 1:
-                        game_state.show_picture(picture_id, {"image_name": picture_frames[0]['image_name']})
+                        game_state.show_picture(picture_id, {"image_name": rpgm_picture_name(picture_frames[0]['image_name'])})
                         continue
 
                     picture_transitions = []
                     for picture_frame in picture_frames:
-                        picture_transitions.append(picture_frame['image_name'])
+                        picture_transitions.append(rpgm_picture_name(picture_frame['image_name']))
                         picture_transitions.append(picture_frame['wait'] * 1/30.0)
                         picture_transitions.append(None)
 
@@ -732,7 +732,7 @@ init python:
 
                     picture_args = None
                     if command['code'] == 231:
-                        picture_args = {'image_name': picture_name}
+                        picture_args = {'image_name': rpgm_picture_name(picture_name)}
                     else:
                         picture_args = game_state.shown_pictures.get(picture_id)
 
@@ -740,7 +740,7 @@ init python:
                         picture_args['opacity'] = opacity
                         if command['code'] == 231:
                             if not picture_name in picture_image_sizes:
-                                picture_image_sizes[picture_name] = renpy.image_size(normal_images[picture_name])
+                                picture_image_sizes[picture_name] = renpy.image_size(normal_images[rpgm_picture_name(picture_name)])
                             image_size = picture_image_sizes[picture_name]
                             if image_size[0] > config.screen_width and image_size[1] > config.screen_height:
                                 image_size = (config.screen_width, config.screen_height)
@@ -773,7 +773,7 @@ init python:
 
                 # Play Movie
                 elif command['code'] == 261:
-                    renpy.show(command['parameters'][0], tag = "movie")
+                    renpy.show(rpgm_movie_name(command['parameters'][0]), tag = "movie")
                     renpy.pause()
                     renpy.hide("movie")
 

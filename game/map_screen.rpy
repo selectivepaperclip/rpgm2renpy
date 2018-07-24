@@ -120,7 +120,7 @@ screen mapscreen(
         add hud_pic['image']:
             xpos hud_pic['X']
             ypos hud_pic['Y']
-            size renpy.image_size(normal_images[hud_pic['image']])
+            size hud_pic['size']
 
     for hud_line in hud_lines:
         text hud_line['text'] ypos hud_line['Y'] xpos hud_line['X']

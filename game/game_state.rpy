@@ -65,8 +65,12 @@ init python:
                     displayable = renpy.display.core.displayable_by_tag('master', tag)
                     if len(displayable.children) == 1:
                       image_name = ' '.join(displayable.children[0].name)
-                      game_state.show_picture(picture_id, {'image_name': image_name})
+                      game_state.show_picture(picture_id, {'image_name': rpgm_picture_name(image_name)})
                     renpy.hide(tag)
+            elif not hasattr(self, 'migrated_image_prefixes'):
+                for picture_args in self.shown_pictures.itervalues():
+                    picture_args['image_name'] = rpgm_picture_name(picture_args['image_name'])
+                self.migrated_image_prefixes = True
 
         def everything_is_reachable(self):
             if hasattr(self, 'everything_reachable'):
@@ -180,10 +184,16 @@ init python:
                     if 'FileName' in pic_params:
                         image = pic_params['FileName']
 
+                    picture_name = rpgm_picture_name(image)
+                    if not image in picture_image_sizes:
+                        picture_image_sizes[image] = renpy.image_size(normal_images[picture_name])
+                    image_size = picture_image_sizes[image]
+
                     pics.append({
                         'X': x,
                         'Y': y,
-                        'image': image
+                        'image': picture_name,
+                        'size': image_size
                     })
 
             return pics

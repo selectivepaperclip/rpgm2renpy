@@ -66,6 +66,12 @@ init python:
     def supported_image(ext):
         return ext.lower() in [ ".jpg", ".jpeg", ".png", ".webp" ]
 
+    def rpgm_picture_name(base):
+        return 'rpgmpicture-' + base.lower()
+
+    def rpgm_movie_name(base):
+        return 'rpgmmovie-' + base.lower()
+
     def mog_title_layer_image():
         plugins = PluginsLoader().json()
         mog_title_layers = next((plugin_data for plugin_data in plugins if plugin_data['name'] == 'MOG_TitleLayers'), None)
@@ -104,16 +110,16 @@ init python:
         base, ext = os.path.splitext(os.path.basename(filename))
         if not supported_image(ext):
             continue
-        if renpy.has_image(base, exact=True):
+        pic_name = rpgm_picture_name(base)
+        if renpy.has_image(pic_name, exact=True):
             continue
-        normal_images[base] = pictures_path + filename
-
-        renpy.image(base, scale_image(pictures_path + filename))
+        normal_images[pic_name] = pictures_path + filename
+        renpy.image(pic_name, scale_image(pictures_path + filename))
 
     movies_path = rpgm_path("www/movies/")
     if os.path.exists(os.path.join(config.basedir, movies_path)):
         for filename in os.listdir(os.path.join(config.basedir, movies_path)):
-            image_name = os.path.splitext(os.path.basename(filename))[0]
+            image_name = rpgm_movie_name(os.path.splitext(os.path.basename(filename))[0])
             if renpy.has_image(image_name, exact=True):
                 continue
 
