@@ -278,7 +278,7 @@ init python:
                     picture_transitions = []
                     for picture_frame in picture_frames:
                         picture_transitions.append(rpgm_picture_name(picture_frame['image_name']))
-                        picture_transitions.append(picture_frame['wait'] * 1/30.0)
+                        picture_transitions.append(picture_frame['wait'] * 1/animation_fps)
                         picture_transitions.append(None)
 
                     if len(picture_transitions) > 1:

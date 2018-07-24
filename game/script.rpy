@@ -15,6 +15,7 @@ define hide_unreachable_events = False
 define show_noop_events = False
 define viewport_xadjustment = ui.adjustment()
 define viewport_yadjustment = ui.adjustment()
+define animation_fps = 60.0
 
 init -10 python:
     build.classify('rpgmdata', 'all')
