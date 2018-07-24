@@ -742,6 +742,8 @@ init python:
                             if not picture_name in picture_image_sizes:
                                 picture_image_sizes[picture_name] = renpy.image_size(normal_images[rpgm_picture_name(picture_name)])
                             image_size = picture_image_sizes[picture_name]
+                            if scale_x != 100 or scale_y != 100:
+                                image_size = (int(image_size[0] * scale_x / 100.0), int(image_size[1] * scale_y / 100.0))
                             if image_size[0] > config.screen_width and image_size[1] > config.screen_height:
                                 image_size = (config.screen_width, config.screen_height)
                             picture_args['size'] = image_size
