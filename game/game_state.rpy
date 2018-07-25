@@ -390,6 +390,10 @@ init python:
                 if self.map.map_id == 2 and self.switches.value(312) == True and not self.switches.value(314) == True:
                     self.switches.set_value(314, True)
 
+        def pause(self):
+            self.picture_since_last_pause = False
+            renpy.pause()
+
         def set_game_start_events(self):
             self.events = [e for e in [self.map.find_auto_trigger_event()] if e]
             if len(self.events) == 0:
@@ -493,10 +497,10 @@ init python:
             return False
 
         def show_map(self, in_interaction = False):
-            game_state.picture_since_last_pause = False
-
             coordinates = []
             if not in_interaction:
+                game_state.picture_since_last_pause = False
+
                 coordinates = self.map.map_options(self.player_x, self.player_y)
                 if not game_state.everything_is_reachable():
                     self.map.assign_reachability(self.player_x, self.player_y, coordinates)

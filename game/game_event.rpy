@@ -322,7 +322,7 @@ init python:
                     if len(text_to_show) > 0:
                         renpy.say(None, re.sub('%', '%%', text_to_show))
                     else:
-                        renpy.pause()
+                        game_state.pause()
 
                 # Show choices
                 elif command['code'] == 102:
@@ -695,7 +695,7 @@ init python:
                     pass
 
                 elif command['code'] == 224: # Flash screen
-                    renpy.pause()
+                    game_state.pause()
 
                 # Pause
                 elif command['code'] == 230:
@@ -712,8 +712,7 @@ init python:
                         game_state.picture_since_last_pause = True
 
                     if game_state.picture_since_last_pause and not self.parallel():
-                        game_state.picture_since_last_pause = False
-                        renpy.pause()
+                        game_state.pause()
 
                 # Show picture / Move picture
                 elif command['code'] == 231 or command['code'] == 232:
@@ -776,7 +775,7 @@ init python:
                 # Play Movie
                 elif command['code'] == 261:
                     renpy.show(rpgm_movie_name(command['parameters'][0]), tag = "movie")
-                    renpy.pause()
+                    game_state.pause()
                     renpy.hide("movie")
 
                 # Change Parallax
