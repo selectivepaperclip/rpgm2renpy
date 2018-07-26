@@ -272,17 +272,16 @@ init python:
                     
                 for picture_id, picture_frames in frame_data.iteritems():
                     if len(picture_frames) == 1:
-                        game_state.show_picture(picture_id, {"image_name": rpgm_picture_name(picture_frames[0]['image_name'])})
+                        game_state.shown_pictures[picture_id] = {"image_name": rpgm_picture_name(picture_frames[0]['image_name'])}
                         continue
 
                     picture_transitions = []
                     for picture_frame in picture_frames:
                         picture_transitions.append(rpgm_picture_name(picture_frame['image_name']))
                         picture_transitions.append(picture_frame['wait'] * 1/animation_fps)
-                        picture_transitions.append(None)
 
                     if len(picture_transitions) > 1:
-                        game_state.show_picture(picture_id, {"image_name": anim.TransitionAnimation(*picture_transitions)})
+                        game_state.shown_pictures[picture_id] = {"image_name": RpgmAnimation(*picture_transitions)}
 
         def migrate_global_branch_data(self):
             if not hasattr(self, 'branch') and hasattr(game_state, 'branch'):
@@ -294,6 +293,11 @@ init python:
             if not self.done():
                 self.migrate_global_branch_data()
                 command = self.page['list'][self.list_index]
+
+                if hasattr(game_state, 'queued_pictures') and len(game_state.queued_pictures) > 0:
+                    if command['code'] in [101, 102, 103, 104, 301, 302, 303]:
+                        game_state.flush_queued_pictures()
+                        return
 
                 if noisy_events:
                     print("map %s, event %s, page %s, command %s (%s)" % (game_state.map.map_id, self.event_data['id'], self.event_data['pages'].index(self.page) if ('pages' in self.event_data) else 'n/a', self.list_index, command['code']))
@@ -690,8 +694,12 @@ init python:
                 elif command['code'] == 213:
                     pass
 
-                # Fade in/out/shake/etc
-                elif command['code'] in [221, 222, 223, 225]:
+                # Fade In / Out
+                elif command['code'] in [221, 222]:
+                    game_state.wait(24) # 'fadeSpeed' from the RPGM code is 24 frames
+
+                # Shake / etc
+                elif command['code'] in [223, 225]:
                     pass
 
                 elif command['code'] == 224: # Flash screen
@@ -699,25 +707,10 @@ init python:
 
                 # Pause
                 elif command['code'] == 230:
-                    # Skip to the final pause if there's a series of pauses and audio
-                    fast_forwarded = False
-                    while self.page['list'][self.list_index + 1]['code'] in [230, 250]:
-                        fast_forwarded = True
-                        self.list_index += 1
-                    if fast_forwarded:
-                        self.list_index -= 1
-
-                    if not hasattr(game_state, 'picture_since_last_pause'):
-                        # Backfill the boolean for savegames from before this bit was introduced
-                        game_state.picture_since_last_pause = True
-
-                    if game_state.picture_since_last_pause and not self.parallel():
-                        game_state.pause()
+                    game_state.wait(command['parameters'][0])
 
                 # Show picture / Move picture
                 elif command['code'] == 231 or command['code'] == 232:
-                    if command['code'] == 231:
-                        game_state.picture_since_last_pause = True
                     picture_id, picture_name, origin = command['parameters'][0:3]
                     x, y = None, None
                     if command['parameters'][3] == 0:
@@ -728,12 +721,14 @@ init python:
                         y = game_state.variables.value(command['parameters'][5])
 
                     scale_x, scale_y, opacity, blend_mode = command['parameters'][6:10]
+                    duration, wait = None, None
 
                     picture_args = None
                     if command['code'] == 231:
                         picture_args = {'image_name': rpgm_picture_name(picture_name)}
                     else:
-                        picture_args = game_state.shown_pictures.get(picture_id)
+                        duration, wait = command['parameters'][10:12]
+                        picture_args = game_state.queued_or_shown_picture(picture_id)
 
                     if picture_args:
                         picture_args['opacity'] = opacity
@@ -754,6 +749,8 @@ init python:
                             picture_args['y'] = y - picture_args['size'][1] / 2
 
                         game_state.show_picture(picture_id, picture_args)
+                        if wait:
+                            game_state.wait(duration)
 
                 # Tint picture - TODO ?
                 elif command['code'] == 234:

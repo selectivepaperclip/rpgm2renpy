@@ -39,8 +39,8 @@ init python:
             self.items = GameItems()
             self.armors = GameArmors()
             self.weapons = GameWeapons()
-            self.picture_since_last_pause = False
             self.shown_pictures = {}
+            self.queued_pictures = []
             self.everything_reachable = False
 
         def __setstate__(self, d):
@@ -71,6 +71,8 @@ init python:
                 for picture_args in self.shown_pictures.itervalues():
                     picture_args['image_name'] = rpgm_picture_name(picture_args['image_name'])
                 self.migrated_image_prefixes = True
+            if not hasattr(self, 'queued_pictures'):
+                self.queued_pictures = []
 
         def everything_is_reachable(self):
             if hasattr(self, 'everything_reachable'):
@@ -79,12 +81,60 @@ init python:
 
         def show_picture(self, picture_id, args):
             self.migrate_shown_pictures()
-            self.shown_pictures[picture_id] = args
+            self.queued_pictures.append((picture_id, args))
 
         def hide_picture(self, picture_id):
             self.migrate_shown_pictures()
             if picture_id in self.shown_pictures:
-                del game_state.shown_pictures[picture_id]
+                del self.shown_pictures[picture_id]
+
+        def queued_or_shown_picture(self, desired_picture_id):
+            self.migrate_shown_pictures()
+            for picture_id, picture_args in reversed(self.queued_pictures):
+                if picture_id == desired_picture_id:
+                    return picture_args
+            if desired_picture_id in self.shown_pictures:
+                return self.shown_pictures[desired_picture_id]
+
+        def wait(self, frames):
+            self.migrate_shown_pictures()
+            if len(self.queued_pictures) > 0:
+                last_picture_id, last_picture_args = self.queued_pictures[-1]
+                if 'wait' in last_picture_args:
+                    last_picture_args['wait'] += frames
+                else:
+                    last_picture_args['wait'] = frames
+
+        def flush_queued_pictures(self):
+            self.migrate_shown_pictures()
+            if len(self.queued_pictures) == 0:
+                return
+
+            frame_data = {}
+            for picture_id, picture_args in self.queued_pictures:
+                if picture_id in frame_data:
+                    frame_data[picture_id].append(picture_args)
+                else:
+                    frame_data[picture_id] = [picture_args]
+
+            for picture_id, picture_frames in frame_data.iteritems():
+                if len(picture_frames) == 1:
+                    self.shown_pictures[picture_id] = picture_frames[0]
+                else:
+                    picture_transitions = []
+                    for picture_frame in picture_frames[0:-1]:
+                        picture_transitions.append(picture_frame['image_name'])
+                        wait_seconds = 0
+                        if 'wait' in picture_frame:
+                            wait_seconds = (picture_frame['wait'] / animation_fps)
+                        picture_transitions.append(wait_seconds)
+                    picture_transitions.append(picture_frames[-1]['image_name'])
+
+                    picture_data = picture_frames[0].copy()
+                    picture_data["image_name"] = RpgmAnimation(*picture_transitions, anim_timebase = True)
+                    self.shown_pictures[picture_id] = picture_data
+
+            self.queued_pictures = []
 
         def pictures(self):
             self.migrate_shown_pictures()
@@ -391,7 +441,7 @@ init python:
                     self.switches.set_value(314, True)
 
         def pause(self):
-            self.picture_since_last_pause = False
+            self.flush_queued_pictures()
             renpy.pause()
 
         def set_game_start_events(self):
@@ -499,8 +549,7 @@ init python:
         def show_map(self, in_interaction = False):
             coordinates = []
             if not in_interaction:
-                game_state.picture_since_last_pause = False
-
+                self.flush_queued_pictures()
                 coordinates = self.map.map_options(self.player_x, self.player_y)
                 if not game_state.everything_is_reachable():
                     self.map.assign_reachability(self.player_x, self.player_y, coordinates)
