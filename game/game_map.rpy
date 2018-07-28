@@ -163,6 +163,7 @@ init python:
 
         def update_for_transfer(self):
             self.event_location_overrides = {}
+            self.erased_events = {}
 
         def data(self):
             if not hasattr(self, '_data'):
@@ -200,17 +201,21 @@ init python:
                     return True
             return False
 
+        def active_events(self):
+            if not hasattr(self, 'erased_events'):
+                self.erased_events = {}
+            return (e for e in self.data()['events'] if e and e['id'] not in self.erased_events)
+
         def is_clicky(self, player_x, player_y):
             some_event_is_clicky = False
             all_events_are_clicky = True
-            for e in self.data()['events']:
-                if e:
-                    for page in reversed(e['pages']):
-                        if self.meets_conditions(e, page['conditions']):
-                            if self.clicky_event(e, page) and not self.ignored_clicky_page(page):
-                                some_event_is_clicky = True
-                            else:
-                                all_events_are_clicky = False
+            for e in self.active_events():
+                for page in reversed(e['pages']):
+                    if self.meets_conditions(e, page['conditions']):
+                        if self.clicky_event(e, page) and not self.ignored_clicky_page(page):
+                            some_event_is_clicky = True
+                        else:
+                            all_events_are_clicky = False
 
             return all_events_are_clicky or (some_event_is_clicky and not self.can_move(player_x, player_y))
 
@@ -577,28 +582,25 @@ init python:
             }
             result.append((game_state.player_x, game_state.player_y) + self.character_sprite(player_character_sprite_data))
 
-            for e in self.data()['events']:
-                if e:
-                    for page in reversed(e['pages']):
-                        if self.meets_conditions(e, page['conditions']):
-                            loc = self.event_location(e)
-                            image_data = page['image']
-                            if image_data['characterName'] != '':
-                                character_sprite_data = self.character_sprite(image_data)
-                                result.append(loc + character_sprite_data)
-                            elif image_data['tileId'] != 0:
-                                tile_sprite_data = self.tile_sprite(image_data)
-                                result.append(loc + tile_sprite_data)
-                            break
+            for e in self.active_events():
+                for page in reversed(e['pages']):
+                    if self.meets_conditions(e, page['conditions']):
+                        loc = self.event_location(e)
+                        image_data = page['image']
+                        if image_data['characterName'] != '':
+                            character_sprite_data = self.character_sprite(image_data)
+                            result.append(loc + character_sprite_data)
+                        elif image_data['tileId'] != 0:
+                            tile_sprite_data = self.tile_sprite(image_data)
+                            result.append(loc + tile_sprite_data)
+                        break
             return result
 
         def event_is_special(self, e):
             return bool(re.search('weightSwitch', e['note']))
 
         def find_event_for_location(self, x, y, only_special = False):
-            for e in self.data()['events']:
-                if not e:
-                    continue
+            for e in self.active_events():
                 loc = self.event_location(e)
                 if loc[0] == x and loc[1] == y:
                     for index, page in enumerate(reversed(e['pages'])):
@@ -614,19 +616,20 @@ init python:
             return [command['code'] for command in page['list']] == [0]
 
         def find_auto_trigger_event(self):
-            for e in self.data()['events']:
-                if e:
-                    for page in reversed(e['pages']):
-                        if self.meets_conditions(e, page['conditions']):
-                            if page['trigger'] == 3 and not self.boring_auto_trigger_page(page):
-                                return GameEvent(self.state, e, page)
-                            else:
-                                break
+            for e in self.active_events():
+                for page in reversed(e['pages']):
+                    if self.meets_conditions(e, page['conditions']):
+                        if page['trigger'] == 3 and not self.boring_auto_trigger_page(page):
+                            return GameEvent(self.state, e, page)
+                        else:
+                            break
             return None
 
         def parallel_event_at_index(self, event_index):
+            if not hasattr(self, 'erased_events'):
+                self.erased_events = {}
             e = self.data()['events'][event_index]
-            if e:
+            if e and e['id'] not in self.erased_events:
                 for page in reversed(e['pages']):
                     if self.meets_conditions(e, page['conditions']):
                         if page['trigger'] == 4:
@@ -797,36 +800,35 @@ init python:
 
             pushable_locations = []
 
-            for e in self.data()['events']:
-                if e:
-                    for page in reversed(e['pages']):
-                        if self.meets_conditions(e, page['conditions']):
-                            # Allow trigger 3/4 (autorun/parallel) events to match so the pages under them don't get matched instead
-                            # But these events shouldn't actually show up on the map, they will be triggered by the event loop
-                            if page['trigger'] >= 3:
-                                break
-
-                            loc = self.event_location(e)
-                            map_clickable = MapClickable(
-                                loc[0],
-                                loc[1],
-                                label = self.page_label(page),
-                                special = self.event_is_special(e),
-                                clicky = self.clicky_event(e, page),
-                                has_commands = self.has_commands(page)
-                            )
-                            if self.hide_buggy_event(e, page):
-                                break
-                            if clicky_screen:
-                                parameters = page['list'][0]['parameters']
-                                if len(parameters) == 1 and parameters[0] == 'click_activate!':
-                                    coords.append(map_clickable)
-                            elif self.has_commands(page) or page['priorityType'] > 0:
-                                coords.append(map_clickable)
-
-                                if self.has_commands(page) and self.make_surrounding_tiles_walkable(page):
-                                    pushable_locations.append(loc)
+            for e in self.active_events():
+                for page in reversed(e['pages']):
+                    if self.meets_conditions(e, page['conditions']):
+                        # Allow trigger 3/4 (autorun/parallel) events to match so the pages under them don't get matched instead
+                        # But these events shouldn't actually show up on the map, they will be triggered by the event loop
+                        if page['trigger'] >= 3:
                             break
+
+                        loc = self.event_location(e)
+                        map_clickable = MapClickable(
+                            loc[0],
+                            loc[1],
+                            label = self.page_label(page),
+                            special = self.event_is_special(e),
+                            clicky = self.clicky_event(e, page),
+                            has_commands = self.has_commands(page)
+                        )
+                        if self.hide_buggy_event(e, page):
+                            break
+                        if clicky_screen:
+                            parameters = page['list'][0]['parameters']
+                            if len(parameters) == 1 and parameters[0] == 'click_activate!':
+                                coords.append(map_clickable)
+                        elif self.has_commands(page) or page['priorityType'] > 0:
+                            coords.append(map_clickable)
+
+                            if self.has_commands(page) and self.make_surrounding_tiles_walkable(page):
+                                pushable_locations.append(loc)
+                        break
 
             if len(pushable_locations) > 0:
                 existing_coords = {(map_clickable.x, map_clickable.y):True for map_clickable in coords}

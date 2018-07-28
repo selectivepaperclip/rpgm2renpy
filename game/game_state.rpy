@@ -517,7 +517,11 @@ init python:
             self.common_events_index = None
 
             if self.parallel_events_index != None and self.parallel_events_index < len(self.map.data()['events']):
-                for event in xrange(self.parallel_events_index, len(self.map.data()['events'])):
+                if not hasattr(self.map, 'erased_events'):
+                    self.map.erased_events = {}
+                for event_id in xrange(self.parallel_events_index, len(self.map.data()['events'])):
+                    if event_id in self.map.erased_events:
+                        continue
                     possible_parallel_event = self.map.parallel_event_at_index(self.parallel_events_index)
                     self.parallel_events_index += 1
                     if possible_parallel_event:

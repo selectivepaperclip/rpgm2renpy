@@ -700,6 +700,10 @@ init python:
                 elif command['code'] == 213:
                     pass
 
+                # Erase Event
+                elif command['code'] == 214:
+                    self.state.map.erased_events[self.event_data['id']] = True
+
                 # Fade In / Out
                 elif command['code'] in [221, 222]:
                     game_state.wait(24) # 'fadeSpeed' from the RPGM code is 24 frames
