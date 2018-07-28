@@ -24,19 +24,25 @@ init python:
 
             images = [ ]
             delays = [ ]
+            transitions = [ ]
 
             for i, arg in enumerate(args):
-
-                if i % 2 == 0:
+                if i % 3 == 0:
                     images.append(renpy.easy.displayable(arg))
-                else:
+                elif i % 3 == 1:
                     delays.append(arg)
+                else:
+                    transitions.append(arg)
 
             if len(images) > len(delays):
                 delays.append(365.25 * 86400.0)  # One year, give or take.
+            if len(images) > len(transitions):
+                transitions.append(None)
 
             self.images = images
+            self.prev_images = [ images[-1] ] + images[:-1]
             self.delays = delays
+            self.transitions = [ transitions[-1] ] + transitions[:-1]
 
         def render(self, width, height, st, at):
             if self.anim_timebase:
@@ -49,15 +55,20 @@ init python:
 
             t = (orig_t - self.first_rendered_t) % sum(self.delays)
 
-            for image, delay, in zip(self.images, self.delays):
+            for image, prev, delay, trans in zip(self.images, self.prev_images, self.delays, self.transitions):
                 if t < delay:
                     if not renpy.game.less_updates:
                         renpy.display.render.redraw(self, delay - t)
 
+                    if trans and orig_t >= self.delays[0]:
+                        image = trans(old_widget=prev, new_widget=image)
+
                     im = renpy.display.render.render(image, width, height, t, at)
                     width, height = im.get_size()
                     rv = renpy.display.render.Render(width, height)
-                    rv.blit(im, (0, 0))
+                    # TODO: questionable if this is the right way to handle x/y positioning, but it works?!
+                    placement = image.get_placement()
+                    rv.blit(im, (placement[0], placement[1]))
 
                     return rv
 

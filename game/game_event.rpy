@@ -254,11 +254,20 @@ init python:
                 last_picture_id = None
                 not_an_animation = False
                 for newly_activated_command in newly_activated_event['list']:
+                    x, y = None, None
+                    if newly_activated_command['code'] in [231]:
+                        if newly_activated_command['parameters'][3] == 0:
+                            x = newly_activated_command['parameters'][4]
+                            y = newly_activated_command['parameters'][5]
+                        else:
+                            x = game_state.variables.value(newly_activated_command['parameters'][4])
+                            y = game_state.variables.value(newly_activated_command['parameters'][5])
+
                     # TODO: isn't responsive to conditionals in event
                     if newly_activated_command['code'] == 231:
                         last_picture_id = newly_activated_command['parameters'][0]
                         image_name = newly_activated_command['parameters'][1]
-                        new_frame_data = {"wait": 0, "image_name": image_name}
+                        new_frame_data = {"wait": 0, "image_name": rpgm_picture_name(image_name), "x": x, "y": y}
                         if last_picture_id in frame_data:
                             frame_data[last_picture_id].append(new_frame_data)
                         else:
@@ -272,13 +281,10 @@ init python:
                     
                 for picture_id, picture_frames in frame_data.iteritems():
                     if len(picture_frames) == 1:
-                        game_state.shown_pictures[picture_id] = {"image_name": rpgm_picture_name(picture_frames[0]['image_name'])}
+                        game_state.shown_pictures[picture_id] = {"image_name": RpgmAnimationBuilder.image_for_picture(picture_frames[0])}
                         continue
 
-                    picture_transitions = []
-                    for picture_frame in picture_frames:
-                        picture_transitions.append(rpgm_picture_name(picture_frame['image_name']))
-                        picture_transitions.append(picture_frame['wait'] * 1/animation_fps)
+                    picture_transitions = RpgmAnimationBuilder(picture_frames).build(loop = True)
 
                     if len(picture_transitions) > 1:
                         game_state.shown_pictures[picture_id] = {"image_name": RpgmAnimation(*picture_transitions)}
@@ -728,7 +734,12 @@ init python:
                         picture_args = {'image_name': rpgm_picture_name(picture_name)}
                     else:
                         duration, wait = command['parameters'][10:12]
-                        picture_args = game_state.queued_or_shown_picture(picture_id)
+                        existing_picture_args = game_state.queued_or_shown_picture(picture_id)
+                        if existing_picture_args:
+                            picture_args = existing_picture_args.copy()
+                        else:
+                            self.list_index += 1
+                            return
 
                     if picture_args:
                         picture_args['opacity'] = opacity
@@ -748,9 +759,13 @@ init python:
                             picture_args['x'] = x - picture_args['size'][0] / 2
                             picture_args['y'] = y - picture_args['size'][1] / 2
 
-                        game_state.show_picture(picture_id, picture_args)
+                        if command['code'] == 231:
+                            game_state.show_picture(picture_id, picture_args)
+                        else:
+                            game_state.move_picture(picture_id, picture_args)
                         if wait:
                             game_state.wait(duration)
+                            game_state.flush_queued_pictures()
 
                 # Tint picture - TODO ?
                 elif command['code'] == 234:

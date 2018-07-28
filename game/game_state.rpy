@@ -83,10 +83,39 @@ init python:
             self.migrate_shown_pictures()
             self.queued_pictures.append((picture_id, args))
 
+        def move_picture(self, picture_id, args):
+            self.migrate_shown_pictures()
+            queued_picture = self.queued_picture(picture_id)
+            if not queued_picture and picture_id in self.shown_pictures:
+                shown_picture = self.shown_pictures[picture_id]
+                reconstructed_picture_args = {
+                    'image_name': shown_picture['image_name'],
+                    'x': shown_picture['final_x'],
+                    'y': shown_picture['final_y'],
+                    'size': shown_picture['final_size'],
+                    'opacity': shown_picture['opacity']
+                }
+                self.queued_pictures.append((picture_id, reconstructed_picture_args))
+            self.queued_pictures.append((picture_id, args))
+
         def hide_picture(self, picture_id):
             self.migrate_shown_pictures()
             if picture_id in self.shown_pictures:
                 del self.shown_pictures[picture_id]
+            self.queued_pictures = [(queued_picture_id, args) for (queued_picture_id, args) in self.queued_pictures if queued_picture_id != picture_id]
+
+        def queued_picture(self, desired_picture_id):
+            self.migrate_shown_pictures()
+            for picture_id, picture_args in reversed(self.queued_pictures):
+                if picture_id == desired_picture_id:
+                    return picture_args
+
+        def queued_or_shown_picture(self, desired_picture_id):
+            queued_picture = self.queued_picture(desired_picture_id)
+            if queued_picture:
+                return queued_picture
+            if desired_picture_id in self.shown_pictures:
+                return self.shown_pictures[desired_picture_id]
 
         def queued_or_shown_picture(self, desired_picture_id):
             self.migrate_shown_pictures()
@@ -118,21 +147,20 @@ init python:
                     frame_data[picture_id] = [picture_args]
 
             for picture_id, picture_frames in frame_data.iteritems():
+                last_frame = picture_frames[-1]
+                picture_args = {
+                    "final_x": last_frame['x'],
+                    "final_y": last_frame['y'],
+                    "final_size": last_frame['size'],
+                    "opacity": picture_frames[-1]['opacity'],
+                    "size": None
+                }
                 if len(picture_frames) == 1:
-                    self.shown_pictures[picture_id] = picture_frames[0]
+                    picture_args['image_name'] = RpgmAnimationBuilder.image_for_picture(picture_frames[0])
                 else:
-                    picture_transitions = []
-                    for picture_frame in picture_frames[0:-1]:
-                        picture_transitions.append(picture_frame['image_name'])
-                        wait_seconds = 0
-                        if 'wait' in picture_frame:
-                            wait_seconds = (picture_frame['wait'] / animation_fps)
-                        picture_transitions.append(wait_seconds)
-                    picture_transitions.append(picture_frames[-1]['image_name'])
-
-                    picture_data = picture_frames[0].copy()
-                    picture_data["image_name"] = RpgmAnimation(*picture_transitions, anim_timebase = True)
-                    self.shown_pictures[picture_id] = picture_data
+                    picture_transitions = RpgmAnimationBuilder(picture_frames).build()
+                    picture_args['image_name'] = RpgmAnimation(*picture_transitions, anim_timebase = True)
+                self.shown_pictures[picture_id] = picture_args
 
             self.queued_pictures = []
 
