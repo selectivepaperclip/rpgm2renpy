@@ -677,7 +677,7 @@ init python:
 
         def has_commands(self, page):
             for command in page['list']:
-                if command['code'] != 0:
+                if command['code'] not in [0, 250]:
                     return True
             return False
 
