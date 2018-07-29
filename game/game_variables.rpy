@@ -8,6 +8,8 @@ init python:
             return self.variable_values[variable_id]
 
         def set_value(self, variable_id, value):
+            if isinstance(value, float):
+                value = int(value)
             self.variable_values[variable_id] = value
 
         def operate_variable(self, variable_id, operation_type, value):
