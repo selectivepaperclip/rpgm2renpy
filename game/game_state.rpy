@@ -467,6 +467,11 @@ init python:
                 # it on some kind of a timer. Instead, let's just set him to always be looking right.
                 if self.map.map_id == 2 and self.switches.value(312) == True and not self.switches.value(314) == True:
                     self.switches.set_value(314, True)
+            if GameIdentifier().is_visiting_sara():
+                # Near the end, you have to push a box a very long way.
+                # The engine is almost capable of doing this, but why bother.
+                if self.map.map_id == 4 and self.switches.value(132) == True and not self.switches.value(133) == True:
+                    self.switches.set_value(133, True)
 
         def pause(self):
             self.flush_queued_pictures()
