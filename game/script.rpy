@@ -115,7 +115,7 @@ init python:
         if renpy.has_image(pic_name, exact=True):
             continue
         normal_images[pic_name] = pictures_path + filename
-        renpy.image(pic_name, scale_image(pictures_path + filename))
+        renpy.image(pic_name, pictures_path + filename)
 
     movies_path = rpgm_path("www/movies/")
     if os.path.exists(os.path.join(config.basedir, movies_path)):
