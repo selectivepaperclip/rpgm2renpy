@@ -556,7 +556,7 @@ init python:
                 if not map_event:
                     map_event = self.map.find_event_for_location(mapdest.x, mapdest.y, only_special = True)
                 if (not self.map.clicky_event(map_event.event_data, map_event.page)) and (self.player_x != mapdest.x or self.player_y != mapdest.y):
-                    if map_event.page['through'] == True and map_event.page['priorityType'] > 0:
+                    if map_event.page['through'] == True and map_event.page['priorityType'] > 0 and map_event.page['trigger'] != 0:
                         new_x, new_y = mapdest.x, mapdest.y
                         self.player_direction = self.determine_direction(new_x, new_y)
                         self.player_x, self.player_y = new_x, new_y
