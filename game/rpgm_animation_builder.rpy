@@ -7,8 +7,8 @@ init python:
         def image_for_picture(cls, picture_frame):
             return Transform(
                 child = picture_frame['image_name'],
-                xpos = picture_frame['x'],
-                ypos = picture_frame['y'],
+                xpos = picture_frame.get('x', 0),
+                ypos = picture_frame.get('y', 0),
                 size = picture_frame.get('size', None),
             )
 
@@ -23,7 +23,7 @@ init python:
 
                 if i + 1 < len(self.picture_frames):
                     next_picture_frame = self.picture_frames[i + 1]
-                    if (next_picture_frame['x'] != picture_frame['x'] or next_picture_frame['y'] != picture_frame['y']):
+                    if 'x' in picture_frame and (next_picture_frame['x'] != picture_frame['x'] or next_picture_frame['y'] != picture_frame['y']):
                         picture_transitions.append(MoveTransition(next_picture_frame.get('wait', 0.001) / animation_fps))
                     else:
                         picture_transitions.append(None)

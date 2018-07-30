@@ -90,11 +90,20 @@ init python:
                 shown_picture = self.shown_pictures[picture_id]
                 reconstructed_picture_args = {
                     'image_name': shown_picture['image_name'],
-                    'x': shown_picture['final_x'],
-                    'y': shown_picture['final_y'],
-                    'size': shown_picture['final_size'],
                     'opacity': shown_picture['opacity']
                 }
+                if 'final_x' in shown_picture:
+                    reconstructed_picture_args.update({
+                        'x': shown_picture['final_x'],
+                        'y': shown_picture['final_y'],
+                        'size': shown_picture['final_size']
+                    })
+                elif 'x' in shown_picture:
+                    reconstructed_picture_args.update({
+                        'x': shown_picture['x'],
+                        'y': shown_picture['y'],
+                        'size': shown_picture['size']
+                    })
                 self.queued_pictures.append((picture_id, reconstructed_picture_args))
             self.queued_pictures.append((picture_id, args))
 
@@ -151,7 +160,7 @@ init python:
                 picture_args = {
                     "final_x": last_frame['x'],
                     "final_y": last_frame['y'],
-                    "final_size": last_frame['size'],
+                    "final_size": last_frame.get('size', None),
                     "opacity": picture_frames[-1]['opacity'],
                     "size": None
                 }
