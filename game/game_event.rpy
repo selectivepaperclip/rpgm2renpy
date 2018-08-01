@@ -680,6 +680,8 @@ init python:
                                 current_x, current_y = game_state.player_x, game_state.player_y
                             else:
                                 loc = self.state.map.event_location(self.event_data)
+                                if not loc:
+                                    break
                                 current_x, current_y = loc
 
                             new_x, new_y = current_x + delta_x, current_y + delta_y

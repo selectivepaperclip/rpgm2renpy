@@ -782,7 +782,8 @@ init python:
             if event_data['id'] in self.event_location_overrides:
                 return self.event_location_overrides[event_data['id']]
             else:
-                return (event_data['x'], event_data['y'])
+                if 'x' in event_data:
+                    return (event_data['x'], event_data['y'])
 
         def override_event_location(self, event_data, loc):
             if not hasattr(self, 'event_location_overrides'):
