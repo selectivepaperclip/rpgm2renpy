@@ -164,7 +164,8 @@ python early:
 
 init python:
     package_json = rpgm_plugins_loader.package_json()
-    config.window_icon = rpgm_path(package_json['window']['icon'])
+    if package_json:
+        config.window_icon = rpgm_path(package_json['window']['icon'])
 
 ## Build configuration #########################################################
 ##

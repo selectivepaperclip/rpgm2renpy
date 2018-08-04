@@ -22,6 +22,9 @@ init -10 python:
 
     class PluginsLoader(SelectivelyPickle):
         def package_json(self):
+            if is_pre_mv_version:
+                return None
+
             if not hasattr(self, '_package_json'):
                 with rpgm_file('package.json') as f:
                     self._package_json = json.load(f)
@@ -29,6 +32,9 @@ init -10 python:
             return self._package_json
 
         def json(self):
+            if is_pre_mv_version:
+                return []
+
             if not hasattr(self, '_json'):
                 with rpgm_file('www/js/plugins.js') as f:
                     # the plugins.js file starts with "var $plugins = ["
@@ -47,6 +53,26 @@ init -10 python:
 
     def rpgm_file(filename):
         return renpy.file(rpgm_path(filename))
+
+    def rpgm_data_file(filename):
+        if is_pre_mv_version:
+            return rpgm_file('JsonData/' + filename)
+        else:
+            return rpgm_file('www/data/' + filename)
+
+    class RpgmPaths():
+        def __init__(self, is_pre_mv_version = False):
+            if is_pre_mv_version:
+                self.pictures = rpgm_path("Graphics/Pictures/")
+                self.tilesets = rpgm_path("Graphics/Tilesets/")
+                self.characters = rpgm_path("Graphics/Characters/")
+            else:
+                self.pictures = rpgm_path("www/img/pictures/")
+                self.tilesets = rpgm_path("www/img/tilesets/")
+                self.characters = rpgm_path("www/img/characters/")
+
+    is_pre_mv_version = os.path.exists(os.path.join(renpy.config.basedir, rpgm_path('JsonData')))
+    rpgm_paths = RpgmPaths(is_pre_mv_version = is_pre_mv_version)
 
     rpgm_plugins_loader = PluginsLoader()
 
@@ -96,7 +122,7 @@ init python:
             return LiveComposite(*composite_args)
         return None
 
-    with rpgm_file('www/data/System.json') as f:
+    with rpgm_data_file('System.json') as f:
         system_data = json.load(f)
         title_screen_file_path = rpgm_path('www/img/titles1/' + system_data['title1Name'] + '.png')
         if os.path.exists(os.path.join(config.basedir, title_screen_file_path)):
@@ -106,16 +132,15 @@ init python:
             if title_layer_image:
                 gui.main_menu_background = title_layer_image
 
-    pictures_path = rpgm_path("www/img/pictures/")
-    for filename in os.listdir(os.path.join(config.basedir, pictures_path)):
+    for filename in os.listdir(os.path.join(config.basedir, rpgm_paths.pictures)):
         base, ext = os.path.splitext(os.path.basename(filename))
         if not supported_image(ext):
             continue
         pic_name = rpgm_picture_name(base)
         if renpy.has_image(pic_name, exact=True):
             continue
-        normal_images[pic_name] = pictures_path + filename
-        renpy.image(pic_name, pictures_path + filename)
+        normal_images[pic_name] = rpgm_paths.pictures + filename
+        renpy.image(pic_name, rpgm_paths.pictures + filename)
 
     movies_path = rpgm_path("www/movies/")
     if os.path.exists(os.path.join(config.basedir, movies_path)):
@@ -126,21 +151,19 @@ init python:
 
             renpy.image(image_name, scale_movie(movies_path + filename))
 
-    tilesets_path = rpgm_path("www/img/tilesets/")
-    for filename in os.listdir(os.path.join(config.basedir, tilesets_path)):
+    for filename in os.listdir(os.path.join(config.basedir, rpgm_paths.tilesets)):
         base, ext = os.path.splitext(os.path.basename(filename))
         if not supported_image(ext):
             continue
         image_name = base.replace(".", "_")
-        tile_images[image_name] = tilesets_path + filename
+        tile_images[image_name] = rpgm_paths.tilesets + filename
 
-    characters_path = rpgm_path("www/img/characters/")
-    for filename in os.listdir(os.path.join(config.basedir, characters_path)):
+    for filename in os.listdir(os.path.join(config.basedir, rpgm_paths.characters)):
         base, ext = os.path.splitext(os.path.basename(filename))
         if not supported_image(ext):
             continue
         image_name = base.replace(".", "_")
-        character_images[image_name] = characters_path + filename
+        character_images[image_name] = rpgm_paths.characters + filename
 
 label start:
     python:

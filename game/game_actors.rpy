@@ -14,7 +14,7 @@ init python:
 
         def data(self):
             if not hasattr(self, '_data'):
-                with rpgm_file('www/data/Actors.json') as f:
+                with rpgm_data_file('Actors.json') as f:
                     self._data = json.load(f)
 
             return self._data

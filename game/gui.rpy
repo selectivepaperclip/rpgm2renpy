@@ -16,6 +16,8 @@ init python:
         gui.init(int(resolution_plugin['parameters']['Screen Width']), int(resolution_plugin['parameters']['Screen Height']))
     elif screen_resolution_plugin:
         gui.init(int(screen_resolution_plugin['parameters']['Screen Width']), int(screen_resolution_plugin['parameters']['Screen Height']))
+    elif is_pre_mv_version:
+        gui.init(1024, 768)
     else:
         gui.init(1280, 720)
 
@@ -474,6 +476,3 @@ init python:
 
         gui.nvl_button_width = 1240
         gui.nvl_button_xpos = 20
-
-
-

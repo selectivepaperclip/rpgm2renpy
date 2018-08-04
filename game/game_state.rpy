@@ -179,21 +179,21 @@ init python:
 
         def system_data(self):
             if not hasattr(self, '_system_data'):
-                with rpgm_file('www/data/System.json') as f:
+                with rpgm_data_file('System.json') as f:
                     self._system_data = json.load(f)
 
             return self._system_data
 
         def common_events_data(self):
             if not hasattr(self, '_common_events_data'):
-                with rpgm_file('www/data/CommonEvents.json') as f:
+                with rpgm_data_file('CommonEvents.json') as f:
                     self._common_events_data = json.load(f)
 
             return self._common_events_data
 
         def tilesets(self):
             if not hasattr(self, '_tilesets'):
-                with rpgm_file('www/data/Tilesets.json') as f:
+                with rpgm_data_file('Tilesets.json') as f:
                     self._tilesets = json.load(f)
 
             return self._tilesets
@@ -224,7 +224,7 @@ init python:
             group_data_list = [plugin_data for plugin_data in plugins if plugin_data['name'].startswith('OrangeHudGroup')]
 
             groups = {}
-            for group_data in group_data_list:            
+            for group_data in group_data_list:
                 groups[group_data['parameters']['GroupName']] = group_data
             main_group = next((plugin_data for plugin_data in plugins if plugin_data['name'] == 'OrangeHud'), None)
             if main_group:
