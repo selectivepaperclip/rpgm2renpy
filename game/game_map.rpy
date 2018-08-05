@@ -69,8 +69,8 @@ init python:
                 if tile.y > largest_y:
                     largest_y = tile.y
 
-            self.width = (largest_x + 1) * GameMap.TILE_WIDTH
-            self.height = (largest_y + 1) * GameMap.TILE_HEIGHT
+            self.width = (largest_x + 1) * rpgm_metadata.tile_width
+            self.height = (largest_y + 1) * rpgm_metadata.tile_height
             self.tiles = tiles
 
         def __getstate__(self):
@@ -93,7 +93,7 @@ init python:
                       img_size = image_sizes[img_path]
                       if tile.sx + tile.w <= img_size[0] and tile.sy + tile.h <= img_size[1]:
                           img = im.Crop(img_path, (tile.sx, tile.sy, tile.w, tile.h))
-                          self._r.blit(img.render(tile.w, tile.h, 0, 0), (tile.dx + int(tile.x * GameMap.TILE_WIDTH), tile.dy + int(tile.y * GameMap.TILE_HEIGHT)))
+                          self._r.blit(img.render(tile.w, tile.h, 0, 0), (tile.dx + int(tile.x * rpgm_metadata.tile_width), tile.dy + int(tile.y * rpgm_metadata.tile_height)))
                       else:
                           print ("Image source out of bounds! '%s', imgWidth: %s, imgHeight: %s, sourceX: %s, sourceY: %s, sourceWidth: %s, sourceHeight: %s" % (tile.tileset_name, img_size[0], img_size[1], tile.sx, tile.sy, tile.w, tile.h))
 
@@ -153,9 +153,6 @@ init python:
             [[2,0],[1,0],[2,1],[1,1]],[[0,0],[1,0],[0,1],[1,1]],
             [[2,0],[3,0],[2,1],[3,1]],[[0,0],[3,0],[0,1],[3,1]]
         ]
-
-        TILE_WIDTH = 48
-        TILE_HEIGHT = 48
 
         def __init__(self, state, map_id):
             self.state = state
@@ -250,10 +247,10 @@ init python:
             else:
                 set_number = 5 + tile_id // 256
 
-            sx = ((tile_id // 128) % 2 * 8 + tile_id % 8) * GameMap.TILE_WIDTH
-            sy = ((tile_id % 256 // 8) % 16) * GameMap.TILE_HEIGHT
+            sx = ((tile_id // 128) % 2 * 8 + tile_id % 8) * rpgm_metadata.tile_width
+            sy = ((tile_id % 256 // 8) % 16) * rpgm_metadata.tile_height
 
-            return GameTile(tile_id = tile_id, sx = sx, sy = sy, dx = 0, dy = 0, w = GameMap.TILE_WIDTH, h = GameMap.TILE_HEIGHT, set_number = set_number)
+            return GameTile(tile_id = tile_id, sx = sx, sy = sy, dx = 0, dy = 0, w = rpgm_metadata.tile_width, h = rpgm_metadata.tile_height, set_number = set_number)
 
         def auto_tile_data(self, tile_id):
             result = []
@@ -312,8 +309,8 @@ init python:
             table = autotile_table[shape]
 
             if table:
-                w1 = GameMap.TILE_WIDTH // 2
-                h1 = GameMap.TILE_HEIGHT // 2
+                w1 = rpgm_metadata.tile_width // 2
+                h1 = rpgm_metadata.tile_height // 2
                 for i in xrange(0, 4):
                     qsx = table[i][0]
                     qsy = table[i][1]
@@ -564,10 +561,10 @@ init python:
             set_number = 5 + (image_data['tileId'] // 256)
             tileset_name = tileset_names[set_number]
 
-            sx = ((image_data['tileId'] // 128) % 2 * 8 + image_data['tileId'] % 8) * GameMap.TILE_WIDTH
-            sy = ((image_data['tileId'] % 256) // 8) % 16 * GameMap.TILE_HEIGHT
+            sx = ((image_data['tileId'] // 128) % 2 * 8 + image_data['tileId'] % 8) * rpgm_metadata.tile_width
+            sy = ((image_data['tileId'] % 256) // 8) % 16 * rpgm_metadata.tile_height
 
-            img = im.Crop(tile_images[tileset_name.replace(".", "_")], (sx, sy, GameMap.TILE_WIDTH, GameMap.TILE_HEIGHT))
+            img = im.Crop(tile_images[tileset_name.replace(".", "_")], (sx, sy, rpgm_metadata.tile_width, rpgm_metadata.tile_height))
             return (img,)
 
         def sprites(self):

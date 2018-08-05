@@ -50,22 +50,22 @@ screen mapscreen(
 
             if background_image:
                 button:
-                    xpos x_offset + int(player_position[0] * GameMap.TILE_WIDTH)
-                    xsize GameMap.TILE_WIDTH
-                    ypos y_offset + int(player_position[1] * GameMap.TILE_HEIGHT)
-                    ysize GameMap.TILE_HEIGHT
+                    xpos x_offset + int(player_position[0] * rpgm_metadata.tile_width)
+                    xsize rpgm_metadata.tile_width
+                    ypos y_offset + int(player_position[1] * rpgm_metadata.tile_height)
+                    ysize rpgm_metadata.tile_height
                     background Color("#00f", alpha = 0.5)
 
             if background_image:
                 for sprite_data in sprites:
                     python:
                         x, y, img = sprite_data[0:3]
-                        screen_x = x * GameMap.TILE_WIDTH
-                        screen_y = y * GameMap.TILE_HEIGHT
+                        screen_x = x * rpgm_metadata.tile_width
+                        screen_y = y * rpgm_metadata.tile_height
                         if len(sprite_data) > 3:
                             pw, ph, shift_y = sprite_data[3:6]
-                            screen_x += (GameMap.TILE_WIDTH / 2) - (pw / 2)
-                            screen_y += (GameMap.TILE_HEIGHT) - (ph + shift_y)
+                            screen_x += (rpgm_metadata.tile_width / 2) - (pw / 2)
+                            screen_y += (rpgm_metadata.tile_height) - (ph + shift_y)
 
                     add img:
                         xpos x_offset + int(screen_x)
@@ -85,20 +85,20 @@ screen mapscreen(
         fixed at mapzoom(mapfactor):
             for coord in impassible_tiles:
                 button:
-                    xpos x_offset + int(coord[0] * GameMap.TILE_WIDTH)
-                    xsize GameMap.TILE_WIDTH
-                    ypos y_offset + int(coord[1] * GameMap.TILE_HEIGHT)
-                    ysize GameMap.TILE_HEIGHT
+                    xpos x_offset + int(coord[0] * rpgm_metadata.tile_width)
+                    xsize rpgm_metadata.tile_width
+                    ypos y_offset + int(coord[1] * rpgm_metadata.tile_height)
+                    ysize rpgm_metadata.tile_height
                     background Color("#000", alpha = 0.9)
                     tooltip("(%s, %s)" % coord)
                     action NullAction()
 
             for i, coord in enumerate(coords):
                 button:
-                    xpos x_offset + int(coord.x * GameMap.TILE_WIDTH)
-                    xsize GameMap.TILE_WIDTH
-                    ypos y_offset + int(coord.y * GameMap.TILE_HEIGHT)
-                    ysize GameMap.TILE_HEIGHT
+                    xpos x_offset + int(coord.x * rpgm_metadata.tile_width)
+                    xsize rpgm_metadata.tile_width
+                    ypos y_offset + int(coord.y * rpgm_metadata.tile_height)
+                    ysize rpgm_metadata.tile_height
                     background Color(coord.map_color(), alpha = 0.5)
                     hover_background Color("#00f", alpha = 0.5)
                     tooltip coord.tooltip()

@@ -624,9 +624,9 @@ init python:
                 #print ("px: %s, py: %s, w: %s, h: %s" % (self.player_x, self.player_y, width, height))
 
                 if self.player_x > 19:
-                    x_initial = int((self.player_x - 19) * GameMap.TILE_WIDTH * mapfactor)
+                    x_initial = int((self.player_x - 19) * rpgm_metadata.tile_width * mapfactor)
                 if self.player_y > 12:
-                    y_initial = int((self.player_y - 12) * GameMap.TILE_HEIGHT * mapfactor)
+                    y_initial = int((self.player_y - 12) * rpgm_metadata.tile_height * mapfactor)
                 background_image = None
             else:
                 map_width = background_image.width + 50
