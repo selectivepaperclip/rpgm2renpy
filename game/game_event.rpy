@@ -608,6 +608,10 @@ init python:
                         else:
                             self.state.party.remove_actor(actor_index)
 
+                # Change save access
+                elif command['code'] == 134:
+                    pass
+
                 # Toggle menu access
                 elif command['code'] == 135:
                     pass
