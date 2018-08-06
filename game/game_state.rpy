@@ -43,8 +43,7 @@ init python:
             self.queued_pictures = []
             self.everything_reachable = False
 
-        def __setstate__(self, d):
-            self.__dict__.update(d)
+        def migrate_event_to_events(self):
             if not hasattr(self, 'events'):
                 self.events = [event for event in [self.event] if event]
 
@@ -496,6 +495,7 @@ init python:
             self.events.append(GameEvent(self, common_event, common_event))
 
         def do_next_thing(self, mapdest, keyed_common_event):
+            self.migrate_event_to_events()
             self.migrate_player_x()
             self.skip_bad_events()
             if len(self.events) > 0:
