@@ -945,9 +945,11 @@ init python:
                 elif command['code'] == 412:
                     pass
 
-                # TODO: Unknown
+                # TODO: Something related to movement (friends with command 205)
                 elif command['code'] == 505:
-                    pass
+                    # Skip all contiguous 505s to reduce log spam with noisy_events
+                    while self.page['list'][self.list_index + 1]['code'] == 505:
+                        self.list_index += 1
 
                 else:
                     renpy.say(None, "Code %d not implemented, plz fix." % command['code'])
