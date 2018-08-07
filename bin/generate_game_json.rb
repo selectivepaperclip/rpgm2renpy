@@ -3,9 +3,8 @@
 require 'yaml'
 require 'ostruct'
 require 'fileutils'
-require 'byebug'
-load 'rpgmaker_fakes.rb'
-load 'vx_ace_to_mv.rb'
+require_relative 'rpgmaker_fakes'
+require_relative 'vx_ace_to_mv'
 
 if ARGV.length != 1
   puts "Usage: #{$0} path/to/an/rpgmaker/xp/vx/or/vxace/game"
