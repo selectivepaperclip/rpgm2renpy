@@ -1,5 +1,7 @@
 init python:
     class GameIdentifier:
+        def is_milfs_control(self):
+            return rpgm_game_data.get('long_name', '') == "Milf's Control"
         def is_milfs_villa(self):
             return game_state.system_data()['gameTitle'] == 'Milfs Villa v1.0 Final'
         def is_ics2(self):

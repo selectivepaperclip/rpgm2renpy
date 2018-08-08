@@ -227,6 +227,8 @@ init python:
                     self.state.self_switches.set_value((map_id, event_id, self_switch_name), self_switch_value)
                 elif line == 'SceneManager.push(Scene_Menu);':
                     self.state.show_inventory()
+                elif GameIdentifier().is_milfs_control() and GameSpecificCodeMilfsControl().eval_script(line, script_string):
+                    pass
                 else:
                     print "Script that could not be evaluated:\n"
                     print script_string
