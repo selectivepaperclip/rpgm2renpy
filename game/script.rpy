@@ -18,6 +18,7 @@ define viewport_yadjustment = ui.adjustment()
 define animation_fps = 60.0
 
 init -10 python:
+    import glob
     build.classify('rpgmdata', 'all')
 
     class PluginsLoader(SelectivelyPickle):
@@ -60,6 +61,9 @@ init -10 python:
         else:
             return rpgm_file('www/data/' + filename)
 
+    def supported_image(ext):
+        return ext.lower() in [ ".jpg", ".jpeg", ".png", ".webp" ]
+
     class RpgmMetadata():
         def __init__(self):
             self.is_pre_mv_version = os.path.exists(os.path.join(renpy.config.basedir, rpgm_path('JsonData')))
@@ -78,6 +82,19 @@ init -10 python:
                 self.tile_width = 48
                 self.tile_height = 48
 
+        def title_screen_file(self, base_file):
+            titles_path = None
+            if self.is_pre_mv_version:
+                titles_path = rpgm_path('Graphics/Titles1/')
+            else:
+                titles_path = rpgm_path('www/img/titles1/')
+
+            if os.path.exists(os.path.join(config.basedir, titles_path)):
+                for filename in glob.glob(os.path.join(config.basedir, titles_path, '%s.*' % base_file)):
+                    base, ext = os.path.splitext(os.path.basename(filename))
+                    if supported_image(ext):
+                        return filename.replace("\\", "/")
+
     rpgm_metadata = RpgmMetadata()
 
     rpgm_plugins_loader = PluginsLoader()
@@ -95,9 +112,6 @@ init python:
 
     def scale_movie(path):
         return Movie(play=path, size=(config.screen_width, config.screen_height))
-
-    def supported_image(ext):
-        return ext.lower() in [ ".jpg", ".jpeg", ".png", ".webp" ]
 
     def rpgm_picture_name(base):
         return 'rpgmpicture-' + base.lower()
@@ -130,8 +144,8 @@ init python:
 
     with rpgm_data_file('System.json') as f:
         system_data = json.load(f)
-        title_screen_file_path = rpgm_path('www/img/titles1/' + system_data['title1Name'] + '.png')
-        if os.path.exists(os.path.join(config.basedir, title_screen_file_path)):
+        title_screen_file_path = rpgm_metadata.title_screen_file(system_data['title1Name'])
+        if title_screen_file_path:
             gui.main_menu_background = scale_image(title_screen_file_path)
         else:
             title_layer_image = mog_title_layer_image()
