@@ -65,12 +65,14 @@ init -10 python:
             self.is_pre_mv_version = os.path.exists(os.path.join(renpy.config.basedir, rpgm_path('JsonData')))
             if self.is_pre_mv_version:
                 self.pictures_path = rpgm_path("Graphics/Pictures/")
+                self.movies_path = rpgm_path("Movies/")
                 self.tilesets_path = rpgm_path("Graphics/Tilesets/")
                 self.characters_path = rpgm_path("Graphics/Characters/")
                 self.tile_width = 32
                 self.tile_height = 32
             else:
                 self.pictures_path = rpgm_path("www/img/pictures/")
+                self.movies_path = rpgm_path("www/movies/")
                 self.tilesets_path = rpgm_path("www/img/tilesets/")
                 self.characters_path = rpgm_path("www/img/characters/")
                 self.tile_width = 48
@@ -146,14 +148,13 @@ init python:
         normal_images[pic_name] = rpgm_metadata.pictures_path + filename
         renpy.image(pic_name, rpgm_metadata.pictures_path + filename)
 
-    movies_path = rpgm_path("www/movies/")
-    if os.path.exists(os.path.join(config.basedir, movies_path)):
-        for filename in os.listdir(os.path.join(config.basedir, movies_path)):
+    if os.path.exists(os.path.join(config.basedir, rpgm_metadata.movies_path)):
+        for filename in os.listdir(os.path.join(config.basedir, rpgm_metadata.movies_path)):
             image_name = rpgm_movie_name(os.path.splitext(os.path.basename(filename))[0])
             if renpy.has_image(image_name, exact=True):
                 continue
 
-            renpy.image(image_name, scale_movie(movies_path + filename))
+            renpy.image(image_name, scale_movie(rpgm_metadata.movies_path + filename))
 
     for filename in os.listdir(os.path.join(config.basedir, rpgm_metadata.tilesets_path)):
         base, ext = os.path.splitext(os.path.basename(filename))
