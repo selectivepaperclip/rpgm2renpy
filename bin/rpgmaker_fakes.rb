@@ -28,6 +28,10 @@ module RPG
       @c
     end
 
+    def code=(c)
+      @c = c
+    end
+
     def indent
       @i
     end
@@ -35,9 +39,21 @@ module RPG
     def parameters
       @p
     end
+
+    def parameters=(p)
+      @p = p
+    end
   end
   class MoveRoute < RpgmYamlObject; end
-  class MoveCommand < RpgmYamlObject; end
+  class MoveCommand < RpgmYamlObject
+    def code=(c)
+      @code = c
+    end
+
+    def parameters=(p)
+      @parameters = p
+    end
+  end
   class System < RpgmYamlObject; end
   class System::Vehicle < RpgmYamlObject; end
   class System::Terms < RpgmYamlObject; end

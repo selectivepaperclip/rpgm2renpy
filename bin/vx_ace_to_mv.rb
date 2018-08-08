@@ -1244,7 +1244,8 @@ module DEGICA
           param = get_color(param)
         end
 
-        if param.to_s.match(/#/)
+        if param.to_s.match(/^\s*#/)
+          print param
           debugger
         end
         res += param.to_s
