@@ -4,8 +4,33 @@ init python:
     import pygame_sdl2.image
     from Queue import PriorityQueue
 
+    class ReachabilityGridCache:
+        MAX_CACHE_ITEMS = 5
+
+        def __init__(self):
+            self.cache = {}
+
+        def get(self, key):
+            if key in self.cache:
+                return self.cache[key][1]
+            return None
+
+        def set(self, key, grid):
+            if len(self.cache) > ReachabilityGridCache.MAX_CACHE_ITEMS:
+                if debug_reachability_grid:
+                    print "More than %s items in grid (%s), purging oldest one" % (ReachabilityGridCache.MAX_CACHE_ITEMS, len(self.cache))
+                oldest_key = None
+                oldest_time = time.time()
+                for key, (time_added, grid) in self.cache.iteritems():
+                    if time_added < oldest_time:
+                        oldest_time = time_added
+                        oldest_key = key
+                del self.cache[oldest_key]
+
+            self.cache[key] = (time.time(), grid)
+
     class MapClickable:
-        def __init__(self, x, y, label = None, special = False, clicky = False, has_commands = True, walk_destination = False):
+        def __init__(self, x, y, label = None, special = False, page_index = None, clicky = False, has_commands = True, walk_destination = False):
             self.x = x
             self.y = y
             self.label = label
@@ -14,6 +39,7 @@ init python:
             self.clicky = clicky
             self.has_commands = has_commands
             self.walk_destination = walk_destination
+            self.page_index = page_index
 
         def is_walk_destination(self):
             if hasattr(self, 'walk_destination') and self.walk_destination:
@@ -734,8 +760,18 @@ init python:
             return self.reachability_grid(game_state.player_x, game_state.player_y, self.map_options(game_state.player_x, game_state.player_y, ignore_clicky = True))
 
         def reachability_grid(self, player_x, player_y, event_coords):
-            if hasattr(self, '_reachability_grid_cache') and (player_x, player_y) in self._reachability_grid_cache:
-                return self._reachability_grid_cache[(player_x, player_y)]
+            if not hasattr(self, '_reachability_grid_cache'):
+                self._reachability_grid_cache = ReachabilityGridCache()
+
+            cache_key = (player_x, player_y, tuple((coord.x, coord.y, coord.page_index) for coord in event_coords))
+            cached_grid = self._reachability_grid_cache.get(cache_key)
+            if cached_grid:
+                if debug_reachability_grid:
+                    print "REACHABILITY GRID FOR MAP %s / %s LOCS: Cache hit!" % (self.map_id, len(event_coords))
+                return cached_grid
+            else:
+                if debug_reachability_grid:
+                    print "REACHABILITY GRID FOR MAP %s / %s LOCS: Cache miss!" % (self.map_id, len(event_coords))
 
             if profile_timings:
                 started = time.time()
@@ -765,16 +801,11 @@ init python:
             # for row in reachability_grid:
             #     print row
 
-            if not hasattr(self, '_reachability_grid_cache'):
-                self._reachability_grid_cache = {}
-            self._reachability_grid_cache[(player_x, player_y)] = reachability_grid
+            self._reachability_grid_cache.set(cache_key, reachability_grid)
             if profile_timings:
                 print "Reachability grid took %s" % (time.time() - started)
 
             return reachability_grid
-
-        def clear_reachability_grid_cache(self):
-            self._reachability_grid_cache = {}
 
         def assign_reachability(self, player_x, player_y, event_coords):
             reachability_grid = self.reachability_grid(player_x, player_y, event_coords)
@@ -816,7 +847,7 @@ init python:
             pushable_locations = []
 
             for e in self.active_events():
-                for page in reversed(e['pages']):
+                for reverse_page_index, page in enumerate(reversed(e['pages'])):
                     if self.meets_conditions(e, page['conditions']):
                         # Allow trigger 3/4 (autorun/parallel) events to match so the pages under them don't get matched instead
                         # But these events shouldn't actually show up on the map, they will be triggered by the event loop
@@ -827,6 +858,7 @@ init python:
                         map_clickable = MapClickable(
                             loc[0],
                             loc[1],
+                            page_index = (len(e['pages']) - 1) - reverse_page_index,
                             label = self.page_label(page),
                             special = self.event_is_special(e),
                             clicky = self.clicky_event(e, page),

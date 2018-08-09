@@ -1,6 +1,7 @@
 ﻿define debug_events = False
 define noisy_events = False
 define debug_pickling = False
+define debug_reachability_grid = False
 define profile_timings = False
 define tile_images = {}
 define normal_images = {}

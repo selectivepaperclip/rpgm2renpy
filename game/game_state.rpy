@@ -499,8 +499,6 @@ init python:
             self.migrate_player_x()
             self.skip_bad_events()
             if len(self.events) > 0:
-                self.map.clear_reachability_grid_cache()
-
                 this_event = self.events[-1]
                 new_event = this_event.do_next_thing()
                 if new_event:
