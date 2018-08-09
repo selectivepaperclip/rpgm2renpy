@@ -611,8 +611,7 @@ init python:
             mapfactor = 1
 
             background_image = self.map.background_image()
-            width = background_image.width
-            height = background_image.height
+            width, height = (self.map.image_width, self.map.image_height)
 
             if self.map.is_clicky(self.player_x, self.player_y):
                 # assume we want to show about 40 tiles wide, 22 tiles high
@@ -629,8 +628,8 @@ init python:
                     y_initial = int((self.player_y - 12) * rpgm_metadata.tile_height * mapfactor)
                 background_image = None
             else:
-                map_width = background_image.width + 50
-                map_height = background_image.height + 50
+                map_width = width + 50
+                map_height = height + 50
 
                 width_ratio = config.screen_width / float(map_width)
                 height_ratio = config.screen_height / float(map_height)

@@ -20,6 +20,7 @@ define animation_fps = 60.0
 init -10 python:
     import glob
     build.classify('rpgmdata', 'all')
+    build.classify('rpgmcache/**', None)
 
     class PluginsLoader(SelectivelyPickle):
         def package_json(self):
@@ -63,6 +64,10 @@ init -10 python:
 
     def supported_image(ext):
         return ext.lower() in [ ".jpg", ".jpeg", ".png", ".webp" ]
+
+    cache_directory = os.path.join(renpy.config.basedir, 'rpgmcache').replace('\\', '/')
+    if not os.path.exists(cache_directory):
+        os.makedirs(cache_directory)
 
     class RpgmMetadata():
         def __init__(self):

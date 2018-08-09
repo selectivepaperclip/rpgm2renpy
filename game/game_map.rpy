@@ -1,5 +1,7 @@
 init python:
     import time
+    import pygame
+    import pygame_sdl2.image
     from Queue import PriorityQueue
 
     class MapClickable:
@@ -57,9 +59,14 @@ init python:
             self.h = h
             self.set_number = set_number
 
+    # Original GameMapBackground class for compatibility with earlier saves
     class GameMapBackground(renpy.Displayable):
-        def __init__(self, tiles, **kwargs):
-            super(GameMapBackground, self).__init__(**kwargs)
+        pass
+
+    class GameMapBackgroundGenerator():
+        def __init__(self, map_id, tiles, cache_file):
+            self.map_id = map_id
+            self.cache_file = cache_file
 
             largest_x = 0
             largest_y = 0
@@ -80,24 +87,26 @@ init python:
                 print map_pickle_values
             return dict(map_pickle_values)
 
-        def render(self, width, height, st, at):
-            if not hasattr(self, '_r'):
-              self._r = renpy.Render(self.width, self.height)
+        def save(self):
+            # Caching code borrowed from https://github.com/renpy/renpy/blob/f40e61dfdfbf723f9eac88bbfec7765b45599682/renpy/display/imagemap.py
+            # because it's hard as hell to figure out what incantations to do without source-diving
 
-              for tile in self.tiles:
-                  if len(tile.tileset_name) > 0:
-                      img_path = tile_images[tile.tileset_name.replace(".", "_")]
-                      img_size = None
-                      if img_path not in image_sizes:
-                          image_sizes[img_path] = renpy.image_size(img_path)
-                      img_size = image_sizes[img_path]
-                      if tile.sx + tile.w <= img_size[0] and tile.sy + tile.h <= img_size[1]:
-                          img = im.Crop(img_path, (tile.sx, tile.sy, tile.w, tile.h))
-                          self._r.blit(img.render(tile.w, tile.h, 0, 0), (tile.dx + int(tile.x * rpgm_metadata.tile_width), tile.dy + int(tile.y * rpgm_metadata.tile_height)))
-                      else:
-                          print ("Image source out of bounds! '%s', imgWidth: %s, imgHeight: %s, sourceX: %s, sourceY: %s, sourceWidth: %s, sourceHeight: %s" % (tile.tileset_name, img_size[0], img_size[1], tile.sx, tile.sy, tile.w, tile.h))
+            surf = pygame.Surface((self.width, self.height), pygame.SRCALPHA, 32)
 
-            return self._r
+            for tile in self.tiles:
+                if len(tile.tileset_name) > 0:
+                    img_path = tile_images[tile.tileset_name.replace(".", "_")]
+                    img_size = None
+                    if img_path not in image_sizes:
+                        image_sizes[img_path] = renpy.image_size(img_path)
+                    img_size = image_sizes[img_path]
+                    if tile.sx + tile.w <= img_size[0] and tile.sy + tile.h <= img_size[1]:
+                        subsurface = renpy.display.im.cache.get(Image(img_path)).subsurface((tile.sx, tile.sy, tile.w, tile.h))
+                        surf.blit(subsurface, (tile.dx + int(tile.x * rpgm_metadata.tile_width), tile.dy + int(tile.y * rpgm_metadata.tile_height)))
+                    else:
+                        print ("Image source out of bounds! '%s', imgWidth: %s, imgHeight: %s, sourceX: %s, sourceY: %s, sourceWidth: %s, sourceHeight: %s" % (tile.tileset_name, img_size[0], img_size[1], tile.sx, tile.sy, tile.w, tile.h))
+
+            pygame_sdl2.image.save(surf, self.cache_file)
 
     class GameMap(SelectivelyPickle):
         TILE_ID_B      = 0
@@ -170,15 +179,23 @@ init python:
             return self._data
 
         def background_image(self):
-            if not hasattr(self, '_background_image'):
-                self._background_image = self.generate_background_image()
+            if not hasattr(self, '_background_image') or isinstance(self._background_image, GameMapBackground):
+                if not os.path.exists(self.background_image_cache_file()):
+                    self.generate_background_image()
+                self._background_image = Image(self.background_image_cache_file())
+            if not hasattr(self, 'image_width'):
+                image_size = renpy.image_size(self._background_image)
+                self.image_width = image_size[0]
+                self.image_height = image_size[1]
 
             return self._background_image
 
+        def background_image_cache_file(self):
+            return os.path.join(renpy.config.basedir, 'rpgmcache', ('Map%03d.png' % self.map_id)).replace("\\", "/")
+
         def generate_background_image(self):
-            tiles = self.tiles()
-            d = GameMapBackground(self.tiles())
-            return d
+            bg = GameMapBackgroundGenerator(self.map_id, self.tiles(), self.background_image_cache_file())
+            bg.save()
 
         def clicky_command(self, command):
            return (command['code'] == 108) and (command['parameters'][0] == 'click_activate!')
