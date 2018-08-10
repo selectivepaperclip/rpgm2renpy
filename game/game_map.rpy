@@ -227,6 +227,9 @@ init python:
            return (command['code'] == 108) and (command['parameters'][0] == 'click_activate!')
 
         def clicky_event(self, event, page):
+            if event['note'] == 'click_activate!':
+                return True
+
             first_event_command = event['pages'][0]['list'][0]
             if first_event_command and self.clicky_command(first_event_command):
                 return True
@@ -788,9 +791,6 @@ init python:
                     if reachability_grid[ay][ax] == 0 and (not self.is_impassible(mx, my, adirection) and not self.is_impassible(ax, ay, GameDirection.reverse_direction(adirection))):
                         coords_to_mark.append(adjacent_coord[0:2])
 
-            # for row in reachability_grid:
-            #     print row
-
             self._reachability_grid_cache.set(cache_key, reachability_grid)
             if profile_timings:
                 print "Reachability grid took %s" % (time.time() - started)
@@ -805,6 +805,10 @@ init python:
 
             for map_clickable in event_coords:
                 map_clickable.reachable = False
+                if hasattr(map_clickable, 'clicky') and map_clickable.clicky:
+                    map_clickable.reachable = True
+                    continue
+
                 for adjacent_coord in self.adjacent_coords(map_clickable.x, map_clickable.y, max_x, max_y):
                     ax, ay, adirection = adjacent_coord
                     if reachability_grid[ay][ax] == 3:
