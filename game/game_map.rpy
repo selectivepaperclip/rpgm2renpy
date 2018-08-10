@@ -617,13 +617,14 @@ init python:
             result = []
 
             player_character_actor = self.state.actors.by_index(1)
-            player_character_sprite_data = {
-                "characterName": player_character_actor['characterName'],
-                "characterIndex": player_character_actor['characterIndex'],
-                "pattern": 0,
-                "direction": game_state.player_direction
-            }
-            result.append((game_state.player_x, game_state.player_y) + self.character_sprite(player_character_sprite_data))
+            if player_character_actor['characterName'] != '':
+                player_character_sprite_data = {
+                    "characterName": player_character_actor['characterName'],
+                    "characterIndex": player_character_actor['characterIndex'],
+                    "pattern": 0,
+                    "direction": game_state.player_direction
+                }
+                result.append((game_state.player_x, game_state.player_y) + self.character_sprite(player_character_sprite_data))
 
             for e in self.active_events():
                 for page in reversed(e['pages']):
