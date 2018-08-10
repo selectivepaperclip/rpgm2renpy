@@ -730,18 +730,8 @@ init python:
             return None
 
         def hide_buggy_event(self, event, page):
-            # Milf's Villa has a scene where you need to cover a hole with an ottoman.
-            # If you move the ottoman to the area before there is a hole, even in the original game, it will be lost forever.
             if GameIdentifier().is_milfs_villa():
-                if self.map_id == 19:
-                    # Fix broken state from savegames before this fix was in - if the hole was covered before the hole existed,
-                    # the switches will be in the wrong state
-                    if game_state.switches.value(59) == True and game_state.switches.value(61) == True:
-                        game_state.switches.set_value(61, False)
-
-                    # Hide the ottoman destination tiles if the quest is not to the phase where the ottoman should be moved there
-                    if event['id'] in [14, 15, 16]:
-                        return game_state.switches.value(59) != True
+                return GameSpecificCodeMilfsVilla().hide_buggy_event(self, event, page)
             return False
 
         def adjacent_coords(self, x, y, max_x, max_y):
