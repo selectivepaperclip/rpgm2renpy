@@ -9,7 +9,7 @@ init python:
         def set_value(self, key, value):
             if value:
                 self.switch_values[key] = value
-            else:
+            elif key in self.switch_values:
                 del self.switch_values[key]
 
         def print_values(self):
