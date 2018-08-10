@@ -63,8 +63,12 @@ init python:
                     picture_id = int(re.search("(\d+)$", tag).groups()[0])
                     displayable = renpy.display.core.displayable_by_tag('master', tag)
                     if len(displayable.children) == 1:
-                      image_name = ' '.join(displayable.children[0].name)
-                      game_state.show_picture(picture_id, {'image_name': rpgm_picture_name(image_name)})
+                        image_name = ' '.join(displayable.children[0].name)
+                        child_size = displayable.child_size
+                        game_state.show_picture(picture_id, {
+                            'image_name': rpgm_picture_name(image_name),
+                            'size': (int(child_size[0]), int(child_size[1])),
+                        })
                     renpy.hide(tag)
             elif not hasattr(self, 'migrated_image_prefixes'):
                 for picture_args in self.shown_pictures.itervalues():
@@ -157,10 +161,10 @@ init python:
             for picture_id, picture_frames in frame_data.iteritems():
                 last_frame = picture_frames[-1]
                 picture_args = {
-                    "final_x": last_frame['x'],
-                    "final_y": last_frame['y'],
+                    "final_x": last_frame.get('x', 0),
+                    "final_y": last_frame.get('y', 0),
                     "final_size": last_frame.get('size', None),
-                    "opacity": picture_frames[-1]['opacity'],
+                    "opacity": picture_frames[-1].get('opacity', 255),
                     "size": None
                 }
                 if len(picture_frames) == 1:
