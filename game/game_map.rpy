@@ -753,7 +753,7 @@ init python:
             return self.reachability_grid(game_state.player_x, game_state.player_y, self.map_options(game_state.player_x, game_state.player_y, ignore_clicky = True))
 
         def reachability_grid(self, player_x, player_y, event_coords):
-            if not hasattr(self, '_reachability_grid_cache'):
+            if not hasattr(self, '_reachability_grid_cache') or not isinstance(self._reachability_grid_cache, ReachabilityGridCache):
                 self._reachability_grid_cache = ReachabilityGridCache()
 
             cache_key = (player_x, player_y, tuple((coord.x, coord.y, coord.page_index) for coord in event_coords))
