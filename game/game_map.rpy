@@ -424,7 +424,14 @@ init python:
             if self.forced_passible(x, y):
                 return False
 
-            if self.tile_region(x, y) == 1:
+            tile_region = self.tile_region(x, y)
+            if tile_region == 1:
+                return True
+
+            # Technically this only applies if the Restrict_with_Region plugin is installed,
+            # and the region ids are configurable, but it's simplest to just assume any
+            # VX Ace game that uses these region ids intended them to be impassible.
+            if rpgm_metadata.is_pre_mv_version and (tile_region in [61, 62]):
                 return True
 
             tile_ids = [self.tile_id(x, y, z) for z in xrange(3, -1, -1)]
