@@ -211,6 +211,8 @@ init python:
 
                 if 'ImageManager' in line:
                     pass
+                elif line == 'Cache.clear':
+                    pass
                 elif variable_set_command:
                     groups = variable_set_command.groups()
                     variable_id = int(groups[0])
