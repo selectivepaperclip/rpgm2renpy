@@ -435,7 +435,8 @@ init python:
                 return False
 
             tile_region = self.tile_region(x, y)
-            if tile_region == 1:
+            # Technically might only be valid if the YEP_RegionRestrictions plugin is installed
+            if not rpgm_metadata.is_pre_mv_version and tile_region == 1:
                 return True
 
             # Technically this only applies if the Restrict_with_Region plugin is installed,
