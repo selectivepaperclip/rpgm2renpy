@@ -10,6 +10,7 @@ screen mapscreen(
     impassible_tiles = None,
     common_events_keymap = None,
     background_image = None,
+    parallax_image = None,
     width = None,
     height = None,
     x_initial = 0,
@@ -44,6 +45,11 @@ screen mapscreen(
         draggable (not in_interaction)
         scrollbars (not in_interaction)
         fixed at mapzoom(mapfactor):
+            if parallax_image:
+                add parallax_image:
+                    xpos x_offset
+                    ypos y_offset
+
             add background_image:
                 xpos x_offset
                 ypos y_offset

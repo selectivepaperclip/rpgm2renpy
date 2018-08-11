@@ -7,6 +7,7 @@ define tile_images = {}
 define normal_images = {}
 define character_images = {}
 define character_image_sizes = {}
+define parallax_images = {}
 define image_sizes = {}
 define picture_image_sizes = {}
 define mapdest = None
@@ -78,6 +79,7 @@ init -10 python:
                 self.movies_path = rpgm_path("Movies/")
                 self.tilesets_path = rpgm_path("Graphics/Tilesets/")
                 self.characters_path = rpgm_path("Graphics/Characters/")
+                self.parallaxes_path = rpgm_path("Graphics/Parallaxes/")
                 self.tile_width = 32
                 self.tile_height = 32
             else:
@@ -85,6 +87,7 @@ init -10 python:
                 self.movies_path = rpgm_path("www/movies/")
                 self.tilesets_path = rpgm_path("www/img/tilesets/")
                 self.characters_path = rpgm_path("www/img/characters/")
+                self.parallaxes_path = rpgm_path("www/img/parallaxes/")
                 self.tile_width = 48
                 self.tile_height = 48
 
@@ -124,6 +127,9 @@ init python:
 
     def rpgm_movie_name(base):
         return 'rpgmmovie-' + base.lower()
+
+    def rpgm_parallax_name(base):
+        return 'rpgmparallax-' + base.lower()
 
     def mog_title_layer_image():
         plugins = PluginsLoader().json()
@@ -189,6 +195,14 @@ init python:
             continue
         image_name = base.replace(".", "_")
         character_images[image_name] = rpgm_metadata.characters_path + filename
+
+    if os.path.exists(os.path.join(config.basedir, rpgm_metadata.parallaxes_path)):
+        for filename in os.listdir(os.path.join(config.basedir, rpgm_metadata.parallaxes_path)):
+            base, ext = os.path.splitext(os.path.basename(filename))
+            if not supported_image(ext):
+                continue
+            image_name = rpgm_parallax_name(base)
+            parallax_images[image_name] = rpgm_metadata.parallaxes_path + filename
 
 label start:
     python:

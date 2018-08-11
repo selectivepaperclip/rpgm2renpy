@@ -223,6 +223,16 @@ init python:
             bg = GameMapBackgroundGenerator(self.map_id, self.tiles(), self.background_image_cache_file())
             bg.save()
 
+        def parallax_image(self):
+            if not hasattr(self, '_parallax_image'):
+                parallax_name = self.data()['parallaxName']
+                if parallax_name and len(parallax_name) > 0:
+                    self._parallax_image = parallax_images[rpgm_parallax_name(parallax_name)]
+                else:
+                    self._parallax_image = None
+
+            return self._parallax_image
+
         def clicky_command(self, command):
            return (command['code'] == 108) and (command['parameters'][0] == 'click_activate!')
 

@@ -613,6 +613,7 @@ init python:
             mapfactor = 1
 
             background_image = self.map.background_image()
+            parallax_image = self.map.parallax_image()
             width, height = (self.map.image_width, self.map.image_height)
 
             if self.map.is_clicky(self.player_x, self.player_y):
@@ -691,6 +692,7 @@ init python:
                 impassible_tiles=impassible_tiles,
                 common_events_keymap=self.common_events_keymap(),
                 background_image=background_image,
+                parallax_image=parallax_image,
                 width=width,
                 height=height,
                 viewport_xadjustment=viewport_xadjustment,
