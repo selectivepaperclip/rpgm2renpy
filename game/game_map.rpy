@@ -30,7 +30,20 @@ init python:
             self.cache[key] = (time.time(), grid)
 
     class MapClickable:
-        def __init__(self, x, y, label = None, special = False, page_index = None, clicky = False, has_commands = True, walk_destination = False):
+        def __init__(
+            self,
+            x,
+            y,
+            label = None,
+            special = False,
+            page_index = None,
+            clicky = False,
+            has_commands = True,
+            walk_destination = False,
+            solid = False,
+            touch_trigger = False,
+            action_trigger = False
+        ):
             self.x = x
             self.y = y
             self.label = label
@@ -40,6 +53,9 @@ init python:
             self.has_commands = has_commands
             self.walk_destination = walk_destination
             self.page_index = page_index
+            self.solid = solid
+            self.touch_trigger = touch_trigger
+            self.action_trigger = action_trigger
 
         def is_walk_destination(self):
             if hasattr(self, 'walk_destination') and self.walk_destination:
@@ -788,7 +804,7 @@ init python:
             if profile_timings:
                 started = time.time()
             # 0 = unknown / impassible
-            # 2 = event
+            # 2 = impassible event
             # 3 = passible
 
             reachability_grid = [[0 for x in xrange(self.width())] for y in xrange(self.height())]
@@ -796,7 +812,16 @@ init python:
             for map_clickable in event_coords:
                 if hasattr(map_clickable, 'walk_destination') and map_clickable.walk_destination:
                     continue
-                reachability_grid[map_clickable.y][map_clickable.x] = 2
+
+                # An event is generally considered passable unless it matches some of these conditions:
+
+                # Consider an event impassible if it is 'solid' (on the same level as a player and not tagged as 'through')
+                if not hasattr(map_clickable, 'solid') or map_clickable.solid:
+                    reachability_grid[map_clickable.y][map_clickable.x] = 2
+                # Consider an event impassible if it is triggered on touch (not action) and has any notable commands
+                # this may become untenable depending on how much the definition of has_commands needs to expand
+                elif (hasattr(map_clickable, 'touch_trigger') and map_clickable.touch_trigger) and (hasattr(map_clickable, 'has_commands') and map_clickable.has_commands):
+                    reachability_grid[map_clickable.y][map_clickable.x] = 2
 
             max_x = self.width() - 1
             max_y = self.height() - 1
@@ -875,7 +900,10 @@ init python:
                             label = self.page_label(page),
                             special = self.event_is_special(e),
                             clicky = self.clicky_event(e, page),
-                            has_commands = self.has_commands(page)
+                            has_commands = self.has_commands(page),
+                            solid = (page['priorityType'] == 1) and not page['through'],
+                            touch_trigger = page['trigger'] in [1,2],
+                            action_trigger = page['trigger'] in [0]
                         )
                         if self.hide_buggy_event(e, page):
                             break
