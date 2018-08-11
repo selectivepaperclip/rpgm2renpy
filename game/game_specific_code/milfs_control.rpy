@@ -100,7 +100,16 @@ init python:
 
                 # Skip command minigame in Milf's Control
                 game_state.switches.set_value(switch_id, True)
+            elif "start_range_game(" in script_string:
+                return True
             else:
                 return False
 
             return True
+
+        def conditional_eval_script(self, script_string):
+            if script_string == 'game_result(:range) == true':
+                return True
+            else:
+                renpy.say(None, "Conditional statements for Script not implemented")
+                return False

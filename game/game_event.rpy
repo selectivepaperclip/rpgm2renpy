@@ -160,9 +160,11 @@ init python:
                 #result = Input.isPressed(this._params[1]);
             # Script
             elif operation == 12:
-                renpy.say(None, "Conditional statements for Script not implemented")
-                return False
-                #result = !!eval(this._params[1]);
+                if GameIdentifier().is_milfs_control():
+                    return GameSpecificCodeMilfsControl().conditional_eval_script(params[1])
+                else:
+                    renpy.say(None, "Conditional statements for Script not implemented")
+                    return False
             # Vehicle
             elif operation == 13:
                 renpy.say(None, "Conditional statements for Vehicle not implemented")
