@@ -150,7 +150,10 @@ init python:
                 layer_values = layer_data[layer_id]
                 if layer_values['Visible'] == 'true':
                     composite_args.append((0, 0))
-                    composite_args.append(rpgm_path('www/img/titles1/' + layer_values['File Name'] + '.png'))
+                    # It probably wouldn't be that hard to animate this for situations where there are multiple frames,
+                    # but doesn't seem like a high priority
+                    layer_file = glob.glob(os.path.join(config.basedir, rpgm_path('www/img/titles1/' + layer_values['File Name'] + '*')))[0]
+                    composite_args.append(rpgm_path('www/img/titles1/' + os.path.basename(layer_file)))
             return LiveComposite(*composite_args)
         return None
 
