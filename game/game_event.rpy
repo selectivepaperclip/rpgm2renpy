@@ -233,6 +233,8 @@ init python:
                     self.state.show_inventory()
                 elif GameIdentifier().is_milfs_control() and GameSpecificCodeMilfsControl().eval_script(line, script_string):
                     pass
+                elif GameIdentifier().is_ics1() and GameSpecificCodeICS1().eval_script(line, script_string):
+                    pass
                 else:
                     print "Script that could not be evaluated:\n"
                     print script_string

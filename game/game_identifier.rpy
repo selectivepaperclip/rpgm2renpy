@@ -4,6 +4,8 @@ init python:
             return rpgm_game_data.get('long_name', '') == "Milf's Control"
         def is_milfs_villa(self):
             return game_state.system_data()['gameTitle'] == 'Milfs Villa v1.0 Final'
+        def is_ics1(self):
+            return rpgm_game_data.get('long_name', '') == "Incest Story 1"
         def is_ics2(self):
             return game_state.system_data()['gameTitle'] == 'Incest Story 2 v1.0 Final'
         def is_taboo_request(self):
