@@ -597,11 +597,16 @@ init python:
                     value = self.state.variables.operate_value(operation, operand_type, operand)
                     self.state.party.gain_gold(value);
 
-                # Change items
-                elif command['code'] == 126:
-                    item_id, operation, operand_type, operand = command['parameters']
+                # Change items, weapons, armors
+                elif command['code'] in [126, 127, 128]:
+                    item_id, operation, operand_type, operand = command['parameters'][0:4]
                     value = self.state.variables.operate_value(operation, operand_type, operand)
-                    self.state.party.gain_item(self.state.items.by_id(item_id), value)
+                    if command['code'] == 126:
+                        self.state.party.gain_item(self.state.items.by_id(item_id), value)
+                    elif command['code'] == 127:
+                        self.state.party.gain_item(self.state.weapons.by_id(item_id), value)
+                    elif command['code'] == 128:
+                        self.state.party.gain_item(self.state.armors.by_id(item_id), value)
 
                 # Change party members -- TODO
                 elif command['code'] == 129:
