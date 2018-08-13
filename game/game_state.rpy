@@ -429,13 +429,16 @@ init python:
                 items_and_counts = self.synthesis_ingredients(item)
                 if items_and_counts:
                     has_all = True
+                    tooltip_lines = []
                     for (item_name, count) in items_and_counts:
                         ingredient_item = self.items.by_name(item_name)
-                        renpy.say(None, ("has %s of %s" % (self.party.num_items(ingredient_item), ingredient_item['name'])))
+                        tooltip_lines.append("%s: %s" % (ingredient_item['name'], self.party.num_items(ingredient_item)))
                         if self.party.num_items(ingredient_item) < count:
                             has_all = False
-                    if has_all:
-                        synthesizables.append(item)
+                    synthesizable = item.copy()
+                    synthesizable['tooltip'] = "\n".join(tooltip_lines)
+                    synthesizable['synthesizable'] = has_all
+                    synthesizables.append(synthesizable)
 
             renpy.call_screen(
                 "synthesisscreen",
