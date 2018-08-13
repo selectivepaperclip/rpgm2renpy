@@ -5,29 +5,55 @@ init python:
     from Queue import PriorityQueue
 
     class ReachabilityGridCache:
+        pass
+
+    class ReachabilityGridCacheV2:
         MAX_CACHE_ITEMS = 5
 
         def __init__(self):
             self.cache = {}
 
-        def get(self, key):
-            if key in self.cache:
-                return self.cache[key][1]
+        def get(self, player_position, events_with_pages):
+            if events_with_pages in self.cache:
+                if debug_reachability_grid:
+                    print "RG: events_with_pages existed in reachability cache, checking positions..."
+                time_added, position_groups_and_grids = self.cache[events_with_pages]
+                for (player_positions, grid) in position_groups_and_grids:
+                    if player_position in player_positions:
+                        if debug_reachability_grid:
+                            print "RG: Player position existed in cache item"
+                        return grid
+                    else:
+                        reachability_bit = grid[player_position[1]][player_position[0]]
+                        if debug_reachability_grid:
+                            print "RG: Reachability bit for %s was %s" % (player_position, reachability_bit)
+                        if reachability_bit == 3:
+                            player_positions.append(player_position)
+                            return grid
             return None
 
-        def set(self, key, grid):
-            if len(self.cache) > ReachabilityGridCache.MAX_CACHE_ITEMS:
+        def set(self, player_position, events_with_pages, grid):
+            if len(self.cache) > ReachabilityGridCacheV2.MAX_CACHE_ITEMS:
                 if debug_reachability_grid:
-                    print "More than %s items in grid (%s), purging oldest one" % (ReachabilityGridCache.MAX_CACHE_ITEMS, len(self.cache))
+                    print "RG: More than %s items in grid (%s), purging oldest one" % (ReachabilityGridCacheV2.MAX_CACHE_ITEMS, len(self.cache))
                 oldest_key = None
                 oldest_time = time.time()
-                for key, (time_added, grid) in self.cache.iteritems():
+                for k, v in self.cache.iteritems():
+                    time_added = v[0]
                     if time_added < oldest_time:
                         oldest_time = time_added
-                        oldest_key = key
+                        oldest_key = k
                 del self.cache[oldest_key]
 
-            self.cache[key] = (time.time(), grid)
+            new_position_group_and_grid = ([player_position], grid)
+            if events_with_pages in self.cache:
+                if debug_reachability_grid:
+                    print "RG: Setting fresh position group and grid in the reachability cache"
+                self.cache[events_with_pages][1].append(new_position_group_and_grid)
+            else:
+                if debug_reachability_grid:
+                    print "RG: Adding position to existing item in reachability cache"
+                self.cache[events_with_pages] = (time.time(), [new_position_group_and_grid])
 
     class MapClickable:
         def __init__(
@@ -788,11 +814,12 @@ init python:
             return self.reachability_grid(game_state.player_x, game_state.player_y, self.map_options(game_state.player_x, game_state.player_y, ignore_clicky = True))
 
         def reachability_grid(self, player_x, player_y, event_coords):
-            if not hasattr(self, '_reachability_grid_cache') or not isinstance(self._reachability_grid_cache, ReachabilityGridCache):
-                self._reachability_grid_cache = ReachabilityGridCache()
+            if not hasattr(self, '_reachability_grid_cache') or not isinstance(self._reachability_grid_cache, ReachabilityGridCacheV2):
+                self._reachability_grid_cache = ReachabilityGridCacheV2()
 
-            cache_key = (player_x, player_y, tuple((coord.x, coord.y, coord.page_index) for coord in event_coords))
-            cached_grid = self._reachability_grid_cache.get(cache_key)
+            player_position = (player_x, player_y)
+            events_with_pages = tuple((coord.x, coord.y, coord.page_index) for coord in event_coords)
+            cached_grid = self._reachability_grid_cache.get(player_position, events_with_pages)
             if cached_grid:
                 if debug_reachability_grid:
                     print "REACHABILITY GRID FOR MAP %s / %s LOCS: Cache hit!" % (self.map_id, len(event_coords))
@@ -835,7 +862,7 @@ init python:
                     if reachability_grid[ay][ax] == 0 and (not self.is_impassible(mx, my, adirection) and not self.is_impassible(ax, ay, GameDirection.reverse_direction(adirection))):
                         coords_to_mark.append(adjacent_coord[0:2])
 
-            self._reachability_grid_cache.set(cache_key, reachability_grid)
+            self._reachability_grid_cache.set(player_position, events_with_pages, reachability_grid)
             if profile_timings:
                 print "Reachability grid took %s" % (time.time() - started)
 
