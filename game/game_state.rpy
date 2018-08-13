@@ -513,6 +513,7 @@ init python:
                     return True
                 if this_event.done():
                     if this_event.new_map_id:
+                        self.reset_user_zoom()
                         self.map = self.map_registry.get_map(this_event.new_map_id)
                         self.map.update_for_transfer()
                         self.player_x = this_event.new_x
@@ -594,6 +595,81 @@ init python:
 
             return False
 
+        def user_map_zoom(self):
+            if not hasattr(self, 'user_map_zoom_factor'):
+                self.user_map_zoom_factor = 1
+            return self.user_map_zoom_factor
+
+        def reset_user_zoom(self):
+            self.user_map_zoom_factor = 1
+            viewport_xadjustment.set_value(0)
+            viewport_yadjustment.set_value(0)
+
+        def zoom_in(self):
+            if not hasattr(self, 'user_map_zoom_factor'):
+                self.user_map_zoom_factor = 1
+            self.set_user_map_zoom(self.user_map_zoom_factor * 1.5)
+
+        def zoom_out(self):
+            if not hasattr(self, 'user_map_zoom_factor'):
+                self.user_map_zoom_factor = 1
+            new_user_zoom = max(self.user_map_zoom_factor * (1 / 1.5), 1)
+            self.set_user_map_zoom(new_user_zoom)
+
+        def set_user_map_zoom(self, new_map_zoom_factor):
+            map_zoom_ratio = new_map_zoom_factor / self.user_map_zoom_factor
+
+            mousepos = renpy.get_mouse_pos()
+            x_zoom_offset = mousepos[0]
+            y_zoom_offset = mousepos[1]
+
+            new_full_zoom = new_map_zoom_factor * self.calculate_map_factor()
+            existing_x_value = viewport_xadjustment.get_value()
+            new_range = (new_full_zoom * self.map.image_width) - config.screen_width
+            new_value = ((existing_x_value + x_zoom_offset) * map_zoom_ratio) - x_zoom_offset
+            viewport_xadjustment.set_range(new_range if new_range > 0 else 0.0)
+            viewport_xadjustment.set_value(new_value if new_value > 0 else 0.0)
+
+            existing_y_value = viewport_yadjustment.get_value()
+            new_range = (new_full_zoom * self.map.image_height) - config.screen_height
+            new_value = ((existing_y_value + y_zoom_offset) * map_zoom_ratio) - y_zoom_offset
+            viewport_yadjustment.set_range(new_range if new_range > 0 else 0.0)
+            viewport_yadjustment.set_value(new_value if new_value > 0 else 0.0)
+
+            self.user_map_zoom_factor = new_map_zoom_factor
+
+        def calculate_map_factor(self):
+            width, height = (self.map.image_width, self.map.image_height)
+            map_width = width
+            map_height = height
+
+            screen_width_sans_scrollbar = config.screen_width - 12
+            screen_height_sans_scrollbar = config.screen_height - 12
+
+            width_ratio = screen_width_sans_scrollbar / float(map_width)
+            height_ratio = screen_height_sans_scrollbar / float(map_height)
+
+            if width_ratio >= 1:
+                x_offset = (screen_width_sans_scrollbar - map_width) // 2
+                if height_ratio >= 1:
+                    # Image smaller than screen, show in native size
+                    return 1
+                else:
+                    # Image too tall, shrink to fit
+                    return float(screen_height_sans_scrollbar) / map_height
+            else:
+                if height_ratio >= 1:
+                    # Image too wide, shrink to fit
+                    return float(screen_width_sans_scrollbar) / map_width
+                else:
+                    # Image overflowing in both dimensions
+                    if width_ratio > height_ratio:
+                        # Overflowing more on map_height
+                        return float(screen_height_sans_scrollbar) / map_height
+                    else:
+                        # Overflowing more on map_width
+                        return float(screen_width_sans_scrollbar) / map_width
+
         def show_map(self, in_interaction = False):
             coordinates = []
             if not in_interaction:
@@ -608,8 +684,8 @@ init python:
 
             x_offset = 0
             y_offset = 0
-            x_initial = 0
-            y_initial = 0
+            x_initial = viewport_xadjustment.get_value()
+            y_initial = viewport_yadjustment.get_value()
             mapfactor = 1
 
             background_image = self.map.background_image()
@@ -631,32 +707,7 @@ init python:
                     y_initial = int((self.player_y - 12) * rpgm_metadata.tile_height * mapfactor)
                 background_image = None
             else:
-                map_width = width + 50
-                map_height = height + 50
-
-                width_ratio = config.screen_width / float(map_width)
-                height_ratio = config.screen_height / float(map_height)
-
-                if width_ratio >= 1:
-                    x_offset = (config.screen_width - map_width) // 2
-                    if height_ratio >= 1:
-                        # Image smaller than screen, show in native size
-                        mapfactor = 1
-                    else:
-                        # Image too tall, shrink to fit
-                        mapfactor = float(config.screen_height) / map_height
-                else:
-                    if height_ratio >= 1:
-                        # Image too wide, shrink to fit
-                        mapfactor = float(config.screen_width) / map_width
-                    else:
-                        # Image overflowing in both dimensions
-                        if width_ratio > height_ratio:
-                            # Overflowing more on height
-                            mapfactor = float(config.screen_height) / map_height
-                        else:
-                            # Overflowing more on width
-                            mapfactor = float(config.screen_width) / map_width
+                mapfactor = self.calculate_map_factor()
 
             hud_pics = self.orange_hud_pictures()
             hud_lines = self.orange_hud_lines()
@@ -681,7 +732,7 @@ init python:
             renpy.show_screen(
                 "mapscreen",
                 _layer="maplayer",
-                mapfactor=mapfactor,
+                mapfactor=mapfactor * self.user_map_zoom(),
                 coords=coordinates,
                 player_position=(self.player_x, self.player_y),
                 hud_pics=hud_pics,

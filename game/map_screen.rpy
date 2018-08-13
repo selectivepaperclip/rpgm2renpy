@@ -13,8 +13,6 @@ screen mapscreen(
     parallax_image = None,
     width = None,
     height = None,
-    x_initial = 0,
-    y_initial = 0,
     viewport_xadjustment = None,
     viewport_yadjustment = None,
     x_offset = None,
@@ -22,17 +20,28 @@ screen mapscreen(
     in_interaction = False,
     switch_toggler_buttons = [],
     common_event_queuers = [],
-    show_synthesis_button = False, # cruft from old savegames
-):
-    #key "viewport_wheelup" action [
-    #    SetVariable('mapfactor', mapfactor * 1.5),
-    #    renpy.restart_interaction
-    #]
-    #key "viewport_wheeldown" action [
-    #    SetVariable('mapfactor', mapfactor * 0.66),
-    #    renpy.restart_interaction
-    #]
 
+    # cruft from old savegames
+    x_initial = 0,
+    y_initial = 0,
+    show_synthesis_button = False,
+):
+    key "K_PAGEUP" action [
+        Function(game_state.zoom_out),
+        Jump("game")
+    ]
+    key "K_PAGEDOWN" action [
+        Function(game_state.zoom_in),
+        Jump("game")
+    ]
+    key "mousedown_4" action [
+        Function(game_state.zoom_in),
+        Jump("game")
+    ]
+    key "mousedown_5" action [
+        Function(game_state.zoom_out),
+        Jump("game")
+    ]
     for key_str, event_id in common_events_keymap:
         key key_str:
             action SetVariable("keyed_common_event", event_id), Jump("game")
@@ -41,7 +50,7 @@ screen mapscreen(
         xadjustment viewport_xadjustment
         yadjustment viewport_yadjustment
         child_size (width, height)
-        mousewheel (not in_interaction)
+        mousewheel False
         draggable (not in_interaction)
         scrollbars (not in_interaction)
         fixed at mapzoom(mapfactor):
@@ -85,9 +94,9 @@ screen mapscreen(
         xadjustment viewport_xadjustment
         yadjustment viewport_yadjustment
         child_size (width, height)
-        mousewheel (not in_interaction)
-        draggable (not in_interaction)
-        scrollbars (not in_interaction)
+        mousewheel False
+        draggable None
+        scrollbars None
         fixed at mapzoom(mapfactor):
             for coord in impassible_tiles:
                 button:
