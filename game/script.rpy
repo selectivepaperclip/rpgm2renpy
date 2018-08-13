@@ -67,9 +67,9 @@ init -10 python:
     def supported_image(ext):
         return ext.lower() in [ ".jpg", ".jpeg", ".png", ".webp" ]
 
-    cache_directory = os.path.join(renpy.config.basedir, 'rpgmcache').replace('\\', '/')
-    if not os.path.exists(cache_directory):
-        os.makedirs(cache_directory)
+    map_cache_directory = os.path.join(renpy.config.basedir, 'rpgmcache', 'maps', 'v1').replace('\\', '/')
+    if not os.path.exists(map_cache_directory):
+        os.makedirs(map_cache_directory)
 
     class RpgmMetadata():
         def __init__(self):

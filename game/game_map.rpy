@@ -259,7 +259,7 @@ init python:
             return self._background_image
 
         def background_image_cache_file(self):
-            return os.path.join(renpy.config.basedir, 'rpgmcache', ('Map%03d.png' % self.map_id)).replace("\\", "/")
+            return os.path.join(map_cache_directory, ('Map%03d.png' % self.map_id)).replace("\\", "/")
 
         def generate_background_image(self):
             bg = GameMapBackgroundGenerator(self.map_id, self.tiles(), self.background_image_cache_file())
