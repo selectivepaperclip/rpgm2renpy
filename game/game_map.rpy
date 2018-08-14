@@ -289,6 +289,12 @@ init python:
             first_page_command = page['list'][0]
             return first_page_command and self.clicky_command(first_page_command)
 
+        def forced_clicky(self):
+            if GameIdentifier().is_milfs_villa():
+                if self.state.variables.value(53) == 1 or self.state.variables.value(54) == 1:
+                    return True
+            return False
+
         def ignored_clicky_page(self, page):
             # ZONE OF HACKS
             if GameIdentifier().is_milfs_villa():
@@ -302,6 +308,9 @@ init python:
             return (e for e in self.data()['events'] if e and e['id'] not in self.erased_events)
 
         def is_clicky(self, player_x, player_y):
+            if self.forced_clicky():
+                return True
+
             some_event_is_clicky = False
             all_events_are_clicky = True
             for e in self.active_events():
