@@ -687,8 +687,6 @@ init python:
 
             x_offset = 0
             y_offset = 0
-            x_initial = viewport_xadjustment.get_value()
-            y_initial = viewport_yadjustment.get_value()
             mapfactor = 1
 
             background_image = self.map.background_image()
@@ -705,9 +703,9 @@ init python:
                 #print ("px: %s, py: %s, w: %s, h: %s" % (self.player_x, self.player_y, width, height))
 
                 if self.player_x > 19:
-                    x_initial = int((self.player_x - 19) * rpgm_metadata.tile_width * mapfactor)
+                    viewport_xadjustment.set_value(int((self.player_x - 19) * rpgm_metadata.tile_width * mapfactor))
                 if self.player_y > 12:
-                    y_initial = int((self.player_y - 12) * rpgm_metadata.tile_height * mapfactor)
+                    viewport_yadjustment.set_value(int((self.player_y - 12) * rpgm_metadata.tile_height * mapfactor))
                 background_image = None
             else:
                 mapfactor = self.calculate_map_factor()
@@ -720,9 +718,6 @@ init python:
                 impassible_tiles=self.map.impassible_tiles()
             else:
                 impassible_tiles = []
-
-            viewport_xadjustment.set_value(x_initial)
-            viewport_yadjustment.set_value(y_initial)
 
             switch_toggler_buttons = []
 

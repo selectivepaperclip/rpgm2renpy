@@ -234,3 +234,10 @@ label game:
         $ show_synthesis = None
 
     return
+
+label after_load:
+    python:
+        displayed_map_screen = renpy.get_widget("mapscreen", "map_bg_viewport", layer = "maplayer")
+        if displayed_map_screen:
+            viewport_xadjustment = displayed_map_screen.xadjustment
+            viewport_yadjustment = displayed_map_screen.yadjustment
