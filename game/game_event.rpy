@@ -717,6 +717,10 @@ init python:
                 elif command['code'] == 211:
                     pass
 
+                # Show character animation
+                elif command['code'] == 212:
+                    pass
+
                 # "Show baloon icon"
                 elif command['code'] == 213:
                     pass
