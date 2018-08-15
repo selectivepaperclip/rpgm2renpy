@@ -291,7 +291,11 @@ init python:
 
         def forced_clicky(self):
             if GameIdentifier().is_milfs_villa():
+                # Bench keys at beach
                 if self.state.variables.value(53) == 1 or self.state.variables.value(54) == 1:
+                    return True
+                # Bottom box in tool shed
+                elif self.map_id == 12 and self.state.variables.value(41) == 1:
                     return True
             return False
 
