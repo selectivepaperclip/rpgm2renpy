@@ -154,7 +154,11 @@ init python:
             frame_data = {}
             for picture_id, picture_args in self.queued_pictures:
                 if picture_id in frame_data:
-                    frame_data[picture_id].append(picture_args)
+                    existing_frame = frame_data[picture_id]
+                    if 'wait' in frame_data and frame_data['wait'] > 0:
+                        frame_data[picture_id].append(picture_args)
+                    else:
+                        frame_data[picture_id][-1] = picture_args
                 else:
                     frame_data[picture_id] = [picture_args]
 
