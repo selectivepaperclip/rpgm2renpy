@@ -576,20 +576,22 @@ init python:
                 map_event = self.map.find_event_for_location(mapdest.x, mapdest.y)
                 if not map_event:
                     map_event = self.map.find_event_for_location(mapdest.x, mapdest.y, only_special = True)
+
                 if (not self.map.clicky_event(map_event.event_data, map_event.page)) and (self.player_x != mapdest.x or self.player_y != mapdest.y):
-                    if map_event.page['through'] == True and map_event.page['priorityType'] > 0 and map_event.page['trigger'] != 0:
-                        new_x, new_y = mapdest.x, mapdest.y
-                        self.player_direction = self.determine_direction(new_x, new_y)
-                        self.player_x, self.player_y = new_x, new_y
-                    else:
-                        if hasattr(mapdest, 'reachable') and mapdest.reachable and not self.everything_is_reachable():
-                            reachability_grid = self.map.reachability_grid_for_current_position()
-                            adjacent_square, self.player_direction = self.map.last_square_before_dest(self.player_x, self.player_y, mapdest.x, mapdest.y)
+                    if hasattr(mapdest, 'reachable') and mapdest.reachable and not self.everything_is_reachable():
+                        reachability_grid = self.map.reachability_grid_for_current_position()
+                        adjacent_square, self.player_direction = self.map.last_square_before_dest(self.player_x, self.player_y, mapdest.x, mapdest.y)
+                        if map_event.page['through'] or (map_event.page['priorityType'] != 1 and map_event.page['trigger'] != 0):
+                            self.player_x, self.player_y = mapdest.x, mapdest.y
+                        else:
                             self.player_x, self.player_y = adjacent_square
+                    else:
+                        self.player_direction = self.determine_direction(mapdest.x, mapdest.y)
+                        if map_event.page['through'] or map_event.page['trigger'] != 0:
+                            self.player_x, self.player_y = mapdest.x, mapdest.y
                         else:
                             first_open_square = self.map.first_open_adjacent_square(mapdest.x, mapdest.y)
                             if first_open_square:
-                                self.player_direction = self.determine_direction(mapdest.x, mapdest.y)
                                 self.player_x, self.player_y = first_open_square
 
                 self.events.append(map_event)
