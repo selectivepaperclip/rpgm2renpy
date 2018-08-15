@@ -170,7 +170,8 @@ init python:
                 if len(picture_frames) == 1:
                     picture_args['image_name'] = RpgmAnimationBuilder.image_for_picture(picture_frames[0])
                 else:
-                    picture_transitions = RpgmAnimationBuilder(picture_frames).build()
+                    should_loop = 'loop' in last_frame and last_frame['loop']
+                    picture_transitions = RpgmAnimationBuilder(picture_frames).build(loop = should_loop)
                     picture_args['image_name'] = RpgmAnimation(*picture_transitions, anim_timebase = True)
                 self.shown_pictures[picture_id] = picture_args
 

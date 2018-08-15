@@ -788,6 +788,8 @@ init python:
                             picture_args['x'] = x - picture_args['size'][0] / 2
                             picture_args['y'] = y - picture_args['size'][1] / 2
 
+                        if self.parallel():
+                            picture_args['loop'] = True
                         if command['code'] == 231:
                             game_state.show_picture(picture_id, picture_args)
                         else:
