@@ -698,14 +698,25 @@ init python:
                 # player x, y should be centered in the visible map
                 # if they are greater than (19, 12)
 
+                # image_height and image_width don't consider parts of the image on the bottom/right
+                # that might not have any tiles; we need to consider the full map width when positioning
+                # events on the screen for clicky scenarios
+                width = self.map.width() * rpgm_metadata.tile_width
+                height = self.map.height() * rpgm_metadata.tile_height
+
                 mapfactor = 0.65
 
-                #print ("px: %s, py: %s, w: %s, h: %s" % (self.player_x, self.player_y, width, height))
+                new_x_range = (mapfactor * width) - config.screen_width
+                viewport_xadjustment.set_range(new_x_range if new_x_range > 0 else 0.0)
+                new_y_range = (mapfactor * height) - config.screen_height
+                viewport_yadjustment.set_range(new_y_range if new_y_range > 0 else 0.0)
 
                 if self.player_x > 19:
-                    viewport_xadjustment.set_value(int((self.player_x - 19) * rpgm_metadata.tile_width * mapfactor))
+                    new_x_value = int((self.player_x - 19) * rpgm_metadata.tile_width * mapfactor)
+                    viewport_xadjustment.set_value(new_x_value)
                 if self.player_y > 12:
-                    viewport_yadjustment.set_value(int((self.player_y - 12) * rpgm_metadata.tile_height * mapfactor))
+                    new_y_value = int((self.player_y - 12) * rpgm_metadata.tile_height * mapfactor)
+                    viewport_yadjustment.set_value(new_y_value)
                 background_image = None
             else:
                 mapfactor = self.calculate_map_factor()
