@@ -714,6 +714,15 @@ init python:
                 new_y_range = (mapfactor * height) - config.screen_height
                 viewport_yadjustment.set_range(new_y_range if new_y_range > 0 else 0.0)
 
+                # if there is more screen real-estate available than map, center the map in the screen
+                # see Game_Map.prototype.setDisplayPos
+                x_tiles_in_screen = config.screen_width / (rpgm_metadata.tile_width * mapfactor)
+                if self.map.width() < x_tiles_in_screen:
+                    x_offset = int(((x_tiles_in_screen - self.map.width()) / 2.0) * rpgm_metadata.tile_width)
+                y_tiles_in_screen = config.screen_height / (rpgm_metadata.tile_height * mapfactor)
+                if self.map.height() < y_tiles_in_screen:
+                    y_offset = int(((y_tiles_in_screen - self.map.height()) / 2.0) * rpgm_metadata.tile_height)
+
                 if self.player_x > 19:
                     new_x_value = int((self.player_x - 19) * rpgm_metadata.tile_width * mapfactor)
                     viewport_xadjustment.set_value(new_x_value)
