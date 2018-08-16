@@ -725,7 +725,7 @@ init python:
                             if ((not only_special) and self.event_is_special(e)):
                                 return None
                             if debug_events:
-                                renpy.say(None, "event %s, page -%s / %s" % (e['id'], index, len(e['pages']) - index))
+                                print "DEBUG_EVENTS: event %s, page -%s / %s" % (e['id'], index, len(e['pages']) - index)
                             return GameEvent(self.state, e, page)
             return None
 

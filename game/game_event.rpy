@@ -643,7 +643,7 @@ init python:
                 elif command['code'] == 201:
                     method, self.new_map_id, self.new_x, self.new_y = command['parameters'][0:4]
                     if debug_events:
-                        renpy.say(None, "Map %d" % self.new_map_id)
+                        print "DEBUG_EVENTS: Map %d" % self.new_map_id
                     if method != 0:
                         renpy.say(None, "Method on transfer was nonzero (%d), plz implement!" % method)
 

@@ -600,7 +600,7 @@ init python:
 
                 self.events.append(map_event)
                 if debug_events:
-                    renpy.say(None, "%d,%d" % (mapdest.x, mapdest.y))
+                    print "DEBUG_EVENTS: %d,%d" % (mapdest.x, mapdest.y)
                 return True
 
             return False
