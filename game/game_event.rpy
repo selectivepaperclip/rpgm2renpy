@@ -303,6 +303,11 @@ init python:
                     event.branch = game_state.branch
                 del game_state.branch
 
+        def get_canned_answer(self, variable_id):
+            # Aunt's cabinet code
+            if GameIdentifier().is_milfs_villa() and variable_id == 109:
+                return 32
+
         def do_next_thing(self):
             if not self.done():
                 self.migrate_global_branch_data()
@@ -362,7 +367,12 @@ init python:
                     entered_a_number = False
                     while not entered_a_number:
                         try:
-                            result = renpy.input("Input number:", length=max_digits)
+                            canned_answer = self.get_canned_answer(variable_id)
+                            if canned_answer:
+                                result = canned_answer
+                            else:
+                                result = renpy.input("Input number:", length=max_digits)
+
                             self.state.variables.set_value(variable_id, int(result))
                             entered_a_number = True
                         except ValueError:
