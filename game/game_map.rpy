@@ -237,6 +237,7 @@ init python:
 
         def update_for_transfer(self):
             self.event_location_overrides = {}
+            self.event_overrides = {}
             self.erased_events = {}
 
         def data(self):
@@ -573,7 +574,7 @@ init python:
 
         def can_move(self, x, y):
             event_on_player = self.find_event_for_location(x, y)
-            if event_on_player:
+            if event_on_player and (not event_on_player.page['through']) and event_on_player.page['priorityType'] == 1:
                 return False
 
             max_x = self.width() - 1
@@ -641,12 +642,13 @@ init python:
         def character_sprite(self, image_data):
             img_base_filename = image_data['characterName'].replace(".", "_")
 
+            character_prefix_match = re.match("^([!$])+", img_base_filename)
             is_big_character = False
-            if re.search("^[!$]+", img_base_filename) and img_base_filename[0] == '$':
+            if character_prefix_match and '$' in character_prefix_match.groups()[0]:
                 is_big_character = True
 
             is_object_character = False
-            if re.search("^[!$]+", img_base_filename) and img_base_filename[0] == '!':
+            if character_prefix_match and '!' in character_prefix_match.groups()[0]:
                 is_object_character = True
 
             if not img_base_filename in character_image_sizes:
@@ -700,12 +702,13 @@ init python:
                 result.append((game_state.player_x, game_state.player_y) + self.character_sprite(player_character_sprite_data))
 
             for e in self.active_events():
-                for page in reversed(e['pages']):
+                for reverse_page_index, page in enumerate(reversed(e['pages'])):
                     if self.meets_conditions(e, page['conditions']):
                         loc = self.event_location(e)
                         image_data = page['image']
                         if image_data['characterName'] != '':
-                            character_sprite_data = self.character_sprite(image_data)
+                            page_index = (len(e['pages']) - 1) - reverse_page_index
+                            character_sprite_data = self.character_sprite(self.event_sprite_data(e, page, page_index))
                             result.append(loc + character_sprite_data)
                         elif image_data['tileId'] != 0:
                             tile_sprite_data = self.tile_sprite(image_data)
@@ -716,17 +719,30 @@ init python:
         def event_is_special(self, e):
             return bool(re.search('weightSwitch', e['note']))
 
+        def find_event_at_index(self, event_index):
+            if not hasattr(self, 'erased_events'):
+                self.erased_events = {}
+            if event_index in self.erased_events:
+                return None
+            e = self.data()['events'][event_index]
+            for reverse_page_index, page in enumerate(reversed(e['pages'])):
+                if self.meets_conditions(e, page['conditions']):
+                    page_index = (len(e['pages']) - 1) - reverse_page_index
+                    return GameEvent(self.state, e, page, page_index)
+            return None
+
         def find_event_for_location(self, x, y, only_special = False):
             for e in self.active_events():
                 loc = self.event_location(e)
                 if loc[0] == x and loc[1] == y:
-                    for index, page in enumerate(reversed(e['pages'])):
+                    for reverse_page_index, page in enumerate(reversed(e['pages'])):
                         if self.meets_conditions(e, page['conditions']) and page['trigger'] != 3:
+                            page_index = (len(e['pages']) - 1) - reverse_page_index
                             if ((not only_special) and self.event_is_special(e)):
                                 return None
                             if debug_events:
-                                print "DEBUG_EVENTS: event %s, page -%s / %s" % (e['id'], index, len(e['pages']) - index)
-                            return GameEvent(self.state, e, page)
+                                print "DEBUG_EVENTS: event %s, page -%s / %s" % (e['id'], reverse_page_index, page_index)
+                            return GameEvent(self.state, e, page, page_index)
             return None
 
         def boring_auto_trigger_page(self, page):
@@ -734,10 +750,11 @@ init python:
 
         def find_auto_trigger_event(self):
             for e in self.active_events():
-                for page in reversed(e['pages']):
+                for reverse_page_index, page in enumerate(reversed(e['pages'])):
                     if self.meets_conditions(e, page['conditions']):
+                        page_index = (len(e['pages']) - 1) - reverse_page_index
                         if page['trigger'] == 3 and not self.boring_auto_trigger_page(page):
-                            return GameEvent(self.state, e, page)
+                            return GameEvent(self.state, e, page, page_index)
                         else:
                             break
             return None
@@ -747,10 +764,11 @@ init python:
                 self.erased_events = {}
             e = self.data()['events'][event_index]
             if e and e['id'] not in self.erased_events:
-                for page in reversed(e['pages']):
+                for reverse_page_index, page in enumerate(reversed(e['pages'])):
                     if self.meets_conditions(e, page['conditions']):
+                        page_index = (len(e['pages']) - 1) - reverse_page_index
                         if page['trigger'] == 4:
-                            return GameEvent(self.state, e, page)
+                            return GameEvent(self.state, e, page, page_index)
                         else:
                             break
             return None
@@ -912,6 +930,27 @@ init python:
             if not hasattr(self, 'event_location_overrides'):
                 self.event_location_overrides = {}
             self.event_location_overrides[event_data['id']] = loc
+
+        def event_sprite_data(self, event_data, page, page_index):
+            event_id = event_data['id']
+            if hasattr(self, 'event_overrides') and event_id in self.event_overrides and self.event_overrides[event_id].get('pageIndex', -1) == page_index:
+                overrides = self.event_overrides[event_id]
+            else:
+                overrides = {}
+
+            return {
+                'direction': overrides.get('direction', page['image']['direction']),
+                'characterName': overrides.get('characterName', page['image']['characterName']),
+                'characterIndex': overrides.get('characterIndex', page['image']['characterIndex']),
+                'pattern': page['image']['pattern']
+            }
+
+        def override_event(self, event_id, page_index, key, value):
+            if not hasattr(self, 'event_overrides'):
+                self.event_overrides = {}
+            if event_id not in self.event_overrides or self.event_overrides[event_id].get('pageIndex', -1) != page_index:
+                self.event_overrides[event_id] = {'pageIndex': page_index}
+            self.event_overrides[event_id][key] = value
 
         def make_surrounding_tiles_walkable(self, page):
             if GameIdentifier().is_my_summer() and (self.map_id in [9, 10]) and (page['image']['characterName'] == 'Box' or page['image']['characterName'] == 'Box2'):

@@ -1,9 +1,10 @@
 init python:
     class GameEvent:
-        def __init__(self, state, event_data, page):
+        def __init__(self, state, event_data, page, page_index = None):
             self.state = state
             self.event_data = event_data
             self.page = page
+            self.page_index = page_index
             self.list_index = 0
             self.new_map_id = None
             self.choices_to_hide = []
@@ -14,6 +15,16 @@ init python:
 
         def parallel(self):
             return self.page['trigger'] == 4
+
+        def get_page_index(self):
+            if hasattr(self, 'page_index') and self.page_index != None:
+                return self.page_index
+            if self.common():
+                return None
+            for index, page in enumerate(self.event_data['pages']):
+                if page == self.page:
+                    self.page_index = index
+                    return self.page_index
 
         def conditional_branch_result(self, params):
             operation = params[0]
@@ -659,12 +670,17 @@ init python:
                 elif command['code'] == 205:
                     reachability_grid = self.state.map.reachability_grid_for_current_position()
 
-                    character_index, route = command['parameters']
-                    target = None
-                    player_moving = character_index < 0
+                    event_id, route = command['parameters']
+                    event = None
+                    player_moving = event_id < 0
+                    if event_id == 0:
+                        event_id = self.event_data['id']
+                    if event_id > 0:
+                        event = self.state.map.find_event_at_index(event_id)
                     for route_part in route['list']:
                         delta_x = 0
                         delta_y = 0
+                        new_direction = None
                         if route_part['code'] == 1: # Move Down
                             delta_y += 1
                         elif route_part['code'] == 2: # Move Left
@@ -683,6 +699,14 @@ init python:
                                 delta_x -= 1
                             elif current_direction == GameDirection.RIGHT:
                                 delta_x += 1
+                        elif route_part['code'] == 16: # Turn Down
+                            new_direction = GameDirection.DOWN
+                        elif route_part['code'] == 17: # Turn Left
+                            new_direction = GameDirection.LEFT
+                        elif route_part['code'] == 18: # Turn Right
+                            new_direction = GameDirection.RIGHT
+                        elif route_part['code'] == 19: # Turn Up
+                            new_direction = GameDirection.UP
                         elif route_part['code'] == 29: # Change Speed
                             pass
                         elif route_part['code'] == 37: # Route Through On
@@ -702,6 +726,12 @@ init python:
                                 pass
                         elif route_part['code'] == 0:
                             pass
+
+                        if new_direction:
+                            if player_moving:
+                                game_state.player_direction = new_direction
+                            else:
+                                self.state.map.override_event(event_id, event.get_page_index(), 'direction', new_direction)
 
                         if delta_x != 0 or delta_y != 0:
                             if player_moving:
