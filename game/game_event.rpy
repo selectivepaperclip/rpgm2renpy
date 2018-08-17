@@ -672,15 +672,18 @@ init python:
 
                     event_id, route = command['parameters']
                     event = None
+                    event_page_index = None
                     player_moving = event_id < 0
                     if event_id == 0:
                         event_id = self.event_data['id']
                     if event_id > 0:
                         event = self.state.map.find_event_at_index(event_id)
+                        event_page_index = event.get_page_index()
                     for route_part in route['list']:
                         delta_x = 0
                         delta_y = 0
                         new_direction = None
+                        new_through = None
                         if route_part['code'] == 1: # Move Down
                             delta_y += 1
                         elif route_part['code'] == 2: # Move Left
@@ -710,20 +713,19 @@ init python:
                         elif route_part['code'] == 29: # Change Speed
                             pass
                         elif route_part['code'] == 37: # Route Through On
-                            if player_moving:
-                                game_state.everything_reachable = True
+                            new_through = True
                         elif route_part['code'] == 38: # Route Through Off
-                            if player_moving:
-                                game_state.everything_reachable = False
+                            new_through = False
                         elif route_part['code'] == 41: # Change image
+                            new_character_name, new_character_index = route_part['parameters']
                             if player_moving:
-                                new_character_name, new_character_index = route_part['parameters']
                                 actor_index = 1
                                 self.state.actors.set_property(actor_index, 'characterName', new_character_name)
                                 self.state.actors.set_property(actor_index, 'characterIndex', new_character_index)
                             else:
-                                # TODO: don't yet support changing other images
-                                pass
+                                self.state.map.override_event(event_id, event_page_index, 'characterName', new_character_name)
+                                self.state.map.override_event(event_id, event_page_index, 'characterIndex', new_character_index)
+
                         elif route_part['code'] == 0:
                             pass
 
@@ -731,7 +733,13 @@ init python:
                             if player_moving:
                                 game_state.player_direction = new_direction
                             else:
-                                self.state.map.override_event(event_id, event.get_page_index(), 'direction', new_direction)
+                                self.state.map.override_event(event_id, event_page_index, 'direction', new_direction)
+
+                        if new_through != None:
+                            if player_moving:
+                                game_state.everything_reachable = new_through
+                            else:
+                                self.state.map.override_event(event_id, event_page_index, 'through', new_through)
 
                         if delta_x != 0 or delta_y != 0:
                             if player_moving:
@@ -744,9 +752,11 @@ init python:
 
                             new_x, new_y = current_x + delta_x, current_y + delta_y
                             if not (player_moving and game_state.everything_reachable):
-                                if len(reachability_grid) > new_y and len(reachability_grid[new_y]) > new_x:
-                                    if reachability_grid[new_y][new_x] == 2 or not self.state.map.can_move_vector(current_x, current_y, delta_x, delta_y):
-                                          break
+                                map_event = self.state.map.find_event_for_location(new_x, new_y)
+                                if not map_event or (not self.state.map.event_through(map_event.event_data, map_event.page, map_event.page_index)):
+                                    if len(reachability_grid) > new_y and len(reachability_grid[new_y]) > new_x:
+                                        if reachability_grid[new_y][new_x] == 2 or not self.state.map.can_move_vector(current_x, current_y, delta_x, delta_y):
+                                              break
 
                             if player_moving: # Player Character
                                 game_state.player_x, game_state.player_y = new_x, new_y

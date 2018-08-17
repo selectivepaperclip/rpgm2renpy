@@ -931,13 +931,20 @@ init python:
                 self.event_location_overrides = {}
             self.event_location_overrides[event_data['id']] = loc
 
-        def event_sprite_data(self, event_data, page, page_index):
-            event_id = event_data['id']
+        def overrides_for_event_page(self, event_id, page_index):
+            if not hasattr(self, 'event_overrides'):
+                self.event_overrides = {}
             if hasattr(self, 'event_overrides') and event_id in self.event_overrides and self.event_overrides[event_id].get('pageIndex', -1) == page_index:
-                overrides = self.event_overrides[event_id]
+                return self.event_overrides[event_id]
             else:
-                overrides = {}
+                return {}
 
+        def event_through(self, event_data, page, page_index):
+            overrides = self.overrides_for_event_page(event_data['id'], page_index)
+            return overrides.get('through', page['through'])
+
+        def event_sprite_data(self, event_data, page, page_index):
+            overrides = self.overrides_for_event_page(event_data['id'], page_index)
             return {
                 'direction': overrides.get('direction', page['image']['direction']),
                 'characterName': overrides.get('characterName', page['image']['characterName']),
