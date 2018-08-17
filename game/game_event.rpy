@@ -679,7 +679,9 @@ init python:
                     player_moving = event_id < 0
                     if event_id == 0:
                         event_id = self.event_data['id']
-                    if event_id > 0:
+                    if event_id == self.event_data['id']:
+                        event_page_index = self.get_page_index()
+                    if event_id > 0 and event_page_index == None:
                         event = self.state.map.find_event_at_index(event_id)
                         event_page_index = event.get_page_index()
                     for route_part in route['list']:
