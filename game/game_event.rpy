@@ -328,7 +328,7 @@ init python:
                 command = self.page['list'][self.list_index]
 
                 if hasattr(game_state, 'queued_pictures') and len(game_state.queued_pictures) > 0:
-                    if command['code'] in [101, 102, 103, 104, 301, 302, 303]:
+                    if command['code'] in [101, 102, 103, 104, 301, 302, 303, 354]:
                         game_state.flush_queued_pictures()
                         return
 
@@ -946,8 +946,8 @@ init python:
 
                 # Return to title
                 elif command['code'] == 354:
-                    # TODO
-                    pass
+                    renpy.pause()
+                    renpy.full_restart()
 
                 # 'Script'
                 elif command['code'] == 355:
