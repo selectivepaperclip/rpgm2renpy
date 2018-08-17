@@ -213,11 +213,13 @@ label start:
         game_state.set_game_start_events()
         if GameIdentifier().is_ics2():
             GameSkips().ics2_skip_unpacking()
-        if GameIdentifier().is_taboo_request():
+        elif GameIdentifier().is_taboo_request():
             hide_unreachable_events = True
-        if GameIdentifier().is_my_summer():
+        elif GameIdentifier().is_my_summer():
             hide_unreachable_events = True
-        if GameIdentifier().is_visiting_sara():
+        elif GameIdentifier().is_visiting_sara():
+            hide_unreachable_events = True
+        elif GameIdentifier().is_milfs_villa():
             hide_unreachable_events = True
 
 label game:
