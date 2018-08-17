@@ -334,7 +334,7 @@ init python:
                         command = self.page['list'][self.list_index]
                         text = game_state.replace_names(command['parameters'][0])
                         # If the previous line didn't end with a space, add a space before joining to the next line
-                        if len(accumulated_text) > 0 and not re.match(ends_with_whitespace_pattern, accumulated_text[-1]):
+                        if len(accumulated_text) > 0 and not re.search(ends_with_whitespace_pattern, accumulated_text[-1]):
                             accumulated_text.append(' ')
                         accumulated_text.append(text)
                         # Always put newlines after colons and periods
