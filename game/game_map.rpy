@@ -470,7 +470,7 @@ init python:
                     if x == 30 and y == 12:
                         return True
 
-                    if x == 23 and y in [16, 17, 18]:
+                    if x in [23, 26] and y in [16, 17, 18]:
                         return True
             return False
 
