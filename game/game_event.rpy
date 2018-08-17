@@ -273,6 +273,10 @@ init python:
                 last_picture_id = None
                 not_an_animation = False
                 for newly_activated_command in newly_activated_event['list']:
+                    if newly_activated_command['code'] in [101]:
+                        not_an_animation = True
+                        break
+
                     x, y = None, None
                     if newly_activated_command['code'] in [231]:
                         if newly_activated_command['parameters'][3] == 0:
@@ -291,10 +295,9 @@ init python:
                             frame_data[last_picture_id].append(new_frame_data)
                         else:
                             frame_data[last_picture_id] = [new_frame_data]
-                    elif newly_activated_command['code'] == 230:
+                    elif newly_activated_command['code'] == 230 and last_picture_id:
                         frame_data[last_picture_id][-1]['wait'] += newly_activated_command['parameters'][0]
-                    elif newly_activated_command['code'] == 101:
-                        not_an_animation = True
+
                 if not_an_animation:
                     continue
                     
