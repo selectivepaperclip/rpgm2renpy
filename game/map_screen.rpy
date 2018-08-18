@@ -6,13 +6,14 @@ screen mapscreen(
     hud_groups = [],
     player_position = None,
     map_name = None,
-    sprites = None,
+    sprite_images_and_positions = None,
     impassible_tiles = None,
     common_events_keymap = None,
     background_image = None,
     parallax_image = None,
     width = None,
     height = None,
+    child_size = None,
     viewport_xadjustment = None,
     viewport_yadjustment = None,
     x_offset = None,
@@ -22,10 +23,17 @@ screen mapscreen(
     common_event_queuers = [],
 
     # cruft from old savegames
+    sprites = None,
     x_initial = 0,
     y_initial = 0,
     show_synthesis_button = False,
 ):
+    if not child_size:
+        $ child_size = (width, height)
+
+    if not sprite_images_and_positions:
+        $ sprite_images_and_positions = game_state.sprite_images_and_positions()
+
     key "K_PAGEUP" action [
         Function(game_state.zoom_out),
         Jump("game")
@@ -49,7 +57,7 @@ screen mapscreen(
     viewport id "map_bg_viewport":
         xadjustment viewport_xadjustment
         yadjustment viewport_yadjustment
-        child_size (width, height)
+        child_size child_size
         mousewheel False
         draggable (not in_interaction)
         scrollbars (not in_interaction)
@@ -73,19 +81,10 @@ screen mapscreen(
                     background Color("#00f", alpha = 0.5)
 
             if background_image:
-                for sprite_data in sprites:
-                    python:
-                        x, y, img = sprite_data[0:3]
-                        screen_x = x * rpgm_metadata.tile_width
-                        screen_y = y * rpgm_metadata.tile_height
-                        if len(sprite_data) > 3:
-                            pw, ph, shift_y = sprite_data[3:6]
-                            screen_x += (rpgm_metadata.tile_width / 2) - (pw / 2)
-                            screen_y += (rpgm_metadata.tile_height) - (ph + shift_y)
-
-                    add img:
-                        xpos x_offset + int(screen_x)
-                        ypos y_offset + int(screen_y)
+                for sprite_image_and_position in sprite_images_and_positions:
+                    add sprite_image_and_position['img']:
+                        xpos x_offset + sprite_image_and_position['x']
+                        ypos y_offset + sprite_image_and_position['y']
 
     for (id, args) in game_state.pictures():
         if ('opacity' not in args) or (args['opacity'] != 0):
@@ -94,7 +93,7 @@ screen mapscreen(
     viewport id "map_fg_viewport":
         xadjustment viewport_xadjustment
         yadjustment viewport_yadjustment
-        child_size (width, height)
+        child_size child_size
         mousewheel False
         draggable None
         scrollbars None

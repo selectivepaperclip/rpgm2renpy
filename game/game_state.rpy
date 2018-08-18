@@ -684,6 +684,23 @@ init python:
                         # Overflowing more on map_width
                         return float(screen_width_sans_scrollbar) / map_width
 
+        def sprite_images_and_positions(self):
+            result = []
+            for sprite_data in self.map.sprites():
+                x, y, img = sprite_data[0:3]
+                screen_x = x * rpgm_metadata.tile_width
+                screen_y = y * rpgm_metadata.tile_height
+                if len(sprite_data) > 3:
+                    pw, ph, shift_y = sprite_data[3:6]
+                    screen_x += (rpgm_metadata.tile_width / 2) - (pw / 2)
+                    screen_y += (rpgm_metadata.tile_height) - (ph + shift_y)
+                result.append({
+                    'img': img,
+                    'x': int(screen_x),
+                    'y': int(screen_y)
+                })
+            return result
+
         def show_map(self, in_interaction = False):
             coordinates = []
             if not in_interaction:
@@ -768,13 +785,15 @@ init python:
                 hud_lines=hud_lines,
                 hud_groups=hud_groups,
                 map_name=self.map.name(),
-                sprites=self.map.sprites(),
+                sprites=None,
+                sprite_images_and_positions=self.sprite_images_and_positions(),
                 impassible_tiles=impassible_tiles,
                 common_events_keymap=self.common_events_keymap(),
                 background_image=background_image,
                 parallax_image=parallax_image,
                 width=width,
                 height=height,
+                child_size=(width, height),
                 viewport_xadjustment=viewport_xadjustment,
                 viewport_yadjustment=viewport_yadjustment,
                 x_offset=x_offset,
