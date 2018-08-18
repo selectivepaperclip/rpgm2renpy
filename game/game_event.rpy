@@ -756,7 +756,7 @@ init python:
                                 current_x, current_y = loc
 
                             new_x, new_y = current_x + delta_x, current_y + delta_y
-                            if not (player_moving and game_state.everything_reachable):
+                            if not (player_moving and game_state.everything_is_reachable()):
                                 map_event = self.state.map.find_event_for_location(new_x, new_y)
                                 if not map_event or (not self.state.map.event_through(map_event.event_data, map_event.page, map_event.page_index)):
                                     if len(reachability_grid) > new_y and len(reachability_grid[new_y]) > new_x:
