@@ -471,9 +471,6 @@ init python:
                     if x == 30 and y == 12:
                         return True
 
-                    if x in [21, 22] and y in [18]:
-                        return True
-
                     if x in [23, 26] and y in [16, 17, 18]:
                         return True
                 elif self.map_id == 49:
