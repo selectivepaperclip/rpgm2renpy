@@ -319,7 +319,7 @@ init python:
 
         def get_canned_answer(self, variable_id):
             # Aunt's cabinet code
-            if GameIdentifier().is_milfs_villa() and variable_id == 109:
+            if GameIdentifier().is_milfs_villa() and self.state.map.map_id == 48 and variable_id == 109:
                 return 32
 
         def do_next_thing(self):
