@@ -243,3 +243,9 @@ label after_load:
         if displayed_map_screen:
             viewport_xadjustment = displayed_map_screen.xadjustment
             viewport_yadjustment = displayed_map_screen.yadjustment
+            bg_image = renpy.get_widget("mapscreen", "map_bg_image", layer = "maplayer")
+            if bg_image:
+                bg_image.children[0].filename = game_state.map.background_image_cache_file()
+
+        # Ensure the map's background has been (re-)generated before any cached displayables get shown
+        game_state.map.background_image()

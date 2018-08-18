@@ -60,6 +60,7 @@ screen mapscreen(
                     ypos y_offset
 
             add background_image:
+                id "map_bg_image"
                 xpos x_offset
                 ypos y_offset
 
