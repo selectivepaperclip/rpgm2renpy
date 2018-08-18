@@ -371,7 +371,7 @@ init python:
                     if not hasattr(self, 'choices_to_hide'):
                         self.choices_to_hide = []
 
-                    result = renpy.display_menu([(game_state.replace_names(text), index) for index, text in enumerate(choice_texts) if index not in self.choices_to_hide])
+                    result = renpy.display_menu([(game_state.replace_names(text), index) for index, text in enumerate(choice_texts) if index + 1 not in self.choices_to_hide])
                     self.branch[command['indent']] = result
                     self.choices_to_hide = []
 
