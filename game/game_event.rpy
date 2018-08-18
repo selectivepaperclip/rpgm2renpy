@@ -845,13 +845,11 @@ init python:
 
                         if self.parallel():
                             picture_args['loop'] = True
+
                         if command['code'] == 231:
                             game_state.show_picture(picture_id, picture_args)
                         else:
-                            game_state.move_picture(picture_id, picture_args)
-                        if wait:
-                            game_state.wait(duration)
-                            game_state.flush_queued_pictures()
+                            game_state.move_picture(picture_id, picture_args, wait, duration)
 
                 # Tint picture - TODO ?
                 elif command['code'] == 234:

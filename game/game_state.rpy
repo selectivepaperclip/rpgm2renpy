@@ -86,7 +86,7 @@ init python:
             self.migrate_shown_pictures()
             self.queued_pictures.append((picture_id, args))
 
-        def move_picture(self, picture_id, args):
+        def move_picture(self, picture_id, args, wait, duration):
             self.migrate_shown_pictures()
             queued_picture = self.queued_picture(picture_id)
             if not queued_picture and picture_id in self.shown_pictures:
@@ -95,6 +95,8 @@ init python:
                     'image_name': shown_picture['image_name'],
                     'opacity': shown_picture['opacity']
                 }
+                if wait:
+                    reconstructed_picture_args['wait'] = duration
                 if 'final_x' in shown_picture:
                     reconstructed_picture_args.update({
                         'x': shown_picture['final_x'],
@@ -108,6 +110,8 @@ init python:
                         'size': shown_picture['size']
                     })
                 self.queued_pictures.append((picture_id, reconstructed_picture_args))
+            elif queued_picture and wait:
+                queued_picture['wait'] = duration
             self.queued_pictures.append((picture_id, args))
 
         def hide_picture(self, picture_id):
@@ -154,8 +158,8 @@ init python:
             frame_data = {}
             for picture_id, picture_args in self.queued_pictures:
                 if picture_id in frame_data:
-                    existing_frame = frame_data[picture_id]
-                    if 'wait' in frame_data and frame_data['wait'] > 0:
+                    existing_frame = frame_data[picture_id][-1]
+                    if 'wait' in existing_frame and existing_frame['wait'] > 0:
                         frame_data[picture_id].append(picture_args)
                     else:
                         frame_data[picture_id][-1] = picture_args
