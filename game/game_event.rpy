@@ -8,6 +8,7 @@ init python:
             self.list_index = 0
             self.new_map_id = None
             self.choices_to_hide = []
+            self.choices_to_disable = []
             self.branch = {}
 
         def common(self):
@@ -204,6 +205,11 @@ init python:
                     indent = new_indent
             self.list_index = index
 
+        def disable_choice(self, choice_id):
+            if not hasattr(self, 'choices_to_disable'):
+                self.choices_to_disable = []
+            self.choices_to_disable.append(choice_id)
+
         def hide_choice(self, choice_id):
             if not hasattr(self, 'choices_to_hide'):
                 self.choices_to_hide = []
@@ -322,6 +328,32 @@ init python:
             if GameIdentifier().is_milfs_villa() and self.state.map.map_id == 48 and variable_id == 109:
                 return 32
 
+        def merge_show_choice_commands(self):
+            command_index = self.list_index
+            first_choice_command = self.page['list'][command_index]
+            while self.page['list'][command_index] and self.page['list'][command_index]['code'] == 102:
+                show_choice_command = self.page['list'][command_index]
+                if show_choice_command != first_choice_command:
+                    choice_offset = len(first_choice_command['parameters'][0])
+                    first_choice_command['parameters'][0] += show_choice_command['parameters'][0]
+                    if show_choice_command['parameters'][1] == 5:
+                        renpy.say(None, "merge_show_choice_commands does not support 'branch' option")
+
+                    i = command_index + 1
+                    while self.page['list'][i] and ((self.page['list'][i]['code'] in [402, 403, 404]) or self.page['list'][i]['indent'] != first_choice_command['indent']):
+                        if self.page['list'][i]['code'] == 402 and self.page['list'][i]['indent'] == first_choice_command['indent']:
+                            # Increment the "when" param by the number of existing available choices
+                            self.page['list'][i]['parameters'][0] += choice_offset
+                        i += 1
+
+                    self.page['list'].remove(show_choice_command)
+                else:
+                    command_index += 1
+
+                # Skip choice branches
+                while self.page['list'][command_index] and ((self.page['list'][command_index]['code'] in [402, 403, 404]) or self.page['list'][command_index]['indent'] != first_choice_command['indent']):
+                    command_index += 1
+
         def do_next_thing(self):
             if not self.done():
                 self.migrate_global_branch_data()
@@ -363,17 +395,35 @@ init python:
 
                 # Show choices
                 elif command['code'] == 102:
-                    choice_texts = command['parameters'][0]
-                    cancel_type = command['parameters'][1]
+                    if GameIdentifier().is_milfs_control():
+                        self.merge_show_choice_commands()
+
+                    choice_texts, cancel_type = command['parameters'][0:2]
                     if cancel_type >= len(choice_texts):
                         cancel_type = -2
 
                     if not hasattr(self, 'choices_to_hide'):
                         self.choices_to_hide = []
 
-                    result = renpy.display_menu([(game_state.replace_names(text), index) for index, text in enumerate(choice_texts) if index + 1 not in self.choices_to_hide])
+                    if not hasattr(self, 'choices_to_disable'):
+                        self.choices_to_disable = []
+
+                    options = [(game_state.replace_names(text), index) for index, text in enumerate(choice_texts) if index + 1 not in self.choices_to_hide]
+                    if len(options) > 10:
+                        choice_options = []
+                        for option_text, option_index in options:
+                            choice_options.append({
+                                'id': option_index,
+                                'text': option_text,
+                                'disabled': True if (option_index + 1) in self.choices_to_disable else False
+                            })
+
+                        result = renpy.call_screen("scrollable_show_choices_screen", choice_options)
+                    else:
+                        result = renpy.display_menu(options)
                     self.branch[command['indent']] = result
                     self.choices_to_hide = []
+                    self.choices_to_disable = []
 
                 # Input number
                 elif command['code'] == 103:

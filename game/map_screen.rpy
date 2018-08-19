@@ -1,5 +1,6 @@
 screen mapscreen(
     coords = [],
+    curated_clickables = [],
     mapfactor = None,
     hud_pics = [],
     hud_lines = [],
@@ -89,6 +90,17 @@ screen mapscreen(
     for (id, args) in game_state.pictures():
         if ('opacity' not in args) or (args['opacity'] != 0):
             add args['image_name']
+
+    for curated_clickable in curated_clickables:
+        button:
+            xpos curated_clickable['xpos']
+            xsize curated_clickable['xsize']
+            ypos curated_clickable['ypos']
+            ysize curated_clickable['ysize']
+            background Color("#f00", alpha = 0.5)
+            hover_background Color("#00f", alpha = 0.5)
+            tooltip curated_clickable['coord'].tooltip()
+            action SetVariable("mapdest", curated_clickable['coord']), Jump("game")
 
     viewport id "map_fg_viewport":
         xadjustment viewport_xadjustment

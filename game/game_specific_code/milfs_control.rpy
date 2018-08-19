@@ -63,6 +63,7 @@ init python:
             gain_triad_card_command = re.match("gain_triad_card\((\d+), (\d+)\)", line)
             triad_game_command = re.match("triple_triad\((\d+)\)", line)
             chain_commands_command = re.match("chain_commands\((\d+)\)", line)
+            disable_choice_command = re.match("disable_choice\((\d+),\s*\"!\$game_switches\[(\d+)\]\"\)", line)
 
             if gain_triad_card_command:
                 groups = gain_triad_card_command.groups()
@@ -91,6 +92,12 @@ init python:
                 elif result == 3:
                     game_state.variables.operate_variable(num_lost_variable, 1, 1)
 
+            elif disable_choice_command:
+                groups = disable_choice_command.groups()
+                choice_index = int(groups[0])
+                switch_id = int(groups[1])
+                if game_state.switches.value(switch_id) != True:
+                    game_state.events[-1].disable_choice(choice_index)
             elif line == "Tidloc.exe \"LockPick\",:game,0,5,":
                 renpy.say(None, "You picked the lock!")
                 game_state.switches.set_value(100, True)
@@ -113,3 +120,52 @@ init python:
             else:
                 renpy.say(None, "Conditional statements for Script not implemented")
                 return False
+
+        def has_curated_clickables(self, map_id):
+            return map_id == 24
+
+        def curated_clickables(self, coordinates, map_id):
+            result = []
+            if map_id == 24:
+                # The RPGM implementation of this screen splits the events into two segments that look like this:
+                # [x][x]
+                # [x][x]
+                # [x]            [x][x]
+                # [x]
+                # In RPGM, you use the arrow keys to move your little man and press the action key to activate the events.
+                # The upper-leftmost one teleports the little man to the group on the right hand side.
+                #
+                # For RenPy, each of these events is mapped to a hardcoded clickable area on the screen.
+                # The events on the right hand side only show up if the player is in one of those locations (has opened context menu)
+
+                mappings = {
+                  (6,3): (35, 45, 120, 120),
+                  (6,4): (35, 175, 120, 120),
+                  (6,5): (35, 310, 120, 120),
+                  (6,6): (35, 435, 120, 120),
+                  (7,3): (165, 45, 120, 120),
+                  (7,4): (165, 175, 120, 120),
+                  (6, 15): (315, 125, 150, 150),
+                  (7, 15): (470, 125, 150, 150),
+                }
+                contextual_coords = [(6, 15), (7, 15)]
+                for coord in coordinates:
+                    if (coord.x, coord.y) in contextual_coords and (game_state.player_x, game_state.player_y) not in contextual_coords:
+                        continue
+
+                    if mappings[(coord.x, coord.y)]:
+                        mapping = mappings[(coord.x, coord.y)]
+                        coord.reachable = True
+                        coord.clicky = True
+                        coord.teleport = True
+                        result.append({
+                            "xpos": mapping[0],
+                            "ypos": mapping[1],
+                            "xsize": mapping[2],
+                            "ysize": mapping[3],
+                            "coord": coord
+                        })
+                    else:
+                        renpy.say(None, "No mapping for coord: %s, %s" % (coord.x, coord.y))
+
+            return result

@@ -586,7 +586,9 @@ init python:
                     map_event = self.map.find_event_for_location(mapdest.x, mapdest.y, only_special = True)
 
                 if (not self.map.clicky_event(map_event.event_data, map_event.page)) and (self.player_x != mapdest.x or self.player_y != mapdest.y):
-                    if hasattr(mapdest, 'reachable') and mapdest.reachable and not self.everything_is_reachable():
+                    if hasattr(mapdest, 'teleport'):
+                        self.player_x, self.player_y = mapdest.x, mapdest.y
+                    elif hasattr(mapdest, 'reachable') and mapdest.reachable and not self.everything_is_reachable():
                         reachability_grid = self.map.reachability_grid_for_current_position()
                         adjacent_square, self.player_direction = self.map.last_square_before_dest(self.player_x, self.player_y, mapdest.x, mapdest.y)
                         if map_event.page['through'] or (map_event.page['priorityType'] != 1 and not self.map.is_impassible(mapdest.x, mapdest.y, self.player_direction)):
@@ -703,15 +705,20 @@ init python:
 
         def show_map(self, in_interaction = False):
             coordinates = []
+            curated_clickables = []
             if not in_interaction:
                 self.flush_queued_pictures()
                 coordinates = self.map.map_options(self.player_x, self.player_y)
-                if not game_state.everything_is_reachable():
-                    self.map.assign_reachability(self.player_x, self.player_y, coordinates)
-                if hide_unreachable_events:
-                    coordinates = [map_clickable for map_clickable in coordinates if map_clickable.reachable]
-                if not show_noop_events:
-                    coordinates = [map_clickable for map_clickable in coordinates if not hasattr(map_clickable, 'has_commands') or map_clickable.has_commands]
+                if GameIdentifier().is_milfs_control() and GameSpecificCodeMilfsControl().has_curated_clickables(self.map.map_id):
+                    curated_clickables = GameSpecificCodeMilfsControl().curated_clickables(coordinates, self.map.map_id)
+                    coordinates = []
+                else:
+                    if not game_state.everything_is_reachable():
+                        self.map.assign_reachability(self.player_x, self.player_y, coordinates)
+                    if hide_unreachable_events:
+                        coordinates = [map_clickable for map_clickable in coordinates if map_clickable.reachable]
+                    if not show_noop_events:
+                        coordinates = [map_clickable for map_clickable in coordinates if not hasattr(map_clickable, 'has_commands') or map_clickable.has_commands]
 
             x_offset = 0
             y_offset = 0
@@ -780,6 +787,7 @@ init python:
                 _layer="maplayer",
                 mapfactor=mapfactor * self.user_map_zoom(),
                 coords=coordinates,
+                curated_clickables=curated_clickables,
                 player_position=(self.player_x, self.player_y),
                 hud_pics=hud_pics,
                 hud_lines=hud_lines,
