@@ -239,6 +239,27 @@ init python:
             self.event_location_overrides = {}
             self.event_overrides = {}
             self.erased_events = {}
+            self.hide_unpleasant_moving_obstacles()
+
+        def hide_unpleasant_moving_obstacles(self):
+            if GameIdentifier().is_ics1():
+                for e in self.active_events():
+                    for page in reversed(e['pages']):
+                        if self.meets_conditions(e, page['conditions']):
+                            if page['trigger'] != 4:
+                                continue
+
+                            for command in page['list']:
+                                if command['code'] != 205:
+                                    continue
+
+                                event_id = command['parameters'][0]
+                                if event_id <= 0:
+                                    continue
+
+                                event = self.state.map.find_event_at_index(event_id)
+                                if event:
+                                    event.hide_if_unpleasant_moving_obstacle()
 
         def data(self):
             if not hasattr(self, '_data'):
@@ -728,6 +749,8 @@ init python:
             if event_index in self.erased_events:
                 return None
             e = self.data()['events'][event_index]
+            if e['id'] in self.erased_events:
+                return None
             for reverse_page_index, page in enumerate(reversed(e['pages'])):
                 if self.meets_conditions(e, page['conditions']):
                     page_index = (len(e['pages']) - 1) - reverse_page_index

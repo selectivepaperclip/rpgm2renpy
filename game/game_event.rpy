@@ -328,6 +328,11 @@ init python:
             if GameIdentifier().is_milfs_villa() and self.state.map.map_id == 48 and variable_id == 109:
                 return 32
 
+        def hide_if_unpleasant_moving_obstacle(self):
+            if GameIdentifier().is_ics1():
+                if self.page['image']['characterName'] and self.page['image']['characterName'].startswith('car'):
+                    self.state.map.erased_events[self.event_data['id']] = True
+
         def merge_show_choice_commands(self):
             command_index = self.list_index
             first_choice_command = self.page['list'][command_index]
@@ -731,9 +736,17 @@ init python:
                         event_id = self.event_data['id']
                     if event_id == self.event_data['id']:
                         event_page_index = self.get_page_index()
-                    if event_id > 0 and event_page_index == None:
-                        event = self.state.map.find_event_at_index(event_id)
-                        event_page_index = event.get_page_index()
+                    if event_id > 0:
+                        if event_page_index == None:
+                            event = self.state.map.find_event_at_index(event_id)
+
+                        if not event:
+                            self.list_index += 1
+                            return
+
+                        if event_page_index == None:
+                            event_page_index = event.get_page_index()
+
                     for route_part in route['list']:
                         delta_x = 0
                         delta_y = 0
