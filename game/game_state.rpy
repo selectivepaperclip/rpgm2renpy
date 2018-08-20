@@ -349,6 +349,12 @@ init python:
                             result.append((activation_key.upper(), event_str))
             return result
 
+        def function_calls_keymap(self):
+            result = []
+            if GameIdentifier().is_ics1():
+                result.append(('i', 'show_inventory'))
+            return result
+
         def queue_common_and_parallel_events(self):
             if len(self.common_events_data()) > 0:
                 self.common_events_index = 1
@@ -565,6 +571,10 @@ init python:
             if keyed_common_event:
                 common_event = self.common_events_data()[int(keyed_common_event)]
                 self.events.append(GameEvent(self, common_event, common_event))
+                return True
+
+            if keyed_function_call:
+                getattr(self, keyed_function_call)()
                 return True
 
             if mapdest:
@@ -797,6 +807,7 @@ init python:
                 sprite_images_and_positions=self.sprite_images_and_positions(),
                 impassible_tiles=impassible_tiles,
                 common_events_keymap=self.common_events_keymap(),
+                function_calls_keymap=self.function_calls_keymap(),
                 background_image=background_image,
                 parallax_image=parallax_image,
                 width=width,

@@ -12,6 +12,7 @@ define image_sizes = {}
 define picture_image_sizes = {}
 define mapdest = None
 define keyed_common_event = None
+define keyed_function_call = None
 define draw_impassible_tiles = False
 define hide_unreachable_events = False
 define show_noop_events = False
@@ -232,6 +233,7 @@ label game:
           $ renpy.checkpoint()
           $ renpy.ui.interact(mouse="screen", type="screen")
         $ mapdest = None
+        $ keyed_function_call = None
         $ keyed_common_event = None
         $ show_synthesis = None
 

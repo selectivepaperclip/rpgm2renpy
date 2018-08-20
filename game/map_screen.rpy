@@ -10,6 +10,7 @@ screen mapscreen(
     sprite_images_and_positions = None,
     impassible_tiles = None,
     common_events_keymap = None,
+    function_calls_keymap = [],
     background_image = None,
     parallax_image = None,
     width = None,
@@ -54,6 +55,10 @@ screen mapscreen(
     for key_str, event_id in common_events_keymap:
         key key_str:
             action SetVariable("keyed_common_event", event_id), Jump("game")
+
+    for key_str, function_call in function_calls_keymap:
+        key key_str:
+            action SetVariable("keyed_function_call", function_call), Jump("game")
 
     viewport id "map_bg_viewport":
         xadjustment viewport_xadjustment
