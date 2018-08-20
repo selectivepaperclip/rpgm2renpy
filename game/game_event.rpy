@@ -700,6 +700,10 @@ init python:
                         else:
                             self.state.party.remove_actor(actor_index)
 
+                # Change battle BGM / Change victory ME
+                elif command['code'] in [132, 133]:
+                    pass
+
                 # Change save access
                 elif command['code'] == 134:
                     pass
