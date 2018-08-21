@@ -187,7 +187,28 @@ init python:
 
         def pictures(self):
             self.migrate_shown_pictures()
-            return iter(sorted(self.shown_pictures.iteritems()))
+
+            if GameIdentifier().is_ics1():
+                # ICS1 keeps showing pictures on top of each other, making the game slower and slower what with the compositing
+                # we need to hide all but the topmost one
+                if len(self.shown_pictures) > 0:
+                    last_scene_image = None
+                    for k, v in reversed(sorted(self.shown_pictures.iteritems())):
+                        if hasattr(v['image_name'], 'children') and len(v['image_name'].children) > 0 and v['image_name'].children[0].name[0].startswith('rpgmpicture-scene'):
+                            last_scene_image = k
+                            break
+
+                    tmp_shown_pictures = {}
+                    for k, v in reversed(sorted(self.shown_pictures.iteritems())):
+                        if hasattr(v['image_name'], 'children') and len(v['image_name'].children) > 0 and v['image_name'].children[0].name[0].startswith('rpgmpicture-scene') and last_scene_image != k:
+                            continue
+                        tmp_shown_pictures[k] = v
+
+                    return iter(sorted(tmp_shown_pictures.iteritems()))
+                else:
+                    return []
+            else:
+                return iter(sorted(self.shown_pictures.iteritems()))
 
         def system_data(self):
             if not hasattr(self, '_system_data'):
