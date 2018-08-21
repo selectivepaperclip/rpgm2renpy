@@ -212,13 +212,18 @@ label start:
     python:
         game_state = GameState()
         game_state.set_game_start_events()
-        if GameIdentifier().is_ics2():
+        if GameIdentifier().is_ics1():
+            game_state.party.gold = 30000
+            hide_unreachable_events = True
+        elif GameIdentifier().is_ics2():
             GameSkips().ics2_skip_unpacking()
         elif GameIdentifier().is_taboo_request():
             hide_unreachable_events = True
         elif GameIdentifier().is_my_summer():
             hide_unreachable_events = True
         elif GameIdentifier().is_visiting_sara():
+            hide_unreachable_events = True
+        elif GameIdentifier().is_milfs_control():
             hide_unreachable_events = True
         elif GameIdentifier().is_milfs_villa():
             hide_unreachable_events = True
