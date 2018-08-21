@@ -497,6 +497,17 @@ init python:
                 elif self.map_id == 49:
                     if x in [29] and y in [16, 17]:
                         return True
+
+            elif GameIdentifier().is_ics1():
+                # Streetlights in ICS1 - this is an actual game bug in the RPGM version
+                # where you can zone into a new map and be facing an impassible streetlight
+                # and your only choice is to go back and try to go forward again on a new y
+                if self.map_id == 33:
+                    if (x, y) in [(53, 1), (53, 7)]:
+                        return True
+                if self.map_id == 43:
+                    if (x, y) in [(58,23), (58, 29)]:
+                        return True
             return False
 
         def tile_id(self, x, y, z):
