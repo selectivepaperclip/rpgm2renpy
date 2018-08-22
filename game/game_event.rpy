@@ -383,7 +383,7 @@ init python:
                     while len(self.page['list']) > self.list_index + 1 and self.page['list'][self.list_index + 1]['code'] == 401:
                         self.list_index += 1
                         command = self.page['list'][self.list_index]
-                        text = game_state.replace_names(command['parameters'][0])
+                        text = command['parameters'][0]
                         # If the previous line didn't end with a space, add a space before joining to the next line
                         if len(accumulated_text) > 0 and not re.search(ends_with_whitespace_pattern, accumulated_text[-1]):
                             accumulated_text.append(' ')
@@ -392,7 +392,7 @@ init python:
                         if text.endswith(":") or text.endswith('.'):
                             accumulated_text.append("\n")
 
-                    text_to_show = "".join(accumulated_text).strip()
+                    text_to_show = game_state.replace_names("".join(accumulated_text).strip())
                     if len(text_to_show) > 0:
                         renpy.say(None, re.sub('%', '%%', text_to_show))
                     else:
