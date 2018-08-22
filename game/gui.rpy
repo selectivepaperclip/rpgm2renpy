@@ -12,10 +12,13 @@ init python:
     plugins_json = rpgm_plugins_loader.json()
     resolution_plugin = next((plugin_data for plugin_data in plugins_json if plugin_data['name'].startswith('Resolution')), None)
     screen_resolution_plugin = next((plugin_data for plugin_data in plugins_json if plugin_data['name'].startswith('ScreenResolution')), None)
+    core_engine_plugin = next((plugin_data for plugin_data in plugins_json if plugin_data['name'].startswith('YEP_CoreEngine')), None)
     if resolution_plugin:
         gui.init(int(resolution_plugin['parameters']['Screen Width']), int(resolution_plugin['parameters']['Screen Height']))
     elif screen_resolution_plugin:
         gui.init(int(screen_resolution_plugin['parameters']['Screen Width']), int(screen_resolution_plugin['parameters']['Screen Height']))
+    elif core_engine_plugin:
+        gui.init(int(core_engine_plugin['parameters']['Screen Width']), int(core_engine_plugin['parameters']['Screen Height']))
     elif rpgm_metadata.is_pre_mv_version:
         gui.init(1024, 768)
     else:
