@@ -270,7 +270,7 @@ init python:
 
         def background_image(self):
             if not hasattr(self, '_background_image') or isinstance(self._background_image, GameMapBackground):
-                if not os.path.exists(self.background_image_cache_file()):
+                if not os.path.exists(self.background_image_cache_file_absolute()):
                     self.generate_background_image()
                 self._background_image = Image(self.background_image_cache_file())
             if not hasattr(self, 'image_width'):
@@ -283,8 +283,11 @@ init python:
         def background_image_cache_file(self):
             return os.path.join(map_cache_directory, ('Map%03d.png' % self.map_id)).replace("\\", "/")
 
+        def background_image_cache_file_absolute(self):
+            return os.path.join(config.basedir, self.background_image_cache_file()).replace("\\", "/")
+
         def generate_background_image(self):
-            bg = GameMapBackgroundGenerator(self.map_id, self.tiles(), self.background_image_cache_file())
+            bg = GameMapBackgroundGenerator(self.map_id, self.tiles(), self.background_image_cache_file_absolute())
             bg.save()
 
         def parallax_image(self):
