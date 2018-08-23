@@ -101,9 +101,10 @@ init -10 python:
 
             if os.path.exists(os.path.join(config.basedir, titles_path)):
                 for filename in glob.glob(os.path.join(config.basedir, titles_path, '%s.*' % base_file)):
-                    base, ext = os.path.splitext(os.path.basename(filename))
+                    basename = os.path.basename(filename)
+                    base, ext = os.path.splitext(basename)
                     if supported_image(ext):
-                        return filename.replace("\\", "/")
+                        return os.path.join(titles_path, basename).replace("\\", "/")
 
     rpgm_metadata = RpgmMetadata()
 
