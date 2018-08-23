@@ -70,7 +70,7 @@ init -10 python:
 
     map_cache_directory = os.path.join('rpgmcache', 'maps', 'v1').replace('\\', '/')
     if not os.path.exists(os.path.join(renpy.config.basedir, map_cache_directory)):
-        os.makedirs(map_cache_directory)
+        os.makedirs(os.path.join(renpy.config.basedir, map_cache_directory))
 
     class RpgmMetadata():
         def __init__(self):
