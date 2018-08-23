@@ -687,7 +687,7 @@ init python:
                 is_object_character = True
 
             if not img_base_filename in character_image_sizes:
-                character_image_sizes[img_base_filename] = renpy.image_size(character_images[img_base_filename])
+                character_image_sizes[img_base_filename] = renpy.image_size(character_images[img_base_filename.lower()])
             img_size = character_image_sizes[img_base_filename]
 
             pw = img_size[0] / 12
@@ -708,7 +708,7 @@ init python:
             sx = (character_block_x + character_pattern_x) * pw
             sy = (character_block_y + character_pattern_y) * ph
 
-            img = im.Crop(character_images[img_base_filename], (sx, sy, pw, ph))
+            img = im.Crop(character_images[img_base_filename.lower()], (sx, sy, pw, ph))
             shift_y = 0 if is_object_character else 6
             return (img, pw, ph, shift_y)
 

@@ -198,7 +198,7 @@ init python:
         if not supported_image(ext):
             continue
         image_name = base.replace(".", "_")
-        character_images[image_name] = rpgm_metadata.characters_path + filename
+        character_images[image_name.lower()] = rpgm_metadata.characters_path + filename
 
     if os.path.exists(os.path.join(config.basedir, rpgm_metadata.parallaxes_path)):
         for filename in os.listdir(os.path.join(config.basedir, rpgm_metadata.parallaxes_path)):
