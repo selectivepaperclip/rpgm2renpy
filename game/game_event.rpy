@@ -222,6 +222,8 @@ init python:
                 success_clause = xhr_compare_command.groups()[0]
                 self.eval_script(success_clause.strip())
                 return
+            elif GameIdentifier().is_milfs_control() and GameSpecificCodeMilfsControl().eval_full_script(script_string):
+                return
 
             for line in script_string.split("\n"):
                 variable_set_command = re.match("\$gameVariables\.setValue\((\d+),\s*(.+)\);?", line)
@@ -255,7 +257,8 @@ init python:
                 else:
                     print "Script that could not be evaluated:\n"
                     print script_string
-                    renpy.say(None, "Code 355 not implemented to eval script including line '%s'\nSee console for full script" % line.replace("{", "{{"))
+                    clean_line = line.replace("{", "{{").replace("[", "[[")
+                    renpy.say(None, "Code 355 not implemented to eval script including line '%s'\nSee console for full script" % clean_line)
                     return
 
         def eval_fancypants_value_statement(self, script_string):

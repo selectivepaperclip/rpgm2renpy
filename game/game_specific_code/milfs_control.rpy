@@ -59,6 +59,13 @@ init python:
             55: 'Tonker',
         }
 
+        def eval_full_script(self, script_string):
+            triad_shop_assignment_command = re.match("^\$triad_shop =", script_string)
+            if triad_shop_assignment_command:
+                return True
+
+            return False
+
         def eval_script(self, line, script_string):
             gain_triad_card_command = re.match("gain_triad_card\((\d+), (\d+)\)", line)
             triad_game_command = re.match("triple_triad\((\d+)\)", line)
@@ -108,6 +115,9 @@ init python:
                 # Skip command minigame in Milf's Control
                 game_state.switches.set_value(switch_id, True)
             elif "start_range_game(" in script_string:
+                return True
+            elif script_string == "SceneManager.call(Shop_Triple_Triad)":
+                renpy.say(None, "Card Shop not implemented!")
                 return True
             else:
                 return False
