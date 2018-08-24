@@ -254,6 +254,8 @@ init python:
                     pass
                 elif GameIdentifier().is_ics1() and GameSpecificCodeICS1().eval_script(line, script_string):
                     pass
+                elif GameIdentifier().is_robots_touch() and GameSpecificCodeRobotsTouch().eval_script(line, script_string):
+                    pass
                 else:
                     print "Script that could not be evaluated:\n"
                     print script_string
@@ -403,7 +405,7 @@ init python:
 
                 # Show choices
                 elif command['code'] == 102:
-                    if GameIdentifier().is_milfs_control():
+                    if GameIdentifier().is_milfs_control() or GameIdentifier().is_robots_touch():
                         self.merge_show_choice_commands()
 
                     choice_texts, cancel_type = command['parameters'][0:2]
@@ -416,7 +418,7 @@ init python:
                     if not hasattr(self, 'choices_to_disable'):
                         self.choices_to_disable = []
 
-                    options = [(game_state.replace_names(text), index) for index, text in enumerate(choice_texts) if index + 1 not in self.choices_to_hide]
+                    options = [(game_state.replace_names(text), index) for index, text in enumerate(choice_texts) if index + 1 not in self.choices_to_hide and len(text) > 0]
                     if len(options) > 10:
                         choice_options = []
                         for option_text, option_index in options:
@@ -826,6 +828,8 @@ init python:
                                 current_x, current_y = loc
 
                             new_x, new_y = current_x + delta_x, current_y + delta_y
+                            if new_x < 0 or new_y < 0:
+                                break
                             if not (player_moving and game_state.everything_is_reachable()):
                                 map_event = self.state.map.find_event_for_location(new_x, new_y)
                                 if not map_event or (not self.state.map.event_through(map_event.event_data, map_event.page, map_event.page_index)):

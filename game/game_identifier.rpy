@@ -8,6 +8,8 @@ init python:
             return rpgm_game_data.get('long_name', '') == "Incest Story 1"
         def is_ics2(self):
             return game_state.system_data()['gameTitle'] == 'Incest Story 2 v1.0 Final'
+        def is_robots_touch(self):
+            return rpgm_game_data.get('long_name', '') == "Robot's Touch"
         def is_taboo_request(self):
             return game_state.system_data()['gameTitle'] == 'Taboo Request'
         def is_my_summer(self):
