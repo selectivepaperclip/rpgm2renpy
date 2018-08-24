@@ -588,6 +588,10 @@ init python:
             if self.parallel_events_index != None and self.parallel_events_index < len(self.map.data()['events']):
                 if not hasattr(self.map, 'erased_events'):
                     self.map.erased_events = {}
+                if not hasattr(self, 'previous_parallel_event_pages'):
+                    self.previous_parallel_event_pages = []
+                if self.parallel_events_index == 1:
+                    self.previous_parallel_event_pages.append(self.map.parallel_event_pages())
                 for event_id in xrange(self.parallel_events_index, len(self.map.data()['events'])):
                     if event_id in self.map.erased_events:
                         continue
@@ -597,6 +601,20 @@ init python:
                         self.events.append(possible_parallel_event)
                         return True
             self.parallel_events_index = None
+
+            if hasattr(self, 'previous_parallel_event_pages') and len(self.previous_parallel_event_pages) > 0:
+                current_parallel_event_pages = self.map.parallel_event_pages()
+                seen_event_set_before = False
+                for prior_event_page_set in reversed(self.previous_parallel_event_pages):
+                    if current_parallel_event_pages == prior_event_page_set:
+                        seen_event_set_before = True
+                        break
+                if not seen_event_set_before:
+                    if noisy_events:
+                        print "running parallel events changed event pages %s to %s" % (self.previous_parallel_event_pages[-1], current_parallel_event_pages)
+
+                    self.queue_parallel_events()
+                    return True
 
             self.events = [e for e in [self.map.find_auto_trigger_event()] if e]
             if len(self.events) > 0:

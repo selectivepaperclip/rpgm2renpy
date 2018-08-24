@@ -799,6 +799,14 @@ init python:
                             break
             return None
 
+        def parallel_event_pages(self):
+            result = []
+            for event_id in xrange(1, len(self.data()['events'])):
+                possible_parallel_event = self.parallel_event_at_index(event_id)
+                if possible_parallel_event:
+                    result.append((possible_parallel_event.event_data['id'], possible_parallel_event.page_index))
+            return result
+
         def parallel_event_at_index(self, event_index):
             if not hasattr(self, 'erased_events'):
                 self.erased_events = {}
@@ -806,8 +814,8 @@ init python:
             if e and e['id'] not in self.erased_events:
                 for reverse_page_index, page in enumerate(reversed(e['pages'])):
                     if self.meets_conditions(e, page['conditions']):
-                        page_index = (len(e['pages']) - 1) - reverse_page_index
                         if page['trigger'] == 4:
+                            page_index = (len(e['pages']) - 1) - reverse_page_index
                             return GameEvent(self.state, e, page, page_index)
                         else:
                             break
