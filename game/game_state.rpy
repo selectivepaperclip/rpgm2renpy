@@ -247,6 +247,15 @@ init python:
             # Remove other "wait" commands e.g. \. \|
             text = re.sub(r'\\[{}!.|]', '', text)
 
+            # Remove position changing things
+            text = re.sub(r'\\p[xy]\[.*?\]\s*', '', text)
+            # Remove outline changing things
+            text = re.sub(r'\\o[cw]\[.*?\]\s*', '', text)
+            # Remove font changing things
+            text = re.sub(r'\\fs\[.*?\]\s*', '', text)
+            text = re.sub(r'\\fn\<.*?\>\s*', '', text)
+            text = re.sub(r'\\f[rbi]\s*', '', text)
+
             # Remove fancy characters from GALV_VisualNovelChoices.js
             text = re.sub(r'\\C\[(\d+)\]', '', text, flags=re.IGNORECASE)
 
