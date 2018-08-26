@@ -162,7 +162,7 @@ init python:
             surf = pygame.Surface((self.width, self.height), pygame.SRCALPHA, 32)
 
             for tile in self.tiles:
-                renpy.not_infinite_loop(60)
+                renpy.not_infinite_loop(10)
                 if len(tile.tileset_name) > 0:
                     img_path = tile_images[tile.tileset_name.replace(".", "_")]
                     img_size = None
@@ -935,7 +935,7 @@ init python:
 
             coords_to_mark = [(player_x, player_y)]
             while len(coords_to_mark) > 0:
-                renpy.not_infinite_loop(60)
+                renpy.not_infinite_loop(10)
                 mx, my = coords_to_mark.pop()
                 reachability_grid[my][mx] = 3
                 for adjacent_coord in self.adjacent_coords(mx, my, max_x, max_y):

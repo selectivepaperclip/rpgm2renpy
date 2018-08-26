@@ -533,6 +533,12 @@ init python:
                     label_name = command['parameters'][0]
                     for index, other_command in enumerate(self.page['list']):
                         if other_command['code'] == 118 and other_command['parameters'][0] == label_name:
+                            if self.parallel() and index < self.list_index:
+                                # This might be an endlessly looping animation in a parallel
+                                # event. Bail out of the event.
+                                self.finish_event()
+                                return
+
                             self.jump_to(index, current_indent = command['indent'])
 
                 # Control Switches
