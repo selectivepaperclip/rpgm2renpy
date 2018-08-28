@@ -138,4 +138,38 @@ end
 class DataManager
   def self.load_normal_database
   end
+
+  def self.extract_save_contents
+  end
 end
+
+class Scene_Map
+  def update_scene
+  end
+end
+
+class Scene_Menu
+  def create_command_window
+  end
+
+  def on_personal_ok
+  end
+end
+
+class Scene_MenuBase
+end
+
+class Window_MenuCommand
+  def make_command_list
+  end
+end
+
+class Window_HorzCommand
+end
+
+class Window_Selectable
+  def contents_height
+    0
+  end
+end
+
