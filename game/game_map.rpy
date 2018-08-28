@@ -745,9 +745,10 @@ init python:
                     if self.meets_conditions(e, page['conditions']):
                         loc = self.event_location(e)
                         image_data = page['image']
-                        if image_data['characterName'] != '':
-                            page_index = (len(e['pages']) - 1) - reverse_page_index
-                            character_sprite_data = self.character_sprite(self.event_sprite_data(e, page, page_index))
+                        page_index = (len(e['pages']) - 1) - reverse_page_index
+                        event_sprite_data = self.event_sprite_data(e, page, page_index)
+                        if event_sprite_data['characterName'] != '':
+                            character_sprite_data = self.character_sprite(event_sprite_data)
                             result.append(loc + character_sprite_data)
                         elif image_data['tileId'] != 0:
                             tile_sprite_data = self.tile_sprite(image_data)
