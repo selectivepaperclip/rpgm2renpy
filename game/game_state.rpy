@@ -395,7 +395,7 @@ init python:
 
         def function_calls_keymap(self):
             result = []
-            if GameIdentifier().is_ics1():
+            if GameIdentifier().is_ics1() or rpgm_game_data.get('enable_inventory_key', None):
                 result.append(('i', 'show_inventory'))
             return result
 
