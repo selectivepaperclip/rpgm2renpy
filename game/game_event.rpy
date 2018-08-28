@@ -763,6 +763,8 @@ init python:
                             event_page_index = event.get_page_index()
 
                     for route_part in route['list']:
+                        if noisy_events:
+                            print "MOVEMENT ROUTE: %s" % route_part['code']
                         delta_x = 0
                         delta_y = 0
                         new_direction = None
@@ -828,25 +830,29 @@ init python:
                             if player_moving:
                                 current_x, current_y = game_state.player_x, game_state.player_y
                             else:
-                                loc = self.state.map.event_location(self.event_data)
+                                loc = self.state.map.event_location(event.event_data)
                                 if not loc:
                                     break
                                 current_x, current_y = loc
 
                             new_x, new_y = current_x + delta_x, current_y + delta_y
-                            if new_x < 0 or new_y < 0:
+                            if new_x < 0 or new_y < 0 or new_x > self.state.map.width() - 1 or new_y > self.state.map.height() - 1:
                                 break
-                            if not (player_moving and game_state.everything_is_reachable()):
+
+                            moving_object_does_not_collide = (player_moving and game_state.everything_is_reachable()) or (event and self.state.map.event_through(event.event_data, event.page, event.page_index))
+                            if not moving_object_does_not_collide:
                                 map_event = self.state.map.find_event_for_location(new_x, new_y)
                                 if not map_event or (not self.state.map.event_through(map_event.event_data, map_event.page, map_event.page_index)):
                                     if len(reachability_grid) > new_y and len(reachability_grid[new_y]) > new_x:
                                         if reachability_grid[new_y][new_x] == 2 or not self.state.map.can_move_vector(current_x, current_y, delta_x, delta_y):
+                                              if noisy_events:
+                                                  print "MOVEMENT COLLIDED AT %s, %s!!!" % (new_x, new_y)
                                               break
 
                             if player_moving: # Player Character
                                 game_state.player_x, game_state.player_y = new_x, new_y
                             else:
-                                self.state.map.override_event_location(self.event_data, (new_x, new_y))
+                                self.state.map.override_event_location(event.event_data, (new_x, new_y))
 
                 # Change Transparency
                 elif command['code'] == 211:
