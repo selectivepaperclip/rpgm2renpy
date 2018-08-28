@@ -84,6 +84,7 @@ init python:
 
         def show_picture(self, picture_id, args):
             self.migrate_shown_pictures()
+            args['faded_out'] = hasattr(self, 'faded_out') and self.faded_out
             self.queued_pictures.append((picture_id, args))
 
         def move_picture(self, picture_id, args, wait, duration):
@@ -159,7 +160,7 @@ init python:
             for picture_id, picture_args in self.queued_pictures:
                 if picture_id in frame_data:
                     existing_frame = frame_data[picture_id][-1]
-                    if 'wait' in existing_frame and existing_frame['wait'] > 0:
+                    if 'wait' in existing_frame and existing_frame['wait'] > 0 and not picture_args.get('faded_out', False):
                         frame_data[picture_id].append(picture_args)
                     else:
                         frame_data[picture_id][-1] = picture_args
