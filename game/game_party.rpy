@@ -20,6 +20,8 @@ init python:
                 self.armors = {}
             if not hasattr(self, 'weapons'):
                 self.weapons = {}
+            if not hasattr(self, 'maic_quest_activity'):
+                self.maic_quest_activity = {}
 
         def num_items(self, item):
             self.migrate_missing_properties()
@@ -68,3 +70,49 @@ init python:
                 return self.armors
             else:
                 return self.items
+
+        def maic_quests_active(self):
+            self.migrate_missing_properties()
+            result = []
+            for q in rpgm_game_data['maic_quests']:
+                if q['id'] in self.maic_quest_activity and not self.maic_quest_activity[q['id']].get('completed', False):
+                    q_copy = q.copy()
+                    if 'objectives' in q_copy and len(q_copy['objectives']) > 0:
+                        annotated_objectives = []
+                        active_objectives = self.maic_quest_activity[q_copy['id']]['objectives']
+                        for objective_index, objective_text in enumerate(q_copy['objectives']):
+                            if objective_index in active_objectives:
+                                annotated_objectives.append({
+                                    'text': objective_text,
+                                    'completed': 'completed' in active_objectives[objective_index]
+                                })
+                        q_copy['objectives'] = annotated_objectives
+
+                    result.append(q_copy)
+            return result
+
+        def maic_quest_start(self, quest_id):
+            self.migrate_missing_properties()
+            self.maic_quest_activity[quest_id] = {}
+
+        def maic_quest_complete(self, quest_id):
+            self.migrate_missing_properties()
+            if quest_id not in self.maic_quest_activity:
+                self.maic_quest_activity[quest_id] = {}
+            self.maic_quest_activity[quest_id]['completed'] = True
+
+        def maic_quest_reveal_objective(self, quest_id, objective_index):
+            self.migrate_missing_properties()
+            if quest_id not in self.maic_quest_activity:
+                self.maic_quest_activity[quest_id] = {}
+            if 'objectives' not in self.maic_quest_activity[quest_id]:
+                self.maic_quest_activity[quest_id]['objectives'] = {}
+            self.maic_quest_activity[quest_id]['objectives'][objective_index] = {}
+
+        def maic_quest_complete_objective(self, quest_id, objective_index):
+            self.maic_quest_reveal_objective(quest_id, objective_index)
+            objective_activity = self.maic_quest_activity[quest_id]['objectives']
+            objective_activity[objective_index]['completed'] = True
+            total_objectives = len(next(q for q in rpgm_game_data['maic_quests'] if q['id'] == quest_id)['objectives'])
+            if len([v for v in objective_activity.values() if v.get('completed', None)]) == total_objectives:
+                self.maic_quest_complete(quest_id)

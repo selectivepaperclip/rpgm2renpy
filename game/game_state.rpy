@@ -397,6 +397,8 @@ init python:
             result = []
             if GameIdentifier().is_ics1() or rpgm_game_data.get('enable_inventory_key', None):
                 result.append(('i', 'show_inventory'))
+            if rpgm_game_data.get('maic_quests', None):
+                result.append(('q', 'show_maic_quests'))
             return result
 
         def queue_common_and_parallel_events(self):
@@ -427,6 +429,15 @@ init python:
             effect = common_event_effects[0]
             common_event = self.common_events_data()[int(effect['dataId'])]
             self.events.append(GameEvent(self, common_event, common_event))
+            return True
+
+        def show_maic_quests(self):
+            scrubbed_quest_data = []
+            for quest in self.party.maic_quests_active():
+                quest_copy = quest.copy()
+                quest_copy['description'] = "\n".join([line.strip() for line in quest_copy['description'].split("\n")])
+                scrubbed_quest_data.append(quest_copy)
+            result = renpy.call_screen('maic_quests_screen', scrubbed_quest_data)
             return True
 
         def migrate_missing_shop_data(self):

@@ -25,6 +25,18 @@ init -10 python:
     build.classify('rpgmdata', 'all')
     build.classify('rpgmcache/**', None)
 
+    class Re(object):
+        def __init__(self):
+            self.last_match = None
+
+        def match(self,pattern,text):
+            self.last_match = re.match(pattern,text)
+            return self.last_match
+
+        def search(self,pattern,text):
+            self.last_match = re.search(pattern,text)
+            return self.last_match
+
     class PluginsLoader(SelectivelyPickle):
         def package_json(self):
             if rpgm_metadata.is_pre_mv_version:

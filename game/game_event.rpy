@@ -215,6 +215,25 @@ init python:
                 self.choices_to_hide = []
             self.choices_to_hide.append(choice_id)
 
+        def eval_maic_quests_script(self, script_string, line):
+            gre = Re()
+            if gre.match("quest\((\d+)\)", line):
+                game_state.party.maic_quest_start(int(gre.last_match.groups()[0]))
+            elif gre.match("manually_complete_quest\((\d+)\)", line):
+                game_state.party.maic_quest_complete(int(gre.last_match.groups()[0]))
+            elif gre.match("reveal_objective\((\d+),\s*(\d+)\)", line):
+                quest_id = int(gre.last_match.groups()[0])
+                objective_index = int(gre.last_match.groups()[1])
+                game_state.party.maic_quest_reveal_objective(quest_id, objective_index)
+            elif gre.match("complete_objective\((\d+),\s*(\d+)\)", line):
+                quest_id = int(gre.last_match.groups()[0])
+                objective_index = int(gre.last_match.groups()[1])
+                game_state.party.maic_quest_complete_objective(quest_id, objective_index)
+            else:
+                return False
+
+            return True
+
         def eval_script(self, script_string):
             xhr_compare_command = re.match(re.compile("var xhr = new XMLHttpRequest\(\);.*if\(.*?\) {\n(.*?)}", re.DOTALL), script_string)
 
@@ -227,12 +246,25 @@ init python:
 
             for line in script_string.split("\n"):
                 variable_set_command = re.match("\$gameVariables\.setValue\((\d+),\s*(.+)\);?", line)
-                self_switch_set_command = re.match("\$gameSelfSwitches\.setValue\(\[(\d+),(\d+),'(.*?)'\], (\w+)\);?", line)
+                mv_self_switch_set_command = re.match("\$gameSelfSwitches\.setValue\(\[(\d+),(\d+),'(.*?)'\], (\w+)\);?", line)
+                ace_self_switch_set_command = re.match("\$game_self_switches\[\[(\d+)\s*,\s*(\d+)\s*,\s*'(.*?)'\]\] = (\w+)", line)
                 hide_choice_command = re.match("hide_choice\((\d+), \"\$gameSwitches\.value\((\d+)\) === (\w+)\"\)", line)
 
+                if rpgm_game_data.get('maic_quests', None):
+                    result = self.eval_maic_quests_script(script_string, line)
+                    if result:
+                        continue
+
+                gre = Re()
                 if 'ImageManager' in line:
                     pass
                 elif line == 'Cache.clear':
+                    pass
+                elif line.startswith('$game_player.no_dash'):
+                    pass
+                elif line.startswith('$game_scr_lock'):
+                    pass
+                elif line.startswith('cam_set('):
                     pass
                 elif variable_set_command:
                     groups = variable_set_command.groups()
@@ -244,8 +276,9 @@ init python:
                     choice_id, switch_id, switch_value = (int(groups[0]), int(groups[1]), groups[2] == 'true')
                     if self.state.switches.value(switch_id) == switch_value:
                         self.hide_choice(choice_id)
-                elif self_switch_set_command:
-                    groups = self_switch_set_command.groups()
+                elif mv_self_switch_set_command or ace_self_switch_set_command:
+                    matching_command = mv_self_switch_set_command or ace_self_switch_set_command
+                    groups = matching_command.groups()
                     map_id, event_id, self_switch_name, self_switch_value = (int(groups[0]), int(groups[1]), groups[2], groups[3] == 'true')
                     self.state.self_switches.set_value((map_id, event_id, self_switch_name), self_switch_value)
                 elif line == 'SceneManager.push(Scene_Menu);':
@@ -255,6 +288,8 @@ init python:
                 elif GameIdentifier().is_ics1() and GameSpecificCodeICS1().eval_script(line, script_string):
                     pass
                 elif GameIdentifier().is_robots_touch() and GameSpecificCodeRobotsTouch().eval_script(line, script_string):
+                    pass
+                elif gre.search("\$game_map\..*?start_anim_loop", line):
                     pass
                 else:
                     print "Script that could not be evaluated:\n"
