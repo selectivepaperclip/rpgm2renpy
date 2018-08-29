@@ -22,6 +22,9 @@ init python:
         screen_size = int(core_engine_plugin['parameters']['Screen Width']), int(core_engine_plugin['parameters']['Screen Height'])
     elif rpgm_metadata.is_pre_mv_version:
         gui.init(1024, 768)
+    elif rpgm_game_data.get('resolution', None):
+        resolution = rpgm_game_data['resolution']
+        gui.init(resolution[0], resolution[1])
     else:
         gui.init(1280, 720)
 

@@ -966,7 +966,7 @@ init python:
                             if not picture_name in picture_image_sizes:
                                 picture_image_sizes[picture_name] = renpy.image_size(normal_images[rpgm_picture_name(picture_name)])
                             image_size = picture_image_sizes[picture_name]
-                            if scale_x != 100 or scale_y != 100:
+                            if (scale_x != 100 or scale_y != 100) and not self.skip_image_resize(picture_name, scale_x, scale_y):
                                 image_size = (int(image_size[0] * scale_x / 100.0), int(image_size[1] * scale_y / 100.0))
                             if image_size[0] > config.screen_width and image_size[1] > config.screen_height:
                                 image_size = (config.screen_width, config.screen_height)
@@ -1172,6 +1172,11 @@ init python:
                     renpy.say(None, "Code %d not implemented, plz fix." % command['code'])
 
                 self.list_index += 1
+
+        def skip_image_resize(self, image_name, scale_x, scale_y):
+            if scale_x == 85 and scale_y == 85 and GameIdentifier().is_living_with_mia():
+                return True
+            return False
 
         def done(self):
             return self.list_index == len(self.page['list'])
