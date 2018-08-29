@@ -239,9 +239,15 @@ init python:
         def eval_script(self, script_string):
             xhr_compare_command = re.match(re.compile("var xhr = new XMLHttpRequest\(\);.*if\(.*?\) {\n(.*?)}", re.DOTALL), script_string)
 
+            gre = Re()
             if xhr_compare_command:
                 success_clause = xhr_compare_command.groups()[0]
                 self.eval_script(success_clause.strip())
+                return
+            elif gre.match("\$game_self_switches\[\[\$game_map\.map_id\s*,\s*(\d+)\s*,\s*'(.*?)'\]\] = (\w+)", script_string):
+                groups = gre.last_match.groups()
+                map_id, event_id, self_switch_name, self_switch_value = (self.state.map.map_id, int(groups[0]), groups[1], groups[2] == 'true')
+                self.state.self_switches.set_value((map_id, event_id, self_switch_name), self_switch_value)
                 return
             elif GameIdentifier().is_milfs_control() and GameSpecificCodeMilfsControl().eval_full_script(script_string):
                 return
@@ -257,7 +263,6 @@ init python:
                     if result:
                         continue
 
-                gre = Re()
                 if 'ImageManager' in line:
                     pass
                 elif line == 'Cache.clear':
