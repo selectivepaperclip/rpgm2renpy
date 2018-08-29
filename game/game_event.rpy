@@ -1075,6 +1075,10 @@ init python:
                     actor_index, nickname = command['parameters'][0:2]
                     self.state.actors.set_property(actor_index, 'nickname', nickname)
 
+                # Enemy / Battle commands
+                elif command['code'] in [331, 332, 333, 334, 335, 336, 337, 339, 340, 342]:
+                    pass
+
                 # Open Save Screen
                 elif command['code'] == 352:
                     renpy.say(None, "RPGMaker would show the save screen right now. You can just open it at your leisure.")
