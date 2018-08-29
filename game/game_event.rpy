@@ -292,6 +292,8 @@ init python:
                     self.state.show_inventory()
                 elif GameIdentifier().is_milfs_control() and GameSpecificCodeMilfsControl().eval_script(line, script_string):
                     pass
+                elif GameIdentifier().is_incest_adventure() and GameSpecificCodeIncestAdventure().eval_script(line, script_string):
+                    pass
                 elif GameIdentifier().is_ics1() and GameSpecificCodeICS1().eval_script(line, script_string):
                     pass
                 elif GameIdentifier().is_robots_touch() and GameSpecificCodeRobotsTouch().eval_script(line, script_string):
