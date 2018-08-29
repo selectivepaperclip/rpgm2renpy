@@ -994,6 +994,10 @@ init python:
             overrides = self.overrides_for_event_page(event_data['id'], page_index)
             return overrides.get('through', page['through'])
 
+        def event_direction_fix(self, event_data, page, page_index):
+            overrides = self.overrides_for_event_page(event_data['id'], page_index)
+            return overrides.get('directionFix', page['directionFix'])
+
         def event_sprite_data(self, event_data, page, page_index):
             overrides = self.overrides_for_event_page(event_data['id'], page_index)
             return {

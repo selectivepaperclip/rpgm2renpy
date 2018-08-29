@@ -808,21 +808,39 @@ init python:
 
                     for route_part in route['list']:
                         if noisy_events:
-                            print "MOVEMENT ROUTE: %s" % route_part['code']
+                            print "MOVEMENT ROUTE: event %s, page %s, command %s, target %s, route command %s" % (
+                                self.event_data['id'],
+                                self.get_page_index(),
+                                self.list_index,
+                                event_id,
+                                route_part['code']
+                            )
                         delta_x = 0
                         delta_y = 0
                         new_direction = None
+                        new_direction_fix = None
                         new_through = None
                         if route_part['code'] == 1: # Move Down
                             delta_y += 1
+                            if player_moving or not self.state.map.event_direction_fix(event.event_data, event.page, event.page_index):
+                                new_direction = GameDirection.DOWN
                         elif route_part['code'] == 2: # Move Left
                             delta_x -= 1
+                            if player_moving or not self.state.map.event_direction_fix(event.event_data, event.page, event.page_index):
+                                new_direction = GameDirection.LEFT
                         elif route_part['code'] == 3: # Move Right
                             delta_x += 1
+                            if player_moving or not self.state.map.event_direction_fix(event.event_data, event.page, event.page_index):
+                                new_direction = GameDirection.RIGHT
                         elif route_part['code'] == 4: # Move Up
                             delta_y -= 1
+                            if player_moving or not self.state.map.event_direction_fix(event.event_data, event.page, event.page_index):
+                                new_direction = GameDirection.UP
                         elif route_part['code'] == 12: # Move Forward
-                            current_direction = game_state.player_direction
+                            if player_moving:
+                                current_direction = game_state.player_direction
+                            else:
+                                current_direction = self.state.map.event_sprite_data(event.event_data, event.page, event_page_index)['direction']
                             if current_direction == GameDirection.UP:
                                 delta_y -= 1
                             elif current_direction == GameDirection.DOWN:
@@ -841,6 +859,10 @@ init python:
                             new_direction = GameDirection.UP
                         elif route_part['code'] == 29: # Change Speed
                             pass
+                        elif route_part['code'] == 35: # Route Direction Fix On
+                            new_direction_fix = True
+                        elif route_part['code'] == 36: # Route Direction Fix Off
+                            new_direction_fix = False
                         elif route_part['code'] == 37: # Route Through On
                             new_through = True
                         elif route_part['code'] == 38: # Route Through Off
@@ -854,9 +876,19 @@ init python:
                             else:
                                 self.state.map.override_event(event_id, event_page_index, 'characterName', new_character_name)
                                 self.state.map.override_event(event_id, event_page_index, 'characterIndex', new_character_index)
+                        elif route_part['code'] == 45: # Route Script
+                            renpy.say(None, "Movement route Script commands not implemented\nSee console for full script.")
+                            print "Script that could not be evaluated:\n"
+                            print route_part['parameters'][0]
 
                         elif route_part['code'] == 0:
                             pass
+
+                        if new_direction_fix != None:
+                            if player_moving:
+                                renpy.say(None, "Movement route direction fix toggling not supported for player")
+                            else:
+                                self.state.map.override_event(event_id, event_page_index, 'directionFix', new_direction_fix)
 
                         if new_direction:
                             if player_moving:
