@@ -137,7 +137,7 @@ init python:
         return Movie(play=path, size=(config.screen_width, config.screen_height))
 
     def rpgm_picture_name(base):
-        return 'rpgmpicture-' + base.lower()
+        return 'rpgmpicture-' + base.lower().replace('.', '_')
 
     def rpgm_movie_name(base):
         return 'rpgmmovie-' + base.lower()
