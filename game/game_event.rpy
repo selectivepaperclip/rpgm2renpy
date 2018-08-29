@@ -175,7 +175,9 @@ init python:
                 if GameIdentifier().is_milfs_control():
                     return GameSpecificCodeMilfsControl().conditional_eval_script(params[1])
                 else:
-                    renpy.say(None, "Conditional statements for Script not implemented")
+                    renpy.say(None, "Conditional statements for Script not implemented\nSee console for full script.")
+                    print "Script that could not be evaluated:\n"
+                    print params[1]
                     return False
             # Vehicle
             elif operation == 13:
