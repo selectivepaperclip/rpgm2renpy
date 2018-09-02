@@ -567,6 +567,22 @@ init python:
             if len(self.events) == 0:
                 self.queue_parallel_events()
 
+        def transfer_player(self, transfer_event):
+            changing_maps = transfer_event.new_map_id != self.map.map_id
+            if noisy_events:
+                print "TRANSFERRING PLAYER TO MAP %s: (%s, %s)" % (transfer_event.new_map_id, transfer_event.new_x, transfer_event.new_y)
+            if changing_maps:
+                self.reset_user_zoom()
+                self.map = self.map_registry.get_map(transfer_event.new_map_id)
+                self.map.update_for_transfer()
+            self.player_x = transfer_event.new_x
+            self.player_y = transfer_event.new_y
+            if hasattr(transfer_event, 'new_direction') and transfer_event.new_direction > 0:
+                self.player_direction = transfer_event.new_direction
+            # TODO: probably better handled elsewhere
+            if changing_maps:
+                self.queue_common_and_parallel_events()
+
         def queue_common_event(self, event_id):
             common_event = self.common_events_data()[event_id]
             self.events.append(GameEvent(self, common_event, common_event))
@@ -584,14 +600,12 @@ init python:
                 if hasattr(self, 'shop_params') and self.shop_params:
                     self.show_shop_ui()
                     return True
+                if this_event.new_map_id and this_event.new_map_id == self.map.map_id:
+                    self.transfer_player(this_event)
+                    this_event.new_map_id = None
                 if this_event.done():
                     if this_event.new_map_id:
-                        self.reset_user_zoom()
-                        self.map = self.map_registry.get_map(this_event.new_map_id)
-                        self.map.update_for_transfer()
-                        self.player_x = this_event.new_x
-                        self.player_y = this_event.new_y
-                        self.queue_common_and_parallel_events()
+                        self.transfer_player(this_event)
                     self.events.pop()
                     if len(self.events) == 0 and self.common_events_index == None and self.parallel_events_index == None:
                         self.queue_common_and_parallel_events()

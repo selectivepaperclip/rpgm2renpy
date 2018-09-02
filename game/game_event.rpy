@@ -778,7 +778,7 @@ init python:
 
                 # Transfer maps
                 elif command['code'] == 201:
-                    method, self.new_map_id, self.new_x, self.new_y = command['parameters'][0:4]
+                    method, self.new_map_id, self.new_x, self.new_y, self.new_direction = command['parameters'][0:5]
                     if debug_events:
                         print "DEBUG_EVENTS: Map %d" % self.new_map_id
                     if method != 0:
