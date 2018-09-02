@@ -877,9 +877,16 @@ init python:
                                 self.state.map.override_event(event_id, event_page_index, 'characterName', new_character_name)
                                 self.state.map.override_event(event_id, event_page_index, 'characterIndex', new_character_index)
                         elif route_part['code'] == 45: # Route Script
-                            renpy.say(None, "Movement route Script commands not implemented\nSee console for full script.")
-                            print "Script that could not be evaluated:\n"
-                            print route_part['parameters'][0]
+                            gre = Re()
+                            if gre.match('\$game_switches\[(\d+)\] = (\w+)', route_part['parameters'][0]):
+                                groups = gre.last_match.groups()
+                                switch_id = int(groups[0])
+                                switch_value = groups[1] == 'true'
+                                self.state.self_switches.set_value(switch_id, switch_value)
+                            else:
+                                renpy.say(None, "Movement route Script commands not implemented\nSee console for full script.")
+                                print "Script that could not be evaluated:\n"
+                                print route_part['parameters'][0]
 
                         elif route_part['code'] == 0:
                             pass
