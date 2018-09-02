@@ -817,12 +817,13 @@ init python:
 
                     for route_part in route['list']:
                         if noisy_events:
-                            print "MOVEMENT ROUTE: event %s, page %s, command %s, target %s, route command %s" % (
+                            print "MOVEMENT ROUTE: event %s, page %s, command %s, target %s, route command %s (%s)" % (
                                 self.event_data['id'],
                                 self.get_page_index(),
                                 self.list_index,
                                 event_id,
-                                route_part['code']
+                                route_part['code'],
+                                RpgmConstants.ROUTE_COMMAND_NAMES[route_part['code']]
                             )
                         delta_x = 0
                         delta_y = 0
