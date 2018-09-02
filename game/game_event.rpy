@@ -443,7 +443,16 @@ init python:
 
                     text_to_show = game_state.replace_names("".join(accumulated_text).strip())
                     if len(text_to_show) > 0:
-                        renpy.say(None, re.sub('%', '%%', text_to_show))
+                        try:
+                            escaped_text = re.sub('%', '%%', text_to_show)
+                            escaped_text = re.sub('\[', '[[', escaped_text)
+                            escaped_text = re.sub('\{', '{{', escaped_text)
+                            renpy.say(None, escaped_text)
+                        except renpy.game.CONTROL_EXCEPTIONS:
+                            raise
+                        except:
+                            print "Text that failed to show:\n%s" % text_to_show
+                            raise
                     else:
                         game_state.pause()
 
