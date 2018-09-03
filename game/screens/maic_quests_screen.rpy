@@ -12,7 +12,8 @@ screen maic_quests_screen(
                 vbox:
                     for quest in quest_data:
                         text "Name: %s" % quest['name']
-                        text "Location: %s" % quest['location']
+                        if 'location' in quest:
+                            text "Location: %s" % quest['location']
                         text quest['description']
                         if 'objectives' in quest:
                             text 'Objectives:'
