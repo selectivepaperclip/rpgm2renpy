@@ -34,6 +34,13 @@ maps.each do |map_path|
                     script_strings.push(command['parameters'][0])
                 elsif command['code'] == 655
                     script_strings[-1] = "#{script_strings[-1]}\n#{command['parameters'][0]}"
+                elsif command['code'] == 205
+                    event_id, route = command['parameters']
+                    route['list'].each do |route_part|
+                        if route_part['code'] == 45
+                            script_strings.push("[ROUTE]: #{route_part['parameters'][0]}")
+                        end
+                    end
                 end
             end
         end
