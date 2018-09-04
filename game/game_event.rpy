@@ -887,16 +887,23 @@ init python:
                                 self.state.map.override_event(event_id, event_page_index, 'characterName', new_character_name)
                                 self.state.map.override_event(event_id, event_page_index, 'characterIndex', new_character_index)
                         elif route_part['code'] == 45: # Route Script
+                            route_script = route_part['parameters'][0]
                             gre = Re()
-                            if gre.match('\$game_switches\[(\d+)\] = (\w+)', route_part['parameters'][0]):
+                            if gre.match('\$game_switches\[(\d+)\] = (\w+)', route_script):
                                 groups = gre.last_match.groups()
                                 switch_id = int(groups[0])
                                 switch_value = groups[1] == 'true'
                                 self.state.self_switches.set_value(switch_id, switch_value)
+                            elif gre.match("\$game_self_switches\[\[(\d+)\s*,\s*(\d+)\s*,\s*'(.*?)'\]\] = (\w+)", route_script):
+                                groups = gre.last_match.groups()
+                                map_id, event_id, self_switch_name, self_switch_value = (int(groups[0]), int(groups[1]), groups[2], groups[3] == 'true')
+                                self.state.self_switches.set_value((map_id, event_id, self_switch_name), self_switch_value)
+                            elif gre.match('end_anim_loop', route_script):
+                                pass
                             else:
-                                renpy.say(None, "Movement route Script commands not implemented\nSee console for full script.")
                                 print "Script that could not be evaluated:\n"
-                                print route_part['parameters'][0]
+                                print route_script
+                                renpy.say(None, "Movement route Script commands not implemented\nSee console for full script.")
 
                         elif route_part['code'] == 0:
                             pass
