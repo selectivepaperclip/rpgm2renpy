@@ -87,6 +87,7 @@ init -10 python:
     class RpgmMetadata():
         def __init__(self):
             self.is_pre_mv_version = os.path.exists(os.path.join(renpy.config.basedir, rpgm_path('JsonData')))
+            self.has_large_choices_plugin = False
             if self.is_pre_mv_version:
                 self.pictures_path = rpgm_path("Graphics/Pictures/")
                 self.movies_path = rpgm_path("Movies/")
@@ -95,6 +96,9 @@ init -10 python:
                 self.parallaxes_path = rpgm_path("Graphics/Parallaxes/")
                 self.tile_width = 32
                 self.tile_height = 32
+                possible_choice_plugin_filenames = ['Choces_More.rb', 'LargeChoices.rb', 'More_Choices.rb']
+                if any(os.path.exists(os.path.join(config.basedir, rpgm_path('Scripts/%s' % filename))) for filename in possible_choice_plugin_filenames):
+                    self.has_large_choices_plugin = True
             else:
                 self.pictures_path = rpgm_path("www/img/pictures/")
                 self.movies_path = rpgm_path("www/movies/")

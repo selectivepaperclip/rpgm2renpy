@@ -458,7 +458,7 @@ init python:
 
                 # Show choices
                 elif command['code'] == 102:
-                    if GameIdentifier().is_milfs_control() or GameIdentifier().is_robots_touch():
+                    if rpgm_metadata.has_large_choices_plugin:
                         self.merge_show_choice_commands()
 
                     choice_texts, cancel_type = command['parameters'][0:2]
