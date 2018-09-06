@@ -20,10 +20,10 @@ init python:
         screen_size = int(screen_resolution_plugin['parameters']['Screen Width']), int(screen_resolution_plugin['parameters']['Screen Height'])
     elif core_engine_plugin:
         screen_size = int(core_engine_plugin['parameters']['Screen Width']), int(core_engine_plugin['parameters']['Screen Height'])
-    elif rpgm_metadata.is_pre_mv_version:
-        screen_size = (1024, 768)
     elif rpgm_game_data.get('resolution', None):
         screen_size = tuple(rpgm_game_data['resolution'])
+    elif rpgm_metadata.is_pre_mv_version:
+        screen_size = (1024, 768)
     else:
         screen_size = (1280, 720)
 
