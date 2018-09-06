@@ -244,6 +244,8 @@ label start:
             hide_unreachable_events = True
         elif GameIdentifier().is_milfs_villa():
             hide_unreachable_events = True
+        elif rpgm_game_data.get('hide_unreachable_events', False) == True:
+            hide_unreachable_events = True
 
 label game:
     $ end_game = False
