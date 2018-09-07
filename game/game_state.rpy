@@ -806,6 +806,9 @@ init python:
             new_user_zoom = max(self.user_map_zoom_factor * (1 / 1.5), 1)
             self.set_user_map_zoom(new_user_zoom)
 
+        def set_player_direction(self, direction):
+            self.player_direction = direction
+
         def set_user_map_zoom(self, new_map_zoom_factor):
             map_zoom_ratio = new_map_zoom_factor / self.user_map_zoom_factor
 
