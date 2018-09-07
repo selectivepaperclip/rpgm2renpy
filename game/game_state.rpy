@@ -25,6 +25,7 @@ init python:
             self.common_events_index = None
             self.parallel_events_index = None
             self.events = []
+            self.parallel_events = []
             self.starting_map_id = self.system_data()['startMapId']
             self.map_registry = GameMapRegistry(self)
             self.map = self.map_registry.get_map(self.starting_map_id)
@@ -39,15 +40,19 @@ init python:
             self.items = GameItems()
             self.armors = GameArmors()
             self.weapons = GameWeapons()
+            self.timer = GameTimer()
             self.shown_pictures = {}
             self.queued_pictures = []
             self.everything_reachable = False
 
-        def migrate_event_to_events(self):
+        def ensure_initialized_attributes(self):
             if not hasattr(self, 'events'):
                 self.events = [event for event in [self.event] if event]
+            if not hasattr(self, 'timer'):
+                self.timer = GameTimer()
+            if not hasattr(self, 'parallel_events'):
+                self.parallel_events = []
 
-        def migrate_player_x(self):
             # for game saves created before player_x moved from map to state
             if not hasattr(self, 'player_x'):
                 if hasattr(self.map, 'x'):
@@ -409,9 +414,25 @@ init python:
                 self.common_events_index = 1
             self.queue_parallel_events()
 
-        def queue_parallel_events(self):
-            if len(self.map.data()['events']) > 0:
-                self.parallel_events_index = 1
+        def queue_parallel_events(self, keep_relevant_existing = True):
+            if not hasattr(self, 'previous_parallel_event_pages'):
+                self.previous_parallel_event_pages = []
+            parallel_event_pages = self.map.parallel_event_pages()
+            if parallel_event_pages not in self.previous_parallel_event_pages:
+                self.previous_parallel_event_pages.append(parallel_event_pages)
+
+            new_parallel_events = self.map.parallel_events()
+            if len(self.parallel_events) > 0 or keep_relevant_existing:
+                # Keep existing events with the same id/page combos to retain pause position,
+                # otherwise treat the new parallel events as canon
+                for existing_parallel_event in self.parallel_events:
+                    id = existing_parallel_event.event_data['id']
+                    new_event_with_id = next((e for e in new_parallel_events if e.event_data['id'] == id), None)
+                    if new_event_with_id and new_event_with_id.page_index == existing_parallel_event.page_index:
+                        new_parallel_events.remove(new_event_with_id)
+                        new_parallel_events.append(existing_parallel_event)
+
+            self.parallel_events = new_parallel_events
 
         def show_inventory(self):
             interesting_items = []
@@ -584,17 +605,59 @@ init python:
                 self.player_direction = transfer_event.new_direction
             # TODO: probably better handled elsewhere
             if changing_maps:
+                self.parallel_events = []
                 self.queue_common_and_parallel_events()
 
         def queue_common_event(self, event_id):
             common_event = self.common_events_data()[event_id]
             self.events.append(GameEvent(self, common_event, common_event))
 
+        def finish_active_timer(self):
+            if self.timer.frames > 0:
+                self.timer.finish()
+                self.queue_parallel_events(keep_relevant_existing = True)
+
+        def unpause_parallel_events_for_key(self, key, press_count = 1):
+            if hasattr(self, 'parallel_events') and len(self.parallel_events) > 0:
+                paused_parallel_events = [e for e in self.parallel_events if hasattr(e, 'paused_for_key') and e.paused_for_key == key]
+                smallest_unpaused_delay = None
+                for e in paused_parallel_events:
+                    e.press_count = press_count
+                    e.paused_for_key = None
+
+        def unpause_parallel_events(self):
+            if hasattr(self, 'parallel_events') and len(self.parallel_events) > 0:
+                paused_parallel_events = [e for e in self.parallel_events if hasattr(e, 'paused') and e.paused > 0]
+                smallest_unpaused_delay = None
+                for e in sorted(paused_parallel_events, key=lambda e: e.paused):
+                    if smallest_unpaused_delay and e.paused > smallest_unpaused_delay:
+                        e.paused -= smallest_unpaused_delay
+                    else:
+                        smallest_unpaused_delay = e.paused
+                        e.paused = 0
+                self.queue_parallel_events(keep_relevant_existing = True)
+
+        def requeue_parallel_events_if_changed(self):
+            if hasattr(self, 'previous_parallel_event_pages') and len(self.previous_parallel_event_pages) > 0:
+                current_parallel_event_pages = self.map.parallel_event_pages()
+                seen_event_set_before = False
+                for prior_event_page_set in reversed(self.previous_parallel_event_pages):
+                    if current_parallel_event_pages == prior_event_page_set:
+                        seen_event_set_before = True
+                        break
+                if not seen_event_set_before:
+                    if noisy_events:
+                        print "running parallel events changed event pages %s to %s" % (self.previous_parallel_event_pages[-1], current_parallel_event_pages)
+
+                    self.queue_parallel_events(keep_relevant_existing = True)
+                    return True
+
         def do_next_thing(self, mapdest, keyed_common_event):
-            self.migrate_event_to_events()
-            self.migrate_player_x()
+            self.ensure_initialized_attributes()
             self.skip_bad_events()
             if len(self.events) > 0:
+                self.previous_parallel_event_pages = []
+
                 this_event = self.events[-1]
                 new_event = this_event.do_next_thing()
                 if new_event:
@@ -610,7 +673,7 @@ init python:
                     if this_event.new_map_id:
                         self.transfer_player(this_event)
                     self.events.pop()
-                    if len(self.events) == 0 and self.common_events_index == None and self.parallel_events_index == None:
+                    if len(self.events) == 0 and self.common_events_index == None and len(self.parallel_events) == 0:
                         self.queue_common_and_parallel_events()
                 return True
 
@@ -623,36 +686,38 @@ init python:
                         return True
             self.common_events_index = None
 
-            if self.parallel_events_index != None and self.parallel_events_index < len(self.map.data()['events']):
-                if not hasattr(self.map, 'erased_events'):
-                    self.map.erased_events = {}
-                if not hasattr(self, 'previous_parallel_event_pages'):
-                    self.previous_parallel_event_pages = []
-                if self.parallel_events_index == 1:
-                    self.previous_parallel_event_pages.append(self.map.parallel_event_pages())
-                for event_id in xrange(self.parallel_events_index, len(self.map.data()['events'])):
-                    if event_id in self.map.erased_events:
-                        continue
-                    possible_parallel_event = self.map.parallel_event_at_index(self.parallel_events_index)
-                    self.parallel_events_index += 1
-                    if possible_parallel_event:
-                        self.events.append(possible_parallel_event)
+            if hasattr(self, 'parallel_events') and len(self.parallel_events) > 0:
+                first_never_paused_event = next((e for e in self.parallel_events if not hasattr(e, 'has_ever_paused') or not e.has_ever_paused), None)
+                if first_never_paused_event:
+                    new_event = first_never_paused_event.do_next_thing(allow_pause = True)
+                    if new_event:
+                        self.events.append(new_event)
                         return True
-            self.parallel_events_index = None
-
-            if hasattr(self, 'previous_parallel_event_pages') and len(self.previous_parallel_event_pages) > 0:
-                current_parallel_event_pages = self.map.parallel_event_pages()
-                seen_event_set_before = False
-                for prior_event_page_set in reversed(self.previous_parallel_event_pages):
-                    if current_parallel_event_pages == prior_event_page_set:
-                        seen_event_set_before = True
-                        break
-                if not seen_event_set_before:
-                    if noisy_events:
-                        print "running parallel events changed event pages %s to %s" % (self.previous_parallel_event_pages[-1], current_parallel_event_pages)
-
-                    self.queue_parallel_events()
+                    if first_never_paused_event.done():
+                        if first_never_paused_event.new_map_id:
+                            self.transfer_player(first_never_paused_event)
+                        if first_never_paused_event in self.parallel_events:
+                            self.parallel_events.remove(first_never_paused_event)
                     return True
+
+                first_has_paused_event = next((e for e in self.parallel_events if hasattr(e, 'has_ever_paused') and e.has_ever_paused and e.ready_to_continue()), None)
+                if first_has_paused_event:
+                    new_event = first_has_paused_event.do_next_thing(allow_pause = True)
+                    if new_event:
+                        self.events.append(new_event)
+                        return True
+                    if first_has_paused_event.done():
+                        if first_has_paused_event.new_map_id:
+                            self.transfer_player(first_has_paused_event)
+                        else:
+                            first_has_paused_event.list_index = 0
+                            if not (hasattr(first_has_paused_event, 'press_count') and first_has_paused_event.press_count > 0):
+                                first_has_paused_event.has_ever_paused = False
+                            self.queue_parallel_events(keep_relevant_existing = True)
+                    return True
+
+            if self.requeue_parallel_events_if_changed():
+                return True
 
             self.events = [e for e in [self.map.find_auto_trigger_event()] if e]
             if len(self.events) > 0:
@@ -891,6 +956,24 @@ init python:
             if GameIdentifier().is_my_summer() and self.switches.value(1) == True:
                 common_event_queuers.append({"text": 'Show Status', "event_id": 1, "ypos": 100})
 
+            key_paused_events = []
+            if hasattr(self, 'parallel_events'):
+                has_paused_events = any(e for e in game_state.parallel_events if hasattr(e, 'paused') and e.paused >= 60)
+                for e in self.parallel_events:
+                    if hasattr(e, 'paused_for_key') and e.paused_for_key:
+                        key_paused_events.append({
+                            "text": ("Press %s" % e.paused_for_key),
+                            "key": e.paused_for_key
+                        })
+            else:
+                has_paused_events = False
+
+            active_timer = None
+            if hasattr(self, 'timer') and self.timer.active and self.timer.frames > 0:
+                active_timer = {
+                    "text": "Finish %ss timer" % self.timer.seconds()
+                }
+
             renpy.show_screen(
                 "mapscreen",
                 _layer="maplayer",
@@ -919,4 +1002,7 @@ init python:
                 in_interaction=in_interaction,
                 switch_toggler_buttons=switch_toggler_buttons,
                 common_event_queuers=common_event_queuers,
+                has_paused_events=has_paused_events,
+                key_paused_events=key_paused_events,
+                active_timer=active_timer,
             )

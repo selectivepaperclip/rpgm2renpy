@@ -61,15 +61,12 @@ init python:
                     return self.state.self_switches.value(key) == (params[2] == 0)
             # Timer
             elif operation == 3:
-                renpy.say(None, "Conditional statements for Timer not implemented")
+                if self.state.timer.active:
+                    if params[2] == 0:
+                        return self.state.timer.seconds() >= params[1]
+                    else:
+                        return self.state.timer.seconds() <= params[1]
                 return False
-                #if ($gameTimer.isWorking()) {
-                #    if (this._params[2] === 0) {
-                #        result = ($gameTimer.seconds() >= this._params[1]);
-                #    } else {
-                #        result = ($gameTimer.seconds() <= this._params[1]);
-                #    }
-                #}
             # Actor
             elif operation == 4:
                 actor = self.state.actors.by_index(params[1])
@@ -167,13 +164,26 @@ init python:
                 return self.state.party.has_item(self.state.armors.by_id(params[1]))
             # Button
             elif operation == 11:
-                renpy.say(None, "Conditional statements for Button not implemented")
-                return False
-                #result = Input.isPressed(this._params[1]);
+                if hasattr(self, 'press_count') and self.press_count > 0:
+                    self.press_count -= 1
+                    return True
+                else:
+                    self.has_ever_paused = True
+                    self.paused_for_key = params[1]
+                    return -1
             # Script
             elif operation == 12:
+                gre = Re()
                 if GameIdentifier().is_milfs_control():
                     return GameSpecificCodeMilfsControl().conditional_eval_script(params[1])
+                elif gre.match("Input\.isTriggered\('(\w+)'\)", params[1]):
+                    if hasattr(self, 'press_count') and self.press_count > 0:
+                        self.press_count -= 1
+                        return True
+                    else:
+                        self.has_ever_paused = True
+                        self.paused_for_key = gre.last_match.groups()[0]
+                        return -1
                 else:
                     renpy.say(None, "Conditional statements for Script not implemented\nSee console for full script.")
                     print "Script that could not be evaluated:\n"
@@ -408,7 +418,14 @@ init python:
                 while self.page['list'][command_index] and ((self.page['list'][command_index]['code'] in [402, 403, 404]) or self.page['list'][command_index]['indent'] != first_choice_command['indent']):
                     command_index += 1
 
-        def do_next_thing(self):
+        def ready_to_continue(self):
+            if hasattr(self, 'paused'):
+                return not self.paused
+            if hasattr(self, 'paused_for_key'):
+                return not self.paused_for_key
+            return True
+
+        def do_next_thing(self, allow_pause = False):
             if not self.done():
                 self.migrate_global_branch_data()
                 command = self.page['list'][self.list_index]
@@ -537,6 +554,12 @@ init python:
                 # Conditional branch
                 elif command['code'] == 111:
                     branch_result = self.conditional_branch_result(command['parameters'])
+                    if branch_result == -1:
+                        return
+
+                    if noisy_events:
+                        print "conditional: %s, result: %s" % (command['parameters'], branch_result)
+
                     self.branch[command['indent']] = branch_result
                     if not branch_result:
                         self.skip_branch(command['indent'])
@@ -733,6 +756,14 @@ init python:
                     if last_non_common_event:
                         key = (self.state.map.map_id, last_non_common_event.event_data['id'], switch_id)
                         self.state.self_switches.set_value(key, value == 0)
+
+                # Control Timer
+                elif command['code'] == 124:
+                    start_timer = command['parameters'][0] == 0
+                    if start_timer:
+                        self.state.timer.start(command['parameters'][1])
+                    else:
+                        self.state.timer.stop()
 
                 # Change gold
                 elif command['code'] == 125:
@@ -988,7 +1019,19 @@ init python:
 
                 # Pause
                 elif command['code'] == 230:
-                    game_state.wait(command['parameters'][0])
+                    wait_time = command['parameters'][0]
+                    if self.parallel():
+                        if allow_pause and wait_time >= 60:
+                            if noisy_events:
+                                print "WAIT DURING PARALLEL EVENT!! %s" % wait_time
+                            self.list_index += 1
+                            self.has_ever_paused = True
+                            self.paused = wait_time
+                            return
+                        else:
+                            self.state.queue_parallel_events(keep_relevant_existing = True)
+
+                    game_state.wait(wait_time)
 
                 # Show picture / Move picture
                 elif command['code'] == 231 or command['code'] == 232:

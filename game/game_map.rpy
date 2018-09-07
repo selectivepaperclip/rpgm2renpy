@@ -814,12 +814,39 @@ init python:
                             break
             return None
 
+        def possible_parallel_event_indices(self):
+            if not hasattr(self, '_possible_parallel_event_indices'):
+                self._possible_parallel_event_indices = []
+                for index, e in enumerate(self.data()['events']):
+                    if e and any(p['trigger'] == 4 for p in e['pages']):
+                        self._possible_parallel_event_indices.append(index)
+
+            return self._possible_parallel_event_indices
+
         def parallel_event_pages(self):
             result = []
-            for event_id in xrange(1, len(self.data()['events'])):
+            for event_id in self.possible_parallel_event_indices():
                 possible_parallel_event = self.parallel_event_at_index(event_id)
                 if possible_parallel_event:
                     result.append((possible_parallel_event.event_data['id'], possible_parallel_event.page_index))
+            return result
+
+        def parallel_events(self):
+            if not hasattr(self, 'erased_events'):
+                self.erased_events = {}
+            result = []
+            all_events = self.data()['events']
+            for index in self.possible_parallel_event_indices():
+                e = all_events[index]
+                if e['id'] in self.erased_events:
+                    continue
+
+                for reverse_page_index, page in enumerate(reversed(e['pages'])):
+                    if self.meets_conditions(e, page['conditions']):
+                        if page['trigger'] == 4:
+                            page_index = (len(e['pages']) - 1) - reverse_page_index
+                            result.append(GameEvent(self.state, e, page, page_index))
+                        break
             return result
 
         def parallel_event_at_index(self, event_index):

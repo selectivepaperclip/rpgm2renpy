@@ -23,6 +23,9 @@ screen mapscreen(
     in_interaction = False,
     switch_toggler_buttons = [],
     common_event_queuers = [],
+    has_paused_events = False,
+    key_paused_events = [],
+    active_timer = None,
 
     # cruft from old savegames
     sprites = None,
@@ -179,3 +182,27 @@ screen mapscreen(
 
     if map_name:
         text map_name ypos 10 xpos 10 outlines [ (2, "#000", 0, 0) ]
+
+    if has_paused_events:
+        textbutton "Advance Time":
+            xpos 5
+            yalign 0.9
+            background "#000"
+            action Function(game_state.unpause_parallel_events), Jump("game")
+
+    if len(key_paused_events) > 0 or active_timer:
+        vbox:
+            xalign 0.9
+            yalign 0.8
+            if active_timer:
+                textbutton active_timer['text']:
+                    background "#000"
+                    action Function(game_state.finish_active_timer), Jump("game")
+            for key_paused_event_data in key_paused_events:
+                hbox:
+                    textbutton key_paused_event_data['text']:
+                        background "#000"
+                        action Function(game_state.unpause_parallel_events_for_key, key_paused_event_data['key']), Jump("game")
+                    textbutton 'x50':
+                        background "#000"
+                        action Function(game_state.unpause_parallel_events_for_key, key_paused_event_data['key'], 50), Jump("game")
