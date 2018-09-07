@@ -627,6 +627,19 @@ init python:
 
             return False
 
+        def surrounded_by_events(self, x, y):
+            max_x = self.width() - 1
+            max_y = self.height() - 1
+
+            count = 0
+            reachability_grid = self.reachability_grid_for_current_position()
+            for adjacent_coord in self.adjacent_coords(x, y, max_x, max_y):
+                ax, ay, adirection = adjacent_coord
+                if reachability_grid[ay][ax] == 2:
+                    count += 1
+
+            return count == 4
+
         def can_move_vector(self, x, y, delta_x, delta_y):
             new_x, new_y = x + delta_x, y + delta_y
             if delta_x == 0 and delta_y == -1:

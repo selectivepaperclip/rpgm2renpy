@@ -667,6 +667,15 @@ init python:
                 getattr(self, keyed_function_call)()
                 return True
 
+            if rpgm_game_data.get('has_dpad_animations', None) and not mapdest:
+                if self.map.surrounded_by_events(self.player_x, self.player_y):
+                    mapdest = MapClickable(
+                        self.player_x + 1,
+                        self.player_y
+                    )
+                    self.flush_queued_pictures()
+                    renpy.pause()
+
             if mapdest:
                 # convert old-style mapdests that were x, y tuples to MapClickable objects
                 if not hasattr(mapdest, 'x'):
