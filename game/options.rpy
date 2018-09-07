@@ -5,6 +5,10 @@
 ## may want to uncomment them when appropriate.
 
 python early:
+    config.hard_rollback_limit = 0
+    config.rollback_enabled = False
+    config.keymap['rollback'] = []
+
     config.searchpath = [ '', renpy.config.gamedir, renpy.config.commondir ]
 
     import json
