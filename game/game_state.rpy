@@ -82,9 +82,12 @@ init python:
                 return self.everything_reachable
             return False
 
+        def occluded(self):
+            return GameIdentifier().is_incest_adventure() and self.queued_picture(2) and self.queued_picture(2)['image_name'] == rpgm_picture_name('LOADINGANIMATIONS')
+
         def show_picture(self, picture_id, args):
             self.migrate_shown_pictures()
-            args['faded_out'] = hasattr(self, 'faded_out') and self.faded_out
+            args['faded_out'] = (hasattr(self, 'faded_out') and self.faded_out) or game_state.occluded()
             self.queued_pictures.append((picture_id, args))
 
         def move_picture(self, picture_id, args, wait, duration):

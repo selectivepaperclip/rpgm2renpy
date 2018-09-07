@@ -1018,7 +1018,7 @@ init python:
 
                     if picture_args:
                         picture_args['opacity'] = opacity
-                        if command['code'] == 231:
+                        if command['code'] == 231 and not game_state.occluded():
                             if not picture_name in picture_image_sizes:
                                 picture_image_sizes[picture_name] = renpy.image_size(normal_images[rpgm_picture_name(picture_name)])
                             image_size = picture_image_sizes[picture_name]
