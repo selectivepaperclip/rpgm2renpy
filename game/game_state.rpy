@@ -780,11 +780,12 @@ init python:
                         self.player_x, self.player_y = mapdest.x, mapdest.y
                     elif hasattr(mapdest, 'reachable') and mapdest.reachable and not self.everything_is_reachable():
                         reachability_grid = self.map.reachability_grid_for_current_position()
-                        adjacent_square, self.player_direction = self.map.last_square_before_dest(self.player_x, self.player_y, mapdest.x, mapdest.y)
+                        path_from_destination = self.map.path_from_destination(self.player_x, self.player_y, mapdest.x, mapdest.y)
+                        adjacent_x, adjacent_y, self.player_direction = path_from_destination[0]
                         if map_event.page['through'] or (map_event.page['priorityType'] != 1 and not self.map.is_impassible(mapdest.x, mapdest.y, self.player_direction)):
                             self.player_x, self.player_y = mapdest.x, mapdest.y
                         else:
-                            self.player_x, self.player_y = adjacent_square
+                            self.player_x, self.player_y = adjacent_x, adjacent_y
                     else:
                         self.player_direction = self.determine_direction(mapdest.x, mapdest.y)
                         if map_event.page['through'] or map_event.page['trigger'] != 0:

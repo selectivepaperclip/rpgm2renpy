@@ -568,16 +568,16 @@ init python:
 
             return result
 
-        def last_square_before_dest(self, current_x, current_y, dest_x, dest_y):
+        def path_from_destination(self, current_x, current_y, dest_x, dest_y):
             if profile_timings:
                 started = time.time()
 
             reachability_grid = self.reachability_grid_for_current_position()
             frontier = PriorityQueue()
             start = (current_x, current_y)
-            frontier.put((0, start))
+            came_from = {start: None}
+            frontier.put((0, (current_x, current_y, game_state.player_direction)))
             total_locations_evaluated = 0
-            visited = {start: True}
 
             max_x = self.width() - 1
             max_y = self.height() - 1
@@ -588,18 +588,26 @@ init python:
 
                 for adjacent_coord in self.adjacent_coords(current[0], current[1], max_x, max_y):
                     ax, ay, adirection = adjacent_coord
-                    if (ax, ay) in visited:
+                    if (ax, ay) in came_from:
                         continue
 
                     if ax == dest_x and ay == dest_y:
                         if profile_timings:
                             print "pathfinding took %s, evaluating %s locations" % (time.time() - started, total_locations_evaluated)
-                        return (current, adirection)
+                        sq = current
+                        path = [sq]
+                        while True:
+                            prev = came_from[(sq[0], sq[1])]
+                            if not prev:
+                                return path
+                            else:
+                                path.append(prev)
+                                sq = prev
 
                     if reachability_grid[ay][ax] == 3 and (not self.is_impassible(current[0], current[1], adirection) and not self.is_impassible(ax, ay, GameDirection.reverse_direction(adirection))):
-                        visited[(ax, ay)] = True
+                        came_from[(ax, ay)] = current
                         priority = abs(dest_x - ax) + abs(dest_y - ay)
-                        frontier.put((priority, (ax, ay)))
+                        frontier.put((priority, (ax, ay, adirection)))
 
             return None
 
