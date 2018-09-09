@@ -5,6 +5,7 @@ require 'fileutils'
 
 if ARGV.length < 1
   puts "Usage: #{$0} path/to/an/rpgmaker/xp/vx/or/vxace/game [rpgm_sdk_path]"
+  puts "SDK path is likely to be something like C:\Program Files (x86)\Common Files\Enterbrain\RGSS3\RPGVXAce"
   exit 0
 end
 
