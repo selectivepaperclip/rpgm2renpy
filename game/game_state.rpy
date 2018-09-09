@@ -586,12 +586,6 @@ init python:
                 if self.map.map_id == 27 and self.switches.value(129) == True and not self.self_switches.value((27, 14, "B")):
                     self.self_switches.set_value((27, 14, "A"), True)
                     self.self_switches.set_value((27, 14, "B"), True)
-            if GameIdentifier().is_my_summer():
-                # In the downstairs stealth scene, normally dad's view would sometimes shift to the right,
-                # but this requires parsing his 'moveRoute' which the engine doesn't currently do, and running
-                # it on some kind of a timer. Instead, let's just set him to always be looking right.
-                if self.map.map_id == 2 and self.switches.value(312) == True and not self.switches.value(314) == True:
-                    self.switches.set_value(314, True)
             if GameIdentifier().is_visiting_sara():
                 # Near the end, you have to push a box a very long way.
                 # The engine is almost capable of doing this, but why bother.
@@ -622,6 +616,7 @@ init python:
             # TODO: probably better handled elsewhere
             if changing_maps:
                 self.parallel_events = []
+                self.move_routes = []
                 self.queue_common_and_parallel_events()
 
         def queue_common_event(self, event_id):
@@ -642,10 +637,15 @@ init python:
                     e.paused_for_key = None
 
         def unpause_parallel_events(self):
+            all_paused_events = []
             if hasattr(self, 'parallel_events') and len(self.parallel_events) > 0:
-                paused_parallel_events = [e for e in self.parallel_events if hasattr(e, 'paused') and e.paused > 0]
+                all_paused_events += [e for e in self.parallel_events if hasattr(e, 'paused') and e.paused > 0]
+            if hasattr(self, 'move_routes') and len(self.move_routes) > 0:
+                all_paused_events += [e for e in self.move_routes if hasattr(e, 'paused') and e.paused > 0]
+
+            if len(all_paused_events) > 0:
                 smallest_unpaused_delay = None
-                for e in sorted(paused_parallel_events, key=lambda e: e.paused):
+                for e in sorted(all_paused_events, key=lambda e: e.paused):
                     if smallest_unpaused_delay and e.paused > smallest_unpaused_delay:
                         e.paused -= smallest_unpaused_delay
                     else:
@@ -667,6 +667,32 @@ init python:
 
                     self.queue_parallel_events(keep_relevant_existing = True)
                     return True
+
+        def paused_move_route_at_page(self, event_id, page_index):
+            for existing_move_route in self.move_routes:
+                if event_id == existing_move_route.event_data['id']:
+                    if page_index == existing_move_route.page_index:
+                        return existing_move_route
+
+        def process_move_routes(self):
+            if not hasattr(self, 'move_routes'):
+                self.move_routes = []
+            new_move_routes = []
+            for e in self.map.active_events():
+                for reverse_page_index, page in enumerate(reversed(e['pages'])):
+                    if self.map.meets_conditions(e, page['conditions']):
+                        if self.map.has_commands(page['moveRoute']):
+                            page_index = (len(e['pages']) - 1) - reverse_page_index
+                            event = self.paused_move_route_at_page(e['id'], page_index)
+                            if not event:
+                                event = GameEvent(self, e, page, page_index)
+                            if not hasattr(event, 'paused') or event.paused == 0:
+                                event.process_move_route(e['id'], page['moveRoute'], return_on_wait = not page['moveRoute']['wait'])
+                                if event.move_route_index >= len(page['moveRoute']['list']) - 1 and page['moveRoute']['repeat']:
+                                    event.move_route_index = 0
+                            new_move_routes.append(event)
+                        break
+            self.move_routes = new_move_routes
 
         def do_next_thing(self, mapdest, keyed_common_event):
             self.ensure_initialized_attributes()
@@ -754,6 +780,8 @@ init python:
                 else:
                     print "NO EVENT FOUND FOR %s, %s ???" % (x, y)
                 return True
+
+            self.process_move_routes()
 
             if keyed_common_event:
                 common_event = self.common_events_data()[int(keyed_common_event)]
@@ -995,16 +1023,17 @@ init python:
                 common_event_queuers.append({"text": 'Show Status', "event_id": 1, "ypos": 100})
 
             key_paused_events = []
+            has_paused_events = False
             if hasattr(self, 'parallel_events'):
-                has_paused_events = any(e for e in game_state.parallel_events if hasattr(e, 'paused') and e.paused >= 60)
+                has_paused_events = any(e for e in game_state.parallel_events if hasattr(e, 'paused') and e.paused >= 45)
                 for e in self.parallel_events:
                     if hasattr(e, 'paused_for_key') and e.paused_for_key:
                         key_paused_events.append({
                             "text": ("Press %s" % e.paused_for_key),
                             "key": e.paused_for_key
                         })
-            else:
-                has_paused_events = False
+            if not has_paused_events and hasattr(self, 'move_routes') and len(self.move_routes) > 0:
+                has_paused_events = any(e for e in game_state.move_routes if hasattr(e, 'paused') and e.paused > 0)
 
             active_timer = None
             if hasattr(self, 'timer') and self.timer.active and self.timer.frames > 0:

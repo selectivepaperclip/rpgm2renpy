@@ -6,10 +6,15 @@ init python:
             self.page = page
             self.page_index = page_index
             self.list_index = 0
+            self.move_route_index = 0
             self.new_map_id = None
             self.choices_to_hide = []
             self.choices_to_disable = []
             self.branch = {}
+
+        @classmethod
+        def page_solid(cls, page):
+            return (page['priorityType'] == 1) and not page['through']
 
         def common(self):
             return self.event_data.has_key('switchId')
@@ -380,6 +385,182 @@ init python:
 
                     if len(picture_transitions) > 1:
                         game_state.shown_pictures[picture_id] = {"image_name": RpgmAnimation(*picture_transitions)}
+
+        def process_move_route(self, event_id, route, return_on_wait = False):
+            if not hasattr(self, 'move_route_index'):
+                self.move_route_index = 0
+
+            event = None
+            event_page_index = None
+            player_moving = event_id < 0
+            if event_id == 0:
+                event_id = self.event_data['id']
+            if event_id == self.event_data['id']:
+                event_page_index = self.get_page_index()
+                event = self
+            if event_id > 0:
+                if event_page_index == None:
+                    event = self.state.map.find_event_at_index(event_id)
+
+                if not event:
+                    print "Wanted to process move route but couldn't find the moving event %s!" % event_id
+                    self.list_index += 1
+                    return
+
+                if event_page_index == None:
+                    event_page_index = event.get_page_index()
+
+            for route_part in route['list'][self.move_route_index:-1]:
+                if noisy_events:
+                    print "MOVEMENT ROUTE: map %s, event %s, page %s, command %s, target %s, route command %s (%s)" % (
+                        self.state.map.map_id,
+                        self.event_data['id'],
+                        self.get_page_index(),
+                        self.list_index,
+                        event_id,
+                        route_part['code'],
+                        RpgmConstants.ROUTE_COMMAND_NAMES[route_part['code']]
+                    )
+                delta_x = 0
+                delta_y = 0
+                new_direction = None
+                new_direction_fix = None
+                new_through = None
+                if route_part['code'] == 1: # Move Down
+                    delta_y += 1
+                    if player_moving or not self.state.map.event_direction_fix(event.event_data, event.page, event.page_index):
+                        new_direction = GameDirection.DOWN
+                elif route_part['code'] == 2: # Move Left
+                    delta_x -= 1
+                    if player_moving or not self.state.map.event_direction_fix(event.event_data, event.page, event.page_index):
+                        new_direction = GameDirection.LEFT
+                elif route_part['code'] == 3: # Move Right
+                    delta_x += 1
+                    if player_moving or not self.state.map.event_direction_fix(event.event_data, event.page, event.page_index):
+                        new_direction = GameDirection.RIGHT
+                elif route_part['code'] == 4: # Move Up
+                    delta_y -= 1
+                    if player_moving or not self.state.map.event_direction_fix(event.event_data, event.page, event.page_index):
+                        new_direction = GameDirection.UP
+                elif route_part['code'] == 12: # Move Forward
+                    if player_moving:
+                        current_direction = game_state.player_direction
+                    else:
+                        current_direction = self.state.map.event_sprite_data(event.event_data, event.page, event_page_index)['direction']
+                    if current_direction == GameDirection.UP:
+                        delta_y -= 1
+                    elif current_direction == GameDirection.DOWN:
+                        delta_y += 1
+                    elif current_direction == GameDirection.LEFT:
+                        delta_x -= 1
+                    elif current_direction == GameDirection.RIGHT:
+                        delta_x += 1
+                elif route_part['code'] == 15: # Wait
+                    if return_on_wait:
+                        self.move_route_index += 1
+                        self.paused = route_part['parameters'][0]
+                        return
+                elif route_part['code'] == 16: # Turn Down
+                    new_direction = GameDirection.DOWN
+                elif route_part['code'] == 17: # Turn Left
+                    new_direction = GameDirection.LEFT
+                elif route_part['code'] == 18: # Turn Right
+                    new_direction = GameDirection.RIGHT
+                elif route_part['code'] == 19: # Turn Up
+                    new_direction = GameDirection.UP
+                elif route_part['code'] == 27: # Route Switch On
+                    self.state.switches.set_value(route_part['parameters'][0], True)
+                elif route_part['code'] == 28: # Route Switch Off
+                    self.state.switches.set_value(route_part['parameters'][0], False)
+                elif route_part['code'] == 29: # Change Speed
+                    pass
+                elif route_part['code'] == 35: # Route Direction Fix On
+                    new_direction_fix = True
+                elif route_part['code'] == 36: # Route Direction Fix Off
+                    new_direction_fix = False
+                elif route_part['code'] == 37: # Route Through On
+                    new_through = True
+                elif route_part['code'] == 38: # Route Through Off
+                    new_through = False
+                elif route_part['code'] == 41: # Change image
+                    new_character_name, new_character_index = route_part['parameters']
+                    if player_moving:
+                        actor_index = 1
+                        self.state.actors.set_property(actor_index, 'characterName', new_character_name)
+                        self.state.actors.set_property(actor_index, 'characterIndex', new_character_index)
+                    else:
+                        self.state.map.override_event(event_id, event_page_index, 'characterName', new_character_name)
+                        self.state.map.override_event(event_id, event_page_index, 'characterIndex', new_character_index)
+                elif route_part['code'] == 45: # Route Script
+                    route_script = route_part['parameters'][0]
+                    gre = Re()
+                    if gre.match('\$game_switches\[(\d+)\] = (\w+)', route_script):
+                        groups = gre.last_match.groups()
+                        switch_id = int(groups[0])
+                        switch_value = groups[1] == 'true'
+                        self.state.self_switches.set_value(switch_id, switch_value)
+                    elif gre.match("\$game_self_switches\[\[(\d+)\s*,\s*(\d+)\s*,\s*'(.*?)'\]\] = (\w+)", route_script):
+                        groups = gre.last_match.groups()
+                        map_id, event_id, self_switch_name, self_switch_value = (int(groups[0]), int(groups[1]), groups[2], groups[3] == 'true')
+                        self.state.self_switches.set_value((map_id, event_id, self_switch_name), self_switch_value)
+                    elif gre.match('end_anim_loop', route_script):
+                        pass
+                    else:
+                        print "Script that could not be evaluated:\n"
+                        print route_script
+                        renpy.say(None, "Movement route Script commands not implemented\nSee console for full script.")
+
+                elif route_part['code'] == 0:
+                    pass
+
+                if new_direction_fix != None:
+                    if player_moving:
+                        renpy.say(None, "Movement route direction fix toggling not supported for player")
+                    else:
+                        self.state.map.override_event(event_id, event_page_index, 'directionFix', new_direction_fix)
+
+                if new_direction:
+                    if player_moving:
+                        game_state.player_direction = new_direction
+                    else:
+                        self.state.map.override_event(event_id, event_page_index, 'direction', new_direction)
+
+                if new_through != None:
+                    if player_moving:
+                        game_state.everything_reachable = new_through
+                    else:
+                        self.state.map.override_event(event_id, event_page_index, 'through', new_through)
+
+                if delta_x != 0 or delta_y != 0:
+                    if player_moving:
+                        current_x, current_y = game_state.player_x, game_state.player_y
+                    else:
+                        loc = self.state.map.event_location(event.event_data)
+                        if not loc:
+                            break
+                        current_x, current_y = loc
+
+                    new_x, new_y = current_x + delta_x, current_y + delta_y
+                    if new_x < 0 or new_y < 0 or new_x > self.state.map.width() - 1 or new_y > self.state.map.height() - 1:
+                        break
+
+                    moving_object_does_not_collide = (player_moving and game_state.everything_is_reachable()) or (event and self.state.map.event_through(event.event_data, event.page, event.page_index))
+                    if not moving_object_does_not_collide:
+                        map_event = self.state.map.find_event_for_location(new_x, new_y)
+                        if not map_event or (not self.state.map.event_through(map_event.event_data, map_event.page, map_event.page_index)):
+                            old_map_event = self.state.map.find_event_for_location(current_x, current_y)
+                            if not old_map_event or (not self.state.map.event_through(old_map_event.event_data, old_map_event.page, old_map_event.page_index)):
+                                if (map_event and GameEvent.page_solid(map_event.page)) or not self.state.map.can_move_vector(current_x, current_y, delta_x, delta_y):
+                                      if noisy_events:
+                                          print "MOVEMENT COLLIDED AT %s, %s!!!" % (new_x, new_y)
+                                      break
+
+                    if player_moving: # Player Character
+                        game_state.player_x, game_state.player_y = new_x, new_y
+                    else:
+                        self.state.map.override_event_location(event.event_data, (new_x, new_y))
+
+                self.move_route_index += 1
 
         def migrate_global_branch_data(self):
             if not hasattr(self, 'branch') and hasattr(game_state, 'branch'):
@@ -834,165 +1015,17 @@ init python:
 
                 # Set movement route
                 elif command['code'] == 205:
-                    reachability_grid = self.state.map.reachability_grid_for_current_position()
-
                     event_id, route = command['parameters']
-                    event = None
-                    event_page_index = None
-                    player_moving = event_id < 0
-                    if event_id == 0:
-                        event_id = self.event_data['id']
-                    if event_id == self.event_data['id']:
-                        event_page_index = self.get_page_index()
-                    if event_id > 0:
-                        if event_page_index == None:
-                            event = self.state.map.find_event_at_index(event_id)
+                    can_pause = self.parallel() and allow_pause
+                    self.process_move_route(event_id, route, return_on_wait = can_pause)
 
-                        if not event:
-                            self.list_index += 1
-                            return
-
-                        if event_page_index == None:
-                            event_page_index = event.get_page_index()
-
-                    for route_part in route['list']:
+                    if hasattr(self, 'paused') and self.paused:
                         if noisy_events:
-                            print "MOVEMENT ROUTE: event %s, page %s, command %s, target %s, route command %s (%s)" % (
-                                self.event_data['id'],
-                                self.get_page_index(),
-                                self.list_index,
-                                event_id,
-                                route_part['code'],
-                                RpgmConstants.ROUTE_COMMAND_NAMES[route_part['code']]
-                            )
-                        delta_x = 0
-                        delta_y = 0
-                        new_direction = None
-                        new_direction_fix = None
-                        new_through = None
-                        if route_part['code'] == 1: # Move Down
-                            delta_y += 1
-                            if player_moving or not self.state.map.event_direction_fix(event.event_data, event.page, event.page_index):
-                                new_direction = GameDirection.DOWN
-                        elif route_part['code'] == 2: # Move Left
-                            delta_x -= 1
-                            if player_moving or not self.state.map.event_direction_fix(event.event_data, event.page, event.page_index):
-                                new_direction = GameDirection.LEFT
-                        elif route_part['code'] == 3: # Move Right
-                            delta_x += 1
-                            if player_moving or not self.state.map.event_direction_fix(event.event_data, event.page, event.page_index):
-                                new_direction = GameDirection.RIGHT
-                        elif route_part['code'] == 4: # Move Up
-                            delta_y -= 1
-                            if player_moving or not self.state.map.event_direction_fix(event.event_data, event.page, event.page_index):
-                                new_direction = GameDirection.UP
-                        elif route_part['code'] == 12: # Move Forward
-                            if player_moving:
-                                current_direction = game_state.player_direction
-                            else:
-                                current_direction = self.state.map.event_sprite_data(event.event_data, event.page, event_page_index)['direction']
-                            if current_direction == GameDirection.UP:
-                                delta_y -= 1
-                            elif current_direction == GameDirection.DOWN:
-                                delta_y += 1
-                            elif current_direction == GameDirection.LEFT:
-                                delta_x -= 1
-                            elif current_direction == GameDirection.RIGHT:
-                                delta_x += 1
-                        elif route_part['code'] == 16: # Turn Down
-                            new_direction = GameDirection.DOWN
-                        elif route_part['code'] == 17: # Turn Left
-                            new_direction = GameDirection.LEFT
-                        elif route_part['code'] == 18: # Turn Right
-                            new_direction = GameDirection.RIGHT
-                        elif route_part['code'] == 19: # Turn Up
-                            new_direction = GameDirection.UP
-                        elif route_part['code'] == 29: # Change Speed
-                            pass
-                        elif route_part['code'] == 35: # Route Direction Fix On
-                            new_direction_fix = True
-                        elif route_part['code'] == 36: # Route Direction Fix Off
-                            new_direction_fix = False
-                        elif route_part['code'] == 37: # Route Through On
-                            new_through = True
-                        elif route_part['code'] == 38: # Route Through Off
-                            new_through = False
-                        elif route_part['code'] == 41: # Change image
-                            new_character_name, new_character_index = route_part['parameters']
-                            if player_moving:
-                                actor_index = 1
-                                self.state.actors.set_property(actor_index, 'characterName', new_character_name)
-                                self.state.actors.set_property(actor_index, 'characterIndex', new_character_index)
-                            else:
-                                self.state.map.override_event(event_id, event_page_index, 'characterName', new_character_name)
-                                self.state.map.override_event(event_id, event_page_index, 'characterIndex', new_character_index)
-                        elif route_part['code'] == 45: # Route Script
-                            route_script = route_part['parameters'][0]
-                            gre = Re()
-                            if gre.match('\$game_switches\[(\d+)\] = (\w+)', route_script):
-                                groups = gre.last_match.groups()
-                                switch_id = int(groups[0])
-                                switch_value = groups[1] == 'true'
-                                self.state.self_switches.set_value(switch_id, switch_value)
-                            elif gre.match("\$game_self_switches\[\[(\d+)\s*,\s*(\d+)\s*,\s*'(.*?)'\]\] = (\w+)", route_script):
-                                groups = gre.last_match.groups()
-                                map_id, event_id, self_switch_name, self_switch_value = (int(groups[0]), int(groups[1]), groups[2], groups[3] == 'true')
-                                self.state.self_switches.set_value((map_id, event_id, self_switch_name), self_switch_value)
-                            elif gre.match('end_anim_loop', route_script):
-                                pass
-                            else:
-                                print "Script that could not be evaluated:\n"
-                                print route_script
-                                renpy.say(None, "Movement route Script commands not implemented\nSee console for full script.")
-
-                        elif route_part['code'] == 0:
-                            pass
-
-                        if new_direction_fix != None:
-                            if player_moving:
-                                renpy.say(None, "Movement route direction fix toggling not supported for player")
-                            else:
-                                self.state.map.override_event(event_id, event_page_index, 'directionFix', new_direction_fix)
-
-                        if new_direction:
-                            if player_moving:
-                                game_state.player_direction = new_direction
-                            else:
-                                self.state.map.override_event(event_id, event_page_index, 'direction', new_direction)
-
-                        if new_through != None:
-                            if player_moving:
-                                game_state.everything_reachable = new_through
-                            else:
-                                self.state.map.override_event(event_id, event_page_index, 'through', new_through)
-
-                        if delta_x != 0 or delta_y != 0:
-                            if player_moving:
-                                current_x, current_y = game_state.player_x, game_state.player_y
-                            else:
-                                loc = self.state.map.event_location(event.event_data)
-                                if not loc:
-                                    break
-                                current_x, current_y = loc
-
-                            new_x, new_y = current_x + delta_x, current_y + delta_y
-                            if new_x < 0 or new_y < 0 or new_x > self.state.map.width() - 1 or new_y > self.state.map.height() - 1:
-                                break
-
-                            moving_object_does_not_collide = (player_moving and game_state.everything_is_reachable()) or (event and self.state.map.event_through(event.event_data, event.page, event.page_index))
-                            if not moving_object_does_not_collide:
-                                map_event = self.state.map.find_event_for_location(new_x, new_y)
-                                if not map_event or (not self.state.map.event_through(map_event.event_data, map_event.page, map_event.page_index)):
-                                    if len(reachability_grid) > new_y and len(reachability_grid[new_y]) > new_x:
-                                        if reachability_grid[new_y][new_x] == 2 or not self.state.map.can_move_vector(current_x, current_y, delta_x, delta_y):
-                                              if noisy_events:
-                                                  print "MOVEMENT COLLIDED AT %s, %s!!!" % (new_x, new_y)
-                                              break
-
-                            if player_moving: # Player Character
-                                game_state.player_x, game_state.player_y = new_x, new_y
-                            else:
-                                self.state.map.override_event_location(event.event_data, (new_x, new_y))
+                            print "WAIT DURING PARALLEL EVENT!! MOVE ROUTE %s PAUSED AT INDEX %s" % (self.paused, self.move_route_index)
+                        self.has_ever_paused = True
+                        return
+                    else:
+                        self.move_route_index = 0
 
                 # Change Transparency
                 elif command['code'] == 211:
@@ -1030,7 +1063,7 @@ init python:
                 elif command['code'] == 230:
                     wait_time = command['parameters'][0]
                     if self.parallel():
-                        if allow_pause and wait_time >= 60:
+                        if allow_pause and wait_time >= 45:
                             if noisy_events:
                                 print "WAIT DURING PARALLEL EVENT!! %s" % wait_time
                             self.list_index += 1

@@ -1068,6 +1068,20 @@ init python:
                 return True
             return False
 
+        def map_clickable_for_event_page(self, loc, e, page, page_index):
+            return MapClickable(
+                loc[0],
+                loc[1],
+                page_index = page_index,
+                label = self.page_label(page),
+                special = self.event_is_special(e),
+                clicky = self.clicky_event(e, page),
+                has_commands = self.has_commands(page),
+                solid = GameEvent.page_solid(page),
+                touch_trigger = page['trigger'] in [1,2],
+                action_trigger = page['trigger'] in [0]
+            )
+
         def map_options(self, player_x, player_y, only_special = False, ignore_clicky = False):
             coords = []
             clicky_screen = not ignore_clicky and self.is_clicky(player_x, player_y)
@@ -1083,18 +1097,8 @@ init python:
                             break
 
                         loc = self.event_location(e)
-                        map_clickable = MapClickable(
-                            loc[0],
-                            loc[1],
-                            page_index = (len(e['pages']) - 1) - reverse_page_index,
-                            label = self.page_label(page),
-                            special = self.event_is_special(e),
-                            clicky = self.clicky_event(e, page),
-                            has_commands = self.has_commands(page),
-                            solid = (page['priorityType'] == 1) and not page['through'],
-                            touch_trigger = page['trigger'] in [1,2],
-                            action_trigger = page['trigger'] in [0]
-                        )
+                        page_index = (len(e['pages']) - 1) - reverse_page_index
+                        map_clickable = self.map_clickable_for_event_page(loc, e, page, page_index)
                         if self.hide_buggy_event(e, page):
                             break
                         if clicky_screen:
