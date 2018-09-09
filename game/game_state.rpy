@@ -90,6 +90,22 @@ init python:
         def occluded(self):
             return GameIdentifier().is_incest_adventure() and self.queued_picture(2) and self.queued_picture(2)['image_name'] == rpgm_picture_name('LOADINGANIMATIONS')
 
+        def print_picture(self, picture):
+            if isinstance(picture, RpgmAnimation):
+                for frame in picture.images:
+                    self.print_picture(frame)
+            elif isinstance(picture, renpy.display.transform.Transform):
+                self.print_picture(picture.children[0])
+            elif isinstance(picture, renpy.display.image.ImageReference):
+                print picture.visit()[0].filename
+            else:
+                print picture
+
+        def print_pictures(self):
+            for picture_id, picture_data in game_state.shown_pictures.iteritems():
+                print "PICTURE %s:" % picture_id
+                self.print_picture(picture_data['image_name'])
+
         def show_picture(self, picture_id, args):
             self.migrate_shown_pictures()
             args['faded_out'] = (hasattr(self, 'faded_out') and self.faded_out) or game_state.occluded()
