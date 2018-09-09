@@ -739,6 +739,22 @@ init python:
             if len(self.events) > 0:
                 return True
 
+            if hasattr(self, 'map_path') and len(self.map_path) > 0:
+                self.player_x, self.player_y, self.player_direction = self.map_path.pop()
+                self.queue_parallel_events(keep_relevant_existing = True)
+                return True
+
+            if hasattr(self, 'map_path_destination') and self.map_path_destination:
+                x, y, self.player_direction = self.map_path_destination
+                self.map_path_destination = None
+
+                map_event = self.map.find_event_for_location(x, y) or self.map.find_event_for_location(x, y, only_special = True)
+                if map_event:
+                    self.events.append(map_event)
+                else:
+                    print "NO EVENT FOUND FOR %s, %s ???" % (x, y)
+                return True
+
             if keyed_common_event:
                 common_event = self.common_events_data()[int(keyed_common_event)]
                 self.events.append(GameEvent(self, common_event, common_event))
@@ -781,11 +797,12 @@ init python:
                     elif hasattr(mapdest, 'reachable') and mapdest.reachable and not self.everything_is_reachable():
                         reachability_grid = self.map.reachability_grid_for_current_position()
                         path_from_destination = self.map.path_from_destination(self.player_x, self.player_y, mapdest.x, mapdest.y)
-                        adjacent_x, adjacent_y, self.player_direction = path_from_destination[0]
-                        if map_event.page['through'] or (map_event.page['priorityType'] != 1 and not self.map.is_impassible(mapdest.x, mapdest.y, self.player_direction)):
-                            self.player_x, self.player_y = mapdest.x, mapdest.y
+                        adjacent_x, adjacent_y, adjacent_direction = path_from_destination[0]
+                        self.map_path_destination = (mapdest.x, mapdest.y, adjacent_direction)
+                        if map_event.page['through'] or (map_event.page['priorityType'] != 1 and not self.map.is_impassible(mapdest.x, mapdest.y, adjacent_direction)):
+                            self.map_path = path_from_destination
                         else:
-                            self.player_x, self.player_y = adjacent_x, adjacent_y
+                            self.map_path = path_from_destination[1:-1]
                     else:
                         self.player_direction = self.determine_direction(mapdest.x, mapdest.y)
                         if map_event.page['through'] or map_event.page['trigger'] != 0:
@@ -795,7 +812,8 @@ init python:
                             if first_open_square:
                                 self.player_x, self.player_y = first_open_square
 
-                self.events.append(map_event)
+                if not hasattr(self, 'map_path_destination') or self.map_path_destination == None:
+                    self.events.append(map_event)
                 if debug_events:
                     print "DEBUG_EVENTS: %d,%d" % (mapdest.x, mapdest.y)
                 return True

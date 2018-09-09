@@ -594,7 +594,8 @@ init python:
                     if ax == dest_x and ay == dest_y:
                         if profile_timings:
                             print "pathfinding took %s, evaluating %s locations" % (time.time() - started, total_locations_evaluated)
-                        sq = current
+                        came_from[(ax, ay)] = current
+                        sq = (ax, ay, adirection)
                         path = [sq]
                         while True:
                             prev = came_from[(sq[0], sq[1])]
