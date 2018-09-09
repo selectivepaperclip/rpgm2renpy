@@ -30,7 +30,9 @@ maps.each do |map_path|
         event_json['pages'].each do |page_json|
             commands = page_json['list']
             commands.each do |command|
-                if command['code'] == 355
+                if command['code'] == 111 and command['parameters'][0] == 12
+                    script_strings.push(command['parameters'][1])
+                elsif command['code'] == 355
                     script_strings.push(command['parameters'][0])
                 elsif command['code'] == 655
                     script_strings[-1] = "#{script_strings[-1]}\n#{command['parameters'][0]}"
