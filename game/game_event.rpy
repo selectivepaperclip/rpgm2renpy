@@ -757,7 +757,11 @@ init python:
                 # Control Self Switch
                 elif command['code'] == 123:
                     switch_id, value = command['parameters']
-                    last_non_common_event = next((e for e in reversed(self.state.events) if not e.common()), None)
+                    if self in self.state.events:
+                        running_events = self.state.events
+                    else:
+                        running_events = self.state.events + [self]
+                    last_non_common_event = next((e for e in reversed(running_events) if not e.common()), None)
                     if last_non_common_event:
                         key = (self.state.map.map_id, last_non_common_event.event_data['id'], switch_id)
                         self.state.self_switches.set_value(key, value == 0)
