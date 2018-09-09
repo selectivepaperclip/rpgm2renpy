@@ -184,6 +184,11 @@ init python:
                         self.has_ever_paused = True
                         self.paused_for_key = gre.last_match.groups()[0]
                         return -1
+                elif gre.match("Proxy\.inprox_?d?\?\(@event_id,(\d+),.*\)", params[1]):
+                    desired_distance = int(gre.last_match.groups()[0])
+                    event_x, event_y = self.state.map.event_location(self.event_data)
+                    distance = abs(self.state.player_x - event_x) + abs(self.state.player_y - event_y)
+                    return distance <= desired_distance
                 else:
                     renpy.say(None, "Conditional statements for Script not implemented\nSee console for full script.")
                     print "Script that could not be evaluated:\n"
