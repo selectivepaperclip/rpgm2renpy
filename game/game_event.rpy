@@ -1152,6 +1152,10 @@ init python:
                     game_state.pause()
                     renpy.hide("movie")
 
+                # Change Tileset
+                elif command['code'] == 282:
+                    self.state.map.override_tileset(command['parameters'][0])
+
                 # Change Parallax
                 elif command['code'] == 284:
                     pass

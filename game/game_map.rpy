@@ -237,6 +237,7 @@ init python:
             self.map_id = map_id
 
         def update_for_transfer(self):
+            self.tileset_id_override = None
             self.event_location_overrides = {}
             self.event_overrides = {}
             self.erased_events = {}
@@ -282,7 +283,12 @@ init python:
             return self._background_image
 
         def background_image_cache_file(self):
-            return os.path.join(map_cache_directory, ('Map%03d.png' % self.map_id)).replace("\\", "/")
+            if hasattr(self, 'tileset_id_override') and self.tileset_id_override:
+                basename = ('Map%03d_tileset%s.png' % (self.map_id, self.tileset_id_override))
+            else:
+                basename = ('Map%03d.png' % self.map_id)
+
+            return os.path.join(map_cache_directory, basename).replace("\\", "/")
 
         def background_image_cache_file_absolute(self):
             return os.path.join(config.basedir, self.background_image_cache_file()).replace("\\", "/")
@@ -368,8 +374,13 @@ init python:
         def is_tile_a5(self, tile_id):
             return tile_id >= GameMap.TILE_ID_A5 and tile_id < GameMap.TILE_ID_A1
 
+        def tileset_id(self):
+            if hasattr(self, 'tileset_id_override') and self.tileset_id_override:
+                return self.tileset_id_override
+            return self.data()['tilesetId']
+
         def flags(self, tile_id):
-            flag_data = self.state.tilesets()[self.data()['tilesetId']]['flags']
+            flag_data = self.state.tilesets()[self.tileset_id()]['flags']
             if len(flag_data) > tile_id:
                 return flag_data[tile_id]
             else:
@@ -693,7 +704,7 @@ init python:
                         for tile in all_tiles:
                             tile.x = x
                             tile.y = y
-                            tileset_names = self.state.tilesets()[self.data()['tilesetId']]['tilesetNames']
+                            tileset_names = self.state.tilesets()[self.tileset_id()]['tilesetNames']
                             if len(tileset_names) > tile.set_number:
                                 tile.tileset_name = tileset_names[tile.set_number]
 
@@ -739,7 +750,7 @@ init python:
             return (img, pw, ph, shift_y)
 
         def tile_sprite(self, image_data):
-            tileset_names = self.state.tilesets()[self.data()['tilesetId']]['tilesetNames']
+            tileset_names = self.state.tilesets()[self.tileset_id()]['tilesetNames']
             set_number = 5 + (image_data['tileId'] // 256)
             tileset_name = tileset_names[set_number]
 
@@ -1025,6 +1036,10 @@ init python:
             else:
                 if 'x' in event_data:
                     return (event_data['x'], event_data['y'])
+
+        def override_tileset(self, tileset_id):
+            self.tileset_id_override = tileset_id
+            delattr(self, '_background_image')
 
         def override_event_location(self, event_data, loc):
             if not hasattr(self, 'event_location_overrides'):
