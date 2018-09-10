@@ -10,6 +10,17 @@ init python:
         DOWN_RIGHT = 3
 
         @classmethod
+        def delta_for_direction(cls, direction):
+            if direction == GameDirection.UP:
+                return (0, -1)
+            elif direction == GameDirection.DOWN:
+                return (0, 1)
+            elif direction == GameDirection.LEFT:
+                return (-1, 0)
+            elif direction == GameDirection.RIGHT:
+                return (1, 0)
+
+        @classmethod
         def reverse_direction(cls, direction):
             if direction == GameDirection.UP:
                 return GameDirection.DOWN
@@ -793,7 +804,7 @@ init python:
                 return True
 
             if rpgm_game_data.get('has_dpad_animations', None) and not mapdest:
-                if self.map.surrounded_by_events(self.player_x, self.player_y):
+                if len(self.shown_pictures) > 0 and self.map.surrounded_by_events(self.player_x, self.player_y):
                     mapdest = MapClickable(
                         self.player_x + 1,
                         self.player_y
@@ -824,7 +835,18 @@ init python:
                         self.player_x, self.player_y = mapdest.x, mapdest.y
                     elif hasattr(mapdest, 'reachable') and mapdest.reachable and not self.everything_is_reachable():
                         reachability_grid = self.map.reachability_grid_for_current_position()
-                        path_from_destination = self.map.path_from_destination(self.player_x, self.player_y, mapdest.x, mapdest.y)
+
+                        path_from_destination = None
+                        preferred_approach_direction = map_event.preferred_approach_direction()
+                        if preferred_approach_direction:
+                            delta_x, delta_y = GameDirection.delta_for_direction(GameDirection.reverse_direction(preferred_approach_direction))
+                            adjacent_x, adjacent_y, adjacent_direction = mapdest.x + delta_x, mapdest.y + delta_y, preferred_approach_direction
+                            if reachability_grid[adjacent_y][adjacent_x] == 3:
+                                path_from_adjacent_square = self.map.path_from_destination(self.player_x, self.player_y, adjacent_x, adjacent_y) or []
+                                path_from_destination = [(mapdest.x, mapdest.y, preferred_approach_direction)] + path_from_adjacent_square
+
+                        if not path_from_destination:
+                            path_from_destination = self.map.path_from_destination(self.player_x, self.player_y, mapdest.x, mapdest.y)
                         adjacent_x, adjacent_y, adjacent_direction = path_from_destination[0]
                         self.map_path_destination = (mapdest.x, mapdest.y, adjacent_direction)
                         if map_event.page['through'] or (map_event.page['priorityType'] != 1 and not self.map.is_impassible(mapdest.x, mapdest.y, adjacent_direction)):

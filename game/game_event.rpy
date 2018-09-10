@@ -32,6 +32,13 @@ init python:
                     self.page_index = index
                     return self.page_index
 
+        def preferred_approach_direction(self):
+            first_command = self.page['list'][0]
+            if first_command['code'] == 111 and first_command['parameters'][0] == 6:
+                character_id, direction = first_command['parameters'][1:3]
+                if character_id == -1:
+                    return direction
+
         def conditional_branch_result(self, params):
             operation = params[0]
             # Switches
@@ -421,25 +428,24 @@ init python:
                         route_part['code'],
                         RpgmConstants.ROUTE_COMMAND_NAMES[route_part['code']]
                     )
-                delta_x = 0
-                delta_y = 0
+                direction_delta = (0, 0)
                 new_direction = None
                 new_direction_fix = None
                 new_through = None
                 if route_part['code'] == 1: # Move Down
-                    delta_y += 1
+                    direction_delta = GameDirection.delta_for_direction(GameDirection.DOWN)
                     if player_moving or not self.state.map.event_direction_fix(event.event_data, event.page, event.page_index):
                         new_direction = GameDirection.DOWN
                 elif route_part['code'] == 2: # Move Left
-                    delta_x -= 1
+                    direction_delta = GameDirection.delta_for_direction(GameDirection.LEFT)
                     if player_moving or not self.state.map.event_direction_fix(event.event_data, event.page, event.page_index):
                         new_direction = GameDirection.LEFT
                 elif route_part['code'] == 3: # Move Right
-                    delta_x += 1
+                    direction_delta = GameDirection.delta_for_direction(GameDirection.RIGHT)
                     if player_moving or not self.state.map.event_direction_fix(event.event_data, event.page, event.page_index):
                         new_direction = GameDirection.RIGHT
                 elif route_part['code'] == 4: # Move Up
-                    delta_y -= 1
+                    direction_delta = GameDirection.delta_for_direction(GameDirection.UP)
                     if player_moving or not self.state.map.event_direction_fix(event.event_data, event.page, event.page_index):
                         new_direction = GameDirection.UP
                 elif route_part['code'] == 12: # Move Forward
@@ -447,14 +453,9 @@ init python:
                         current_direction = game_state.player_direction
                     else:
                         current_direction = self.state.map.event_sprite_data(event.event_data, event.page, event_page_index)['direction']
-                    if current_direction == GameDirection.UP:
-                        delta_y -= 1
-                    elif current_direction == GameDirection.DOWN:
-                        delta_y += 1
-                    elif current_direction == GameDirection.LEFT:
-                        delta_x -= 1
-                    elif current_direction == GameDirection.RIGHT:
-                        delta_x += 1
+                    direction_delta = GameDirection.delta_for_direction(current_direction)
+                elif route_part['code'] == 14: # Jump
+                    direction_delta = route_part['parameters'][0:2]
                 elif route_part['code'] == 15: # Wait
                     if return_on_wait:
                         self.move_route_index += 1
@@ -531,6 +532,7 @@ init python:
                     else:
                         self.state.map.override_event(event_id, event_page_index, 'through', new_through)
 
+                delta_x, delta_y = direction_delta
                 if delta_x != 0 or delta_y != 0:
                     if player_moving:
                         current_x, current_y = game_state.player_x, game_state.player_y
@@ -1021,7 +1023,7 @@ init python:
 
                     if hasattr(self, 'paused') and self.paused:
                         if noisy_events:
-                            print "WAIT DURING PARALLEL EVENT!! MOVE ROUTE %s PAUSED AT INDEX %s" % (self.paused, self.move_route_index)
+                            print "WAIT DURING PARALLEL EVENT!! MOVE ROUTE AT INDEX %s PAUSED FOR %s" % (self.move_route_index, self.paused)
                         self.has_ever_paused = True
                         return
                     else:
