@@ -1047,7 +1047,7 @@ init python:
             key_paused_events = []
             has_paused_events = False
             if hasattr(self, 'parallel_events'):
-                has_paused_events = any(e for e in game_state.parallel_events if hasattr(e, 'paused') and e.paused >= 45)
+                has_paused_events = any(e for e in game_state.parallel_events if hasattr(e, 'paused') and e.paused > 0)
                 for e in self.parallel_events:
                     if hasattr(e, 'paused_for_key') and e.paused_for_key:
                         key_paused_events.append({

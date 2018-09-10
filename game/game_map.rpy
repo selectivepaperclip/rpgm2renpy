@@ -1131,7 +1131,22 @@ init python:
                             existing_coords[(ax, ay)] = True
                             coords.append(map_clickable)
 
+            for location in self.curated_walk_locations():
+                map_clickable = MapClickable(
+                    location[0],
+                    location[1],
+                    walk_destination = True
+                )
+                coords.append(map_clickable)
+
             return coords
+
+        def curated_walk_locations(self):
+            if GameIdentifier().is_incest_adventure():
+                # Top floor of lab, you need to hide behind a plant while a character walks by
+                if game_state.map.map_id == 76:
+                    return [(19, 34)]
+            return []
 
         def name(self):
             if 'displayName' in self.data() and len(self.data()['displayName']) > 0:
