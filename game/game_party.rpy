@@ -23,6 +23,10 @@ init python:
             if not hasattr(self, 'maic_quest_activity'):
                 self.maic_quest_activity = {}
 
+        def leader(self):
+            if len(self.members) > 0:
+                return self.members[0];
+
         def num_items(self, item):
             self.migrate_missing_properties()
             return self.storage_attribute_for_item(item).get(item['id'], 0)

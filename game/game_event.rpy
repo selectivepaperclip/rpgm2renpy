@@ -486,7 +486,7 @@ init python:
                 elif route_part['code'] == 41: # Change image
                     new_character_name, new_character_index = route_part['parameters']
                     if player_moving:
-                        actor_index = 1
+                        actor_index = self.state.party.leader()
                         self.state.actors.set_property(actor_index, 'characterName', new_character_name)
                         self.state.actors.set_property(actor_index, 'characterIndex', new_character_index)
                     else:
@@ -983,7 +983,7 @@ init python:
                     elif command['code'] == 128:
                         self.state.party.gain_item(self.state.armors.by_id(item_id), value)
 
-                # Change party members -- TODO
+                # Change party members
                 elif command['code'] == 129:
                     actor_index = command['parameters'][0]
                     actor = self.state.actors.by_index(actor_index)

@@ -763,15 +763,17 @@ init python:
         def sprites(self):
             result = []
 
-            player_character_actor = self.state.actors.by_index(1)
-            if player_character_actor['characterName'] != '':
-                player_character_sprite_data = {
-                    "characterName": player_character_actor['characterName'],
-                    "characterIndex": player_character_actor['characterIndex'],
-                    "pattern": 0,
-                    "direction": game_state.player_direction
-                }
-                result.append((game_state.player_x, game_state.player_y) + self.character_sprite(player_character_sprite_data))
+            lead_actor_id = self.state.party.leader()
+            if lead_actor_id:
+                player_character_actor = self.state.actors.by_index(lead_actor_id)
+                if player_character_actor['characterName'] != '':
+                    player_character_sprite_data = {
+                        "characterName": player_character_actor['characterName'],
+                        "characterIndex": player_character_actor['characterIndex'],
+                        "pattern": 0,
+                        "direction": game_state.player_direction
+                    }
+                    result.append((game_state.player_x, game_state.player_y) + self.character_sprite(player_character_sprite_data))
 
             for e in self.active_events():
                 for reverse_page_index, page in enumerate(reversed(e['pages'])):
