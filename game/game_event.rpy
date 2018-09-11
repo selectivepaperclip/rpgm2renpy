@@ -626,7 +626,14 @@ init python:
                         return
 
                 if noisy_events:
-                    print("map %s, event %s, page %s, command %s (%s)" % (game_state.map.map_id, self.event_data['id'], self.event_data['pages'].index(self.page) if ('pages' in self.event_data) else 'n/a', self.list_index, command['code']))
+                    print "COMMAND: map %s, event %s, page %s - %s, command %s (%s)" % (
+                        game_state.map.map_id,
+                        self.event_data['id'],
+                        self.event_data['pages'].index(self.page) if ('pages' in self.event_data) else 'n/a',
+                        self.list_index,
+                        command['code'],
+                        RpgmConstants.COMMAND_NAMES[command['code']]
+                    )
 
                 # Do nothing
                 if command['code'] == 0:
