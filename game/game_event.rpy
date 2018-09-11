@@ -69,7 +69,7 @@ init python:
             # Self Switches
             elif operation == 2:
                 if len(self.state.events) > 0:
-                    key = (self.state.map.map_id, event_data['id'], params[1])
+                    key = (self.state.map.map_id, self.event_data['id'], params[1])
                     return self.state.self_switches.value(key) == (params[2] == 0)
             # Timer
             elif operation == 3:
