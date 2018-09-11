@@ -10,6 +10,7 @@ init offset = -2
 ## width and height of the game.
 init python:
     plugins_json = rpgm_plugins_loader.json()
+    package_json = rpgm_plugins_loader.package_json()
     resolution_plugin = next((plugin_data for plugin_data in plugins_json if plugin_data['name'].startswith('Resolution')), None)
     screen_resolution_plugin = next((plugin_data for plugin_data in plugins_json if plugin_data['name'].startswith('ScreenResolution')), None)
     core_engine_plugin = next((plugin_data for plugin_data in plugins_json if plugin_data['name'].startswith('YEP_CoreEngine')), None)
@@ -24,6 +25,8 @@ init python:
         screen_size = tuple(rpgm_game_data['resolution'])
     elif rpgm_metadata.is_pre_mv_version:
         screen_size = (1024, 768)
+    elif package_json:
+        screen_size = (package_json['window']['width'], package_json['window']['height'])
     else:
         screen_size = (1280, 720)
 
