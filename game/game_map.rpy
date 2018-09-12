@@ -236,11 +236,18 @@ init python:
             self.state = state
             self.map_id = map_id
 
+        def initialize_erased_events(self):
+            self.erased_events = {}
+            erased_events_from_metadata = rpgm_game_data.get('erased_events', None)
+            if erased_events_from_metadata:
+                for event_id in erased_events_from_metadata.get(str(self.map_id), []):
+                    self.erased_events[event_id] = True
+
         def update_for_transfer(self):
             self.tileset_id_override = None
             self.event_location_overrides = {}
             self.event_overrides = {}
-            self.erased_events = {}
+            self.initialize_erased_events()
             self.hide_unpleasant_moving_obstacles()
 
         def hide_unpleasant_moving_obstacles(self):
@@ -340,7 +347,7 @@ init python:
 
         def active_events(self):
             if not hasattr(self, 'erased_events'):
-                self.erased_events = {}
+                self.initialize_erased_events()
             return (e for e in self.data()['events'] if e and e['id'] not in self.erased_events)
 
         def is_clicky(self, player_x, player_y):
@@ -796,7 +803,7 @@ init python:
 
         def find_event_at_index(self, event_index):
             if not hasattr(self, 'erased_events'):
-                self.erased_events = {}
+                self.initialize_erased_events()
             if event_index in self.erased_events:
                 return None
             e = self.data()['events'][event_index]
@@ -855,7 +862,7 @@ init python:
 
         def parallel_events(self):
             if not hasattr(self, 'erased_events'):
-                self.erased_events = {}
+                self.initialize_erased_events()
             result = []
             all_events = self.data()['events']
             for index in self.possible_parallel_event_indices():
@@ -873,7 +880,7 @@ init python:
 
         def parallel_event_at_index(self, event_index):
             if not hasattr(self, 'erased_events'):
-                self.erased_events = {}
+                self.initialize_erased_events()
             e = self.data()['events'][event_index]
             if e and e['id'] not in self.erased_events:
                 for reverse_page_index, page in enumerate(reversed(e['pages'])):
