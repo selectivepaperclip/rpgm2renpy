@@ -1087,7 +1087,7 @@ init python:
                             self.paused = wait_time
                             return
                         else:
-                            self.state.queue_parallel_events(keep_relevant_existing = True)
+                            self.state.requeue_parallel_events_if_changed()
 
                     game_state.wait(wait_time)
 
