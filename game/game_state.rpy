@@ -597,11 +597,16 @@ init python:
                 if self.map.map_id == 27 and self.switches.value(129) == True and not self.self_switches.value((27, 14, "B")):
                     self.self_switches.set_value((27, 14, "A"), True)
                     self.self_switches.set_value((27, 14, "B"), True)
-            if GameIdentifier().is_visiting_sara():
+            elif GameIdentifier().is_visiting_sara():
                 # Near the end, you have to push a box a very long way.
                 # The engine is almost capable of doing this, but why bother.
                 if self.map.map_id == 4 and self.switches.value(132) == True and not self.switches.value(133) == True:
                     self.switches.set_value(133, True)
+            elif GameIdentifier().is_the_artifact_part_2():
+                # Lockpicking in The Artifact Part 2
+                if self.map.map_id == 68 and self.switches.value(128) == True:
+                    self.switches.set_value(128, False)
+                    self.switches.set_value(134, True)
 
         def pause(self):
             self.flush_queued_pictures()
