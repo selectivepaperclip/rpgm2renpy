@@ -554,7 +554,8 @@ init python:
                         if not map_event or (not self.state.map.event_through(map_event.event_data, map_event.page, map_event.page_index)):
                             old_map_event = self.state.map.find_event_for_location(current_x, current_y)
                             if not old_map_event or (not self.state.map.event_through(old_map_event.event_data, old_map_event.page, old_map_event.page_index)):
-                                if (map_event and GameEvent.page_solid(map_event.page)) or not self.state.map.can_move_vector(current_x, current_y, delta_x, delta_y):
+                                move_distance = abs(delta_x) + abs(delta_y)
+                                if (map_event and GameEvent.page_solid(map_event.page)) or (move_distance == 1 and not self.state.map.can_move_vector(current_x, current_y, delta_x, delta_y)):
                                       if noisy_events:
                                           print "MOVEMENT COLLIDED AT %s, %s!!!" % (new_x, new_y)
                                       break
