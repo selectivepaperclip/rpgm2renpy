@@ -1022,9 +1022,20 @@ init python:
                     if method != 0:
                         renpy.say(None, "Method on transfer was nonzero (%d), plz implement!" % method)
 
-                # Set event location - TODO
+                # Set event location
                 elif command['code'] == 203:
-                    pass
+                    event_id, operation, vx, vy, direction = command['parameters']
+                    event_data = self.state.map.find_event_data_at_index(event_id)
+                    if operation == 0: # Direct Designation
+                        self.state.map.override_event_location(event_data, (vx, vy))
+                    elif operation == 1: # Designation with variables
+                        x = self.state.variables.value(vx)
+                        y = self.state.variables.value(vy)
+                        self.state.map.override_event_location(event_data, (x, y))
+                    else: # Exchange with another event
+                        renpy.say(None, "Command 203 exchange with another event not implemented, plz implement!")
+                    if direction > 0:
+                        self.state.map.override_event(event_id, None, 'direction', direction)
 
                 # Scroll map
                 elif command['code'] == 204:

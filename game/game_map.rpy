@@ -801,13 +801,19 @@ init python:
         def event_is_special(self, e):
             return bool(re.search('weightSwitch', e['note']))
 
-        def find_event_at_index(self, event_index):
+        def find_event_data_at_index(self, event_index):
             if not hasattr(self, 'erased_events'):
                 self.initialize_erased_events()
             if event_index in self.erased_events:
                 return None
             e = self.data()['events'][event_index]
             if e['id'] in self.erased_events:
+                return None
+            return e
+
+        def find_event_at_index(self, event_index):
+            e = self.find_event_data_at_index(event_index)
+            if not e:
                 return None
             for reverse_page_index, page in enumerate(reversed(e['pages'])):
                 if self.meets_conditions(e, page['conditions']):
