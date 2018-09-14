@@ -526,7 +526,7 @@ init python:
                     if player_moving:
                         game_state.player_direction = new_direction
                     else:
-                        self.state.map.override_event(event_id, event_page_index, 'direction', new_direction)
+                        self.state.map.override_event(event_id, None, 'direction', new_direction)
 
                 if new_through != None:
                     if player_moving:
