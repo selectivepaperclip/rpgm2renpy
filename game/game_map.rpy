@@ -880,7 +880,8 @@ init python:
                     if self.meets_conditions(e, page['conditions']):
                         if page['trigger'] == 4:
                             page_index = (len(e['pages']) - 1) - reverse_page_index
-                            result.append(GameEvent(self.state, e, page, page_index))
+                            if self.has_commands(page):
+                                result.append(GameEvent(self.state, e, page, page_index))
                         break
             return result
 
