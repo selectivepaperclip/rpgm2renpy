@@ -1025,7 +1025,12 @@ init python:
                 # Set event location
                 elif command['code'] == 203:
                     event_id, operation, vx, vy, direction = command['parameters']
-                    event_data = self.state.map.find_event_data_at_index(event_id)
+                    if event_id < 0:
+                        renpy.say(None, "Command 203 not supported for player! Plz fix.")
+                    if event_id == 0:
+                        event_data = self.event_data
+                    else:
+                        event_data = self.state.map.find_event_data_at_index(event_id)
                     if operation == 0: # Direct Designation
                         self.state.map.override_event_location(event_data, (vx, vy))
                     elif operation == 1: # Designation with variables
