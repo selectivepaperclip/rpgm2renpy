@@ -573,6 +573,14 @@ init python:
 
             return False
 
+        def is_counter(self, x, y):
+            tile_ids = [self.tile_id(x, y, z) for z in xrange(3, -1, -1)]
+            for tile_id in tile_ids:
+                flag = self.flags(tile_id)
+                if ((flag & 0x80) != 0):
+                    return True
+            return False
+
         def height(self):
             return self.data()['height']
 
@@ -1046,6 +1054,14 @@ init python:
                     if reachability_grid[ay][ax] == 3:
                         map_clickable.reachable = True
                         break
+                    elif self.is_counter(ax, ay):
+                        delta = GameDirection.delta_for_direction(adirection)
+                        beyond_counter_x = ax + delta[0]
+                        beyond_counter_y = ay + delta[1]
+                        if reachability_grid[beyond_counter_y][beyond_counter_x] == 3:
+                            map_clickable.reachable_via_counter = (beyond_counter_x, beyond_counter_y)
+                            map_clickable.reachable = True
+                            break
 
         def event_location(self, event_data):
             if not hasattr(self, 'event_location_overrides'):

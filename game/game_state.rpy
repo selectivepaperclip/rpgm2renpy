@@ -884,10 +884,16 @@ init python:
                                 path_from_destination = [(mapdest.x, mapdest.y, preferred_approach_direction)] + path_from_adjacent_square
 
                         if not path_from_destination:
-                            path_from_destination = self.map.path_from_destination(self.player_x, self.player_y, mapdest.x, mapdest.y)
+                            if hasattr(mapdest, 'reachable_via_counter'):
+                                before_counter_x, before_counter_y = mapdest.reachable_via_counter
+                                path_from_destination = self.map.path_from_destination(self.player_x, self.player_y, before_counter_x, before_counter_y)
+                            else:
+                                path_from_destination = self.map.path_from_destination(self.player_x, self.player_y, mapdest.x, mapdest.y)
+
                         adjacent_x, adjacent_y, adjacent_direction = path_from_destination[0]
                         self.map_path_destination = (mapdest.x, mapdest.y, adjacent_direction)
-                        if map_event.page['through'] or (map_event.page['priorityType'] != 1 and not self.map.is_impassible(mapdest.x, mapdest.y, adjacent_direction)):
+
+                        if hasattr(mapdest, 'reachable_via_counter') or map_event.page['through'] or (map_event.page['priorityType'] != 1 and not self.map.is_impassible(mapdest.x, mapdest.y, adjacent_direction)):
                             self.map_path = path_from_destination
                         else:
                             self.map_path = path_from_destination[1:-1]
