@@ -31,6 +31,16 @@ init python:
             elif direction == GameDirection.RIGHT:
                 return GameDirection.LEFT
 
+    class YepRegionRestrictions(object):
+        def __init__(self, data):
+            self.data = data
+            self.player_restrict = int(data["Player Restrict"])
+            self.all_restrict = int(data["All Restrict"])
+            self.player_allow = int(data["Player Allow"])
+            self.all_allow = int(data["All Allow"])
+            self.player_restricted_regions = [r_id for r_id in [self.player_restrict, self.all_restrict] if r_id != 0]
+            self.player_allowed_regions = [r_id for r_id in [self.player_allow, self.all_allow] if r_id != 0]
+
     class GameState(SelectivelyPickle):
         def __init__(self):
             self.common_events_index = None
@@ -306,6 +316,29 @@ init python:
                 text = re.sub(r'\s*$', '', text)
 
             return text
+
+        def yep_region_restriction_data(self):
+            if hasattr(self, '_yep_region_restriction_data'):
+                return self._yep_region_restriction_data
+
+            plugins = self.plugins()
+            region_restriction_data = next((plugin_data for plugin_data in plugins if plugin_data['name'] == 'YEP_RegionRestrictions'), None)
+            if region_restriction_data:
+                self._yep_region_restriction_data = region_restriction_data['parameters']
+            else:
+                self._yep_region_restriction_data = None
+            return self._yep_region_restriction_data
+
+        def yep_region_restrictions(self):
+            if hasattr(self, '_yep_region_restrictions'):
+                return self._yep_region_restrictions
+
+            yep_region_restriction_data = self.yep_region_restriction_data()
+            if not yep_region_restriction_data:
+                return None
+
+            self._yep_region_restrictions = YepRegionRestrictions(yep_region_restriction_data)
+            return self._yep_region_restrictions
 
         def orange_hud_group_map(self):
             if hasattr(self, '_orange_hud_group_map'):

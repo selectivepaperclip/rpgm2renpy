@@ -548,9 +548,12 @@ init python:
                 return False
 
             tile_region = self.tile_region(x, y)
-            # Technically might only be valid if the YEP_RegionRestrictions plugin is installed
-            if not rpgm_metadata.is_pre_mv_version and tile_region == 1:
-                return True
+            yep_region_restrictions = game_state.yep_region_restrictions()
+            if yep_region_restrictions:
+                if tile_region in yep_region_restrictions.player_restricted_regions:
+                    return True
+                elif tile_region in yep_region_restrictions.player_allowed_regions:
+                    return False
 
             # Technically this only applies if the Restrict_with_Region plugin is installed,
             # and the region ids are configurable, but it's simplest to just assume any
