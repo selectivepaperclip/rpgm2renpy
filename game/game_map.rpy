@@ -1227,6 +1227,11 @@ init python:
                 # Top floor of lab, you need to hide behind a plant while a character walks by
                 if game_state.map.map_id == 76:
                     return [(19, 34)]
+
+            walk_locations_from_json = rpgm_game_data.get('curated_walk_locations', None)
+            if walk_locations_from_json:
+                return walk_locations_from_json.get(str(game_state.map.map_id), [])
+
             return []
 
         def name(self):

@@ -12,10 +12,13 @@ python early:
     config.searchpath = [ '', renpy.config.gamedir, renpy.config.commondir ]
 
     import json
+    import re
     rpgm_game_data_path = 'rpgm_game_data.json'
     rpgm_game_data = None
     if os.path.exists(os.path.join(config.basedir, rpgm_game_data_path)):
-        rpgm_game_data = json.load(renpy.file(rpgm_game_data_path))
+        with renpy.file(rpgm_game_data_path) as f:
+            json_without_comments = re.sub(r'//.*\n', '\n', f.read())
+            rpgm_game_data = json.loads(json_without_comments)
     else:
         rpgm_game_data = {"short_name": renpy.file('game_name').read().strip()}
 
