@@ -599,7 +599,8 @@ init python:
                                 if (map_event and GameEvent.page_solid(map_event.page)) or (move_distance == 1 and not self.state.map.can_move_vector(current_x, current_y, delta_x, delta_y)):
                                       if noisy_events:
                                           print "MOVEMENT COLLIDED AT %s, %s!!!" % (new_x, new_y)
-                                      break
+                                      if not route['skippable']:
+                                          return
 
                     if player_moving: # Player Character
                         game_state.player_x, game_state.player_y = new_x, new_y
