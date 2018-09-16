@@ -474,7 +474,7 @@ init python:
                 self.common_events_index = 1
             self.queue_parallel_events()
 
-        def queue_parallel_events(self, keep_relevant_existing = True):
+        def queue_parallel_events(self, keep_relevant_existing = True, only_if_conditionals = False):
             if not hasattr(self, 'previous_parallel_event_pages'):
                 self.previous_parallel_event_pages = []
             parallel_event_pages = self.map.parallel_event_pages()
@@ -491,6 +491,10 @@ init python:
                     if new_event_with_id and new_event_with_id.page_index == existing_parallel_event.page_index:
                         new_parallel_events.remove(new_event_with_id)
                         new_parallel_events.append(existing_parallel_event)
+
+            if only_if_conditionals:
+                if not any([e for e in new_parallel_events if self.map.has_conditional(e.page)]):
+                    new_parallel_events = []
 
             self.parallel_events = new_parallel_events
 
@@ -702,7 +706,7 @@ init python:
                         e.paused = 0
                 self.queue_parallel_events(keep_relevant_existing = True)
 
-        def requeue_parallel_events_if_changed(self):
+        def requeue_parallel_events_if_changed(self, always_run_conditionals = False):
             if hasattr(self, 'previous_parallel_event_pages') and len(self.previous_parallel_event_pages) > 0:
                 current_parallel_event_pages = self.map.parallel_event_pages()
                 seen_event_set_before = False
@@ -715,6 +719,9 @@ init python:
                         print "running parallel events changed event pages %s to %s" % (self.previous_parallel_event_pages[-1], current_parallel_event_pages)
 
                     self.queue_parallel_events(keep_relevant_existing = True)
+                    return True
+                if always_run_conditionals and any([len(page_data) > 2 and page_data[2] == True for page_data in current_parallel_event_pages]):
+                    self.queue_parallel_events(keep_relevant_existing = True, only_if_conditionals = True)
                     return True
 
         def paused_move_route_at_page(self, event_id, page_index):
@@ -730,7 +737,7 @@ init python:
             for e in self.map.active_events():
                 for reverse_page_index, page in enumerate(reversed(e['pages'])):
                     if self.map.meets_conditions(e, page['conditions']):
-                        if self.map.has_commands(page['moveRoute']):
+                        if self.map.interesting_move_route(page['moveRoute']):
                             page_index = (len(e['pages']) - 1) - reverse_page_index
                             event = self.paused_move_route_at_page(e['id'], page_index)
                             if not event:
@@ -816,7 +823,7 @@ init python:
 
             if hasattr(self, 'map_path') and len(self.map_path) > 0:
                 self.player_x, self.player_y, self.player_direction = self.map_path.pop()
-                self.queue_parallel_events(keep_relevant_existing = True)
+                self.requeue_parallel_events_if_changed(always_run_conditionals = True)
                 return True
 
             if hasattr(self, 'map_path_destination') and self.map_path_destination:

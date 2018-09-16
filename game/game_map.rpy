@@ -874,7 +874,11 @@ init python:
             for event_id in self.possible_parallel_event_indices():
                 possible_parallel_event = self.parallel_event_at_index(event_id)
                 if possible_parallel_event:
-                    result.append((possible_parallel_event.event_data['id'], possible_parallel_event.page_index))
+                    result.append((
+                        possible_parallel_event.event_data['id'],
+                        possible_parallel_event.page_index,
+                        self.has_conditional(possible_parallel_event.page)
+                    ))
             return result
 
         def parallel_events(self):
@@ -952,6 +956,26 @@ init python:
                 if command['code'] not in [0, 108, 250]:
                     return True
             return False
+
+        def has_conditional(self, page):
+            for command in page['list']:
+                if command['code'] == 111:
+                    return True
+            return False
+
+        def interesting_move_route(self, page):
+            has_commands = False
+            has_wait = False
+            for command in page['list']:
+                if command['code'] not in [0]:
+                    has_commands = True
+                elif command['code'] == 15:
+                    has_wait = True
+            if not has_commands:
+                return False
+            if not page['repeat']:
+                return True
+            return has_wait
 
         def page_label(self, page):
             for command in page['list']:
