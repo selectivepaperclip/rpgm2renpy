@@ -1353,6 +1353,19 @@ init python:
                         event_id = int(plugin_command_args[1])
                         character = plugin_command_args[2]
                         self.state.self_switches.set_value((self.state.map.map_id, event_id, character), value)
+                    elif plugin_command == 'ChainCommand':
+                        def represents_int(s):
+                            try:
+                                int(s)
+                                return True
+                            except ValueError:
+                                return False
+
+                        if represents_int(plugin_command_args[0]) and represents_int(plugin_command_args[1]):
+                            result = renpy.display_menu([("A QTE is happening!", None), ("Succeed!", True), ("Fail!", False)])
+                            self.state.switches.set_value(int(plugin_command_args[1]), result)
+                    else:
+                        renpy.say(None, "Plugin command not implemented: '%s'" % plugin_command)
 
                 # When [**]
                 elif command['code'] == 402:
