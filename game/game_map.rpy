@@ -1118,8 +1118,10 @@ init python:
 
             self.event_overrides[event_id][key] = value
 
-        def make_surrounding_tiles_walkable(self, page):
+        def make_surrounding_tiles_walkable(self, e, page, page_index):
             if GameIdentifier().is_my_summer() and (self.map_id in [9, 10]) and (page['image']['characterName'] == 'Box' or page['image']['characterName'] == 'Box2'):
+                return True
+            elif GameIdentifier().is_living_with_mia_part_2() and (self.map_id == 10) and (e['id'] == 2) and page_index == 2:
                 return True
             return False
 
@@ -1163,7 +1165,7 @@ init python:
                         elif self.has_commands(page) or page['priorityType'] > 0:
                             coords.append(map_clickable)
 
-                            if self.has_commands(page) and self.make_surrounding_tiles_walkable(page):
+                            if self.has_commands(page) and self.make_surrounding_tiles_walkable(e, page, page_index):
                                 pushable_locations.append(loc)
                         break
 
