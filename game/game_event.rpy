@@ -393,6 +393,20 @@ init python:
                     if len(picture_transitions) > 1:
                         game_state.shown_pictures[picture_id] = {"image_name": RpgmAnimation(*picture_transitions)}
 
+        def direction_to_face_player(self, event_location):
+            sx = game_state.player_x - event_location[0]
+            sy = game_state.player_y - event_location[1]
+            if abs(sx) > abs(sy):
+                if sx > 0:
+                    return GameDirection.RIGHT
+                else:
+                    return GameDirection.LEFT
+            elif abs(sy) > 0:
+                if sy > 0:
+                    return GameDirection.DOWN
+                else:
+                    return GameDirection.UP
+
         def process_move_route(self, event_id, route, return_on_wait = False):
             if not hasattr(self, 'move_route_index'):
                 self.move_route_index = 0
@@ -432,28 +446,33 @@ init python:
                 new_direction = None
                 new_direction_fix = None
                 new_through = None
-                if route_part['code'] == 1: # Move Down
-                    direction_delta = GameDirection.delta_for_direction(GameDirection.DOWN)
-                    if player_moving or not self.state.map.event_direction_fix(event.event_data, event.page, event.page_index):
-                        new_direction = GameDirection.DOWN
-                elif route_part['code'] == 2: # Move Left
-                    direction_delta = GameDirection.delta_for_direction(GameDirection.LEFT)
-                    if player_moving or not self.state.map.event_direction_fix(event.event_data, event.page, event.page_index):
-                        new_direction = GameDirection.LEFT
-                elif route_part['code'] == 3: # Move Right
-                    direction_delta = GameDirection.delta_for_direction(GameDirection.RIGHT)
-                    if player_moving or not self.state.map.event_direction_fix(event.event_data, event.page, event.page_index):
-                        new_direction = GameDirection.RIGHT
-                elif route_part['code'] == 4: # Move Up
-                    direction_delta = GameDirection.delta_for_direction(GameDirection.UP)
-                    if player_moving or not self.state.map.event_direction_fix(event.event_data, event.page, event.page_index):
-                        new_direction = GameDirection.UP
-                elif route_part['code'] == 12: # Move Forward
+                direction_order = [GameDirection.DOWN, GameDirection.LEFT, GameDirection.RIGHT, GameDirection.UP]
+                if route_part['code'] in [1, 2, 3, 4]: # Move Down / Left / Right / Up
+                    new_direction = direction_order[route_part['code'] - 1]
+                    direction_delta = GameDirection.delta_for_direction(new_direction)
+                elif route_part['code'] in [5, 6, 7, 8]: # Move Diagonal
+                    renpy.say(None, "Move Route diagonal movement not supported!")
+                elif route_part['code'] == 9: # Move Random
+                    renpy.say(None, "Move Route random movement not supported!")
+                elif route_part['code'] in [10, 11]: # Move Toward / Away
+                    if player_moving:
+                        renpy.say(None, "Move Toward / Away not implemented for player target!")
+                    loc = self.state.map.event_location(event.event_data)
+                    new_direction = self.direction_to_face_player(loc)
+
+                    if route_part['code'] == 10:
+                        direction_delta = GameDirection.delta_for_direction(new_direction)
+                    else:
+                        direction_delta = GameDirection.delta_for_direction(GameDirection.reverse_direction(new_direction))
+                elif route_part['code'] in [12, 13]: # Move Forward / Backward
                     if player_moving:
                         current_direction = game_state.player_direction
                     else:
                         current_direction = self.state.map.event_sprite_data(event.event_data, event.page, event_page_index)['direction']
-                    direction_delta = GameDirection.delta_for_direction(current_direction)
+                    if route_part['code'] == 12:
+                        direction_delta = GameDirection.delta_for_direction(current_direction)
+                    else:
+                        direction_delta = GameDirection.delta_for_direction(GameDirection.reverse_direction(current_direction))
                 elif route_part['code'] == 14: # Jump
                     direction_delta = route_part['parameters'][0:2]
                 elif route_part['code'] == 15: # Wait
@@ -461,14 +480,35 @@ init python:
                         self.move_route_index += 1
                         self.paused = route_part['parameters'][0]
                         return
-                elif route_part['code'] == 16: # Turn Down
-                    new_direction = GameDirection.DOWN
-                elif route_part['code'] == 17: # Turn Left
-                    new_direction = GameDirection.LEFT
-                elif route_part['code'] == 18: # Turn Right
-                    new_direction = GameDirection.RIGHT
-                elif route_part['code'] == 19: # Turn Up
-                    new_direction = GameDirection.UP
+                elif route_part['code'] in [16, 17, 18, 19]: # Turn Down / Left / Right / Up
+                    new_direction = direction_order[route_part['code'] - 16]
+                elif route_part['code'] in [20, 21]: # Turn 90deg R or L
+                    if player_moving:
+                        current_direction = game_state.player_direction
+                    else:
+                        current_direction = self.state.map.event_sprite_data(event.event_data, event.page, event_page_index)['direction']
+                    clockwise_directions = [GameDirection.LEFT, GameDirection.UP, GameDirection.RIGHT, GameDirection.DOWN]
+                    current_index = clockwise_directions.index(current_direction)
+                    if route_part['code'] == 20: # 90 degrees right
+                        rotation_integer = 1
+                    else: # 90 degrees left
+                        rotation_integer = -1
+
+                    new_direction = clockwise_directions[(current_index + rotation_integer) % 4]
+                elif route_part['code'] == 22: # Turn 180deg
+                    if player_moving:
+                        current_direction = game_state.player_direction
+                    else:
+                        current_direction = self.state.map.event_sprite_data(event.event_data, event.page, event_page_index)['direction']
+                    new_direction = GameDirection.reverse_direction(current_direction)
+                elif route_part['code'] in [23, 24]: # Turn Random 90deg, Turn Random
+                    renpy.say(None, "Move Route random turn commands not supported!")
+                elif route_part['code'] == 25: # Turn Toward
+                    loc = self.state.map.event_location(event.event_data)
+                    new_direction = self.direction_to_face_player(loc)
+                elif route_part['code'] == 26: # Turn Away
+                    loc = self.state.map.event_location(event.event_data)
+                    new_direction = GameDirection.reverse_direction(self.direction_to_face_player(loc))
                 elif route_part['code'] == 27: # Route Switch On
                     self.state.switches.set_value(route_part['parameters'][0], True)
                 elif route_part['code'] == 28: # Route Switch Off
@@ -524,8 +564,9 @@ init python:
 
                 if new_direction:
                     if player_moving:
+                        # TODO: check direction fix for player
                         game_state.player_direction = new_direction
-                    else:
+                    elif not self.state.map.event_direction_fix(event.event_data, event.page, event.page_index):
                         self.state.map.override_event(event_id, None, 'direction', new_direction)
 
                 if new_through != None:
