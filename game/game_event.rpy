@@ -33,11 +33,11 @@ init python:
                     return self.page_index
 
         def preferred_approach_direction(self):
-            first_command = self.page['list'][0]
-            if first_command['code'] == 111 and first_command['parameters'][0] == 6:
-                character_id, direction = first_command['parameters'][1:3]
-                if character_id == -1:
-                    return direction
+            for command in self.page['list'][0:2]:
+                if command['code'] == 111 and command['parameters'][0] == 6:
+                    character_id, direction = command['parameters'][1:3]
+                    if character_id == -1:
+                        return direction
 
         def conditional_branch_result(self, params):
             operation = params[0]
