@@ -1147,6 +1147,10 @@ init python:
                 return True
             elif GameIdentifier().is_living_with_mia_part_2() and (self.map_id == 10) and (e['id'] == 2) and page_index == 2:
                 return True
+            else:
+                pushable_events = rpgm_game_data.get('pushable_events', None)
+                if pushable_events:
+                    return e['id'] in pushable_events.get(str(self.map_id), [])
             return False
 
         def map_clickable_for_event_page(self, loc, e, page, page_index):
