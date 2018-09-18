@@ -5,7 +5,7 @@ require 'fileutils'
 
 if ARGV.length < 1
   puts "Usage: #{$0} path/to/an/rpgmaker/xp/vx/or/vxace/game [rpgm_sdk_path]"
-  puts "SDK path is likely to be something like C:\Program Files (x86)\Common Files\Enterbrain\RGSS3\RPGVXAce"
+  puts "SDK path is likely to be something like C:\\Program Files (x86)\\Common Files\\Enterbrain\\RGSS3\\RPGVXAce"
   exit 0
 end
 
@@ -67,3 +67,26 @@ if needed_characters.length > 0
     end
 end
 
+parallaxes = $rpgm_map_paths.map do |map_path|
+    JSON.parse(File.read(map_path))['parallaxName']
+end
+
+needed_parallaxes = parallaxes.sort.uniq.compact.select do |parallax|
+    parallax.length > 0 && Dir[File.join(game_dir, 'Graphics', 'Parallaxes', "#{parallax}.*")].empty?
+end
+
+if needed_parallaxes.length > 0
+    puts " === Needed parallaxes: === "
+    puts needed_parallaxes
+    needed_parallaxes.each do |name|
+        src = File.join(sdk_path, 'Graphics', 'Parallaxes', "#{name}.png")
+        if File.exist?(src)
+            dest = File.join(game_dir, 'Graphics', 'Parallaxes')
+            FileUtils.mkdir_p(dest)
+            puts "Copying #{src} to #{dest}"
+            FileUtils.cp(src, dest)
+        else
+            puts "#{src} does not exist!"
+        end
+    end
+end
