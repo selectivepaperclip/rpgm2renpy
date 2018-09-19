@@ -644,6 +644,9 @@ init python:
                 if self.map.map_id == 68 and self.switches.value(128) == True:
                     self.switches.set_value(128, False)
                     self.switches.set_value(134, True)
+                # Robot battle in The Artifact Part 2
+                elif self.map.map_id == 70 and self.switches.value(143) == True:
+                    self.switches.set_value(149, True)
 
         def pause(self):
             self.flush_queued_pictures()
