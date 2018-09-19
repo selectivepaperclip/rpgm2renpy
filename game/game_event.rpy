@@ -1191,8 +1191,9 @@ init python:
                             picture_args['x'] = x
                             picture_args['y'] = y
                         else: # origin of 1 means it's screen center
-                            picture_args['x'] = x - picture_args['size'][0] / 2
-                            picture_args['y'] = y - picture_args['size'][1] / 2
+                            size = picture_args.get('final_size', None) or picture_args.get('size')
+                            picture_args['x'] = x - size[0] / 2
+                            picture_args['y'] = y - size[1] / 2
 
                         if self.parallel():
                             picture_args['loop'] = True

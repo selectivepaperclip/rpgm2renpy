@@ -217,7 +217,7 @@ init python:
                 picture_args = {
                     "final_x": last_frame.get('x', 0),
                     "final_y": last_frame.get('y', 0),
-                    "final_size": last_frame.get('size', None),
+                    "final_size": last_frame.get('final_size', None) or last_frame.get('size', None),
                     "opacity": picture_frames[-1].get('opacity', 255),
                     "size": None
                 }
