@@ -20,7 +20,7 @@ init python:
             return self.event_data.has_key('switchId')
 
         def parallel(self):
-            return self.page['trigger'] == 4
+            return self.page['trigger'] == 4 or (self.common() and self.page['trigger'] == 2)
 
         def get_page_index(self):
             if hasattr(self, 'page_index') and self.page_index != None:
@@ -433,8 +433,8 @@ init python:
 
             for route_part in route['list'][self.move_route_index:-1]:
                 if noisy_events:
-                    print "MOVEMENT ROUTE: map %s, event %s, page %s, command %s, target %s, route command %s (%s)" % (
-                        self.state.map.map_id,
+                    print "MOVEMENT ROUTE: %s, event %s, page %s, command %s, target %s, route command %s (%s)" % (
+                        "common" if self.common() else ("map %s" % game_state.map.map_id),
                         self.event_data['id'],
                         self.get_page_index(),
                         self.list_index,
@@ -669,8 +669,8 @@ init python:
                         return
 
                 if noisy_events:
-                    print "COMMAND: map %s, event %s, page %s - %s, command %s (%s)" % (
-                        game_state.map.map_id,
+                    print "COMMAND: %s, event %s, page %s - %s, command %s (%s)" % (
+                        "common" if self.common() else ("map %s" % game_state.map.map_id),
                         self.event_data['id'],
                         self.event_data['pages'].index(self.page) if ('pages' in self.event_data) else 'n/a',
                         self.list_index,
