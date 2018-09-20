@@ -538,6 +538,21 @@ init python:
             except IndexError:
                 return 0
 
+        def can_pass(self, x, y, direction):
+            delta = GameDirection.delta_for_direction(direction)
+            return (not self.is_impassible(x, y, direction)) and (not self.is_impassible(x + delta[0], y + delta[1], GameDirection.reverse_direction(direction)))
+
+        def can_pass_diagonally(self, x, y, horz, vert):
+            horiz_delta = GameDirection.delta_for_direction(horz)
+            vert_delta = GameDirection.delta_for_direction(vert)
+            x2 = x + horiz_delta[0]
+            y2 = y + vert_delta[1]
+            if self.can_pass(x, y, vert) and self.can_pass(x, y2, horz):
+                return True
+            if self.can_pass(x, y, horz) and self.can_pass(x2, y, horz):
+                return True
+            return False
+
         def is_impassible(self, x, y, direction = None):
             if direction:
                 direction_bits = [1 << direction / 2 - 1]
@@ -689,7 +704,7 @@ init python:
             elif delta_x == 1 and delta_y == 0:
                 direction = GameDirection.RIGHT
 
-            return (not self.is_impassible(x, y, direction) and not self.is_impassible(new_x, new_y, GameDirection.reverse_direction(direction)))
+            return self.can_pass(x, y, direction)
 
         def tile_region(self, x, y):
             region_z = 5
@@ -1207,7 +1222,7 @@ init python:
                         ax, ay, adirection = adjacent_coord
                         if (ax, ay) in existing_coords or (game_state.player_x == ax and game_state.player_y == ay):
                             continue
-                        if (not self.is_impassible(loc[0], loc[1], adirection) and not self.is_impassible(ax, ay, GameDirection.reverse_direction(adirection))):
+                        if self.can_pass(loc[0], loc[1], adirection):
                             map_clickable = MapClickable(
                                 ax,
                                 ay,

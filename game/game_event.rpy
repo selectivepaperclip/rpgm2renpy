@@ -450,8 +450,41 @@ init python:
                 if route_part['code'] in [1, 2, 3, 4]: # Move Down / Left / Right / Up
                     new_direction = direction_order[route_part['code'] - 1]
                     direction_delta = GameDirection.delta_for_direction(new_direction)
-                elif route_part['code'] in [5, 6, 7, 8]: # Move Diagonal
-                    renpy.say(None, "Move Route diagonal movement not supported!")
+                elif route_part['code'] in [5, 6, 7, 8]: # Move Diagonally
+                    if route_part['code'] == 5: # Move Lower Left
+                        horz = GameDirection.LEFT
+                        vert = GameDirection.DOWN
+                    elif route_part['code'] == 6: # Move Lower Right
+                        horz = GameDirection.RIGHT
+                        vert = GameDirection.DOWN
+                    elif route_part['code'] == 7: # Move Upper Left
+                        horz = GameDirection.LEFT
+                        vert = GameDirection.UP
+                    else: # Move Upper Right
+                        horz = GameDirection.RIGHT
+                        vert = GameDirection.UP
+
+                    horiz_delta = GameDirection.delta_for_direction(horz)
+                    vert_delta = GameDirection.delta_for_direction(vert)
+                    direction_delta = tuple(map(sum, zip(horiz_delta, vert_delta)))
+
+                    if player_moving:
+                        x = game_state.player_x
+                        y = game_state.player_y
+                        current_direction = game_state.player_direction
+                    else:
+                        x, y = self.state.map.event_location(event.event_data)
+                        current_direction = self.state.map.event_sprite_data(event.event_data, event.page, event_page_index)['direction']
+
+                    if current_direction == GameDirection.reverse_direction(horz):
+                        new_direction = horz
+                    if current_direction == GameDirection.reverse_direction(vert):
+                        new_direction = vert
+
+                    map_event = self.state.map.find_event_for_location(x, y)
+                    # TODO: may need to account for through-ness of events being moved into
+                    if (not self.state.map.event_through(map_event.event_data, map_event.page, map_event.page_index)) and (not self.state.map.can_pass_diagonally(x, y, horz, vert)) and not route['skippable']:
+                        return
                 elif route_part['code'] == 9: # Move Random
                     renpy.say(None, "Move Route random movement not supported!")
                 elif route_part['code'] in [10, 11]: # Move Toward / Away
