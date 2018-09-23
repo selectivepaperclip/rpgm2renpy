@@ -1114,18 +1114,19 @@ init python:
             if GameIdentifier().is_my_summer() and self.switches.value(1) == True:
                 common_event_queuers.append({"text": 'Show Status', "event_id": 1, "ypos": 100})
 
+            paused_events = []
             key_paused_events = []
-            has_paused_events = False
             if hasattr(self, 'parallel_events'):
-                has_paused_events = any(e for e in game_state.parallel_events if hasattr(e, 'paused') and e.paused > 0)
+                paused_events.extend([e for e in game_state.parallel_events if hasattr(e, 'paused') and e.paused > 0])
                 for e in self.parallel_events:
                     if hasattr(e, 'paused_for_key') and e.paused_for_key:
                         key_paused_events.append({
                             "text": ("Press %s" % e.paused_for_key),
                             "key": e.paused_for_key
                         })
-            if not has_paused_events and hasattr(self, 'move_routes') and len(self.move_routes) > 0:
-                has_paused_events = any(e for e in game_state.move_routes if hasattr(e, 'paused') and e.paused > 0)
+            if hasattr(self, 'move_routes') and len(self.move_routes) > 0:
+                paused_events.extend([e for e in game_state.move_routes if hasattr(e, 'paused') and e.paused > 0])
+            paused_events_delay = next((e.paused for e in sorted(paused_events, key=lambda e: e.paused)), None)
 
             active_timer = None
             if hasattr(self, 'timer') and self.timer.active and self.timer.frames > 0:
@@ -1161,7 +1162,8 @@ init python:
                 in_interaction=in_interaction,
                 switch_toggler_buttons=switch_toggler_buttons,
                 common_event_queuers=common_event_queuers,
-                has_paused_events=has_paused_events,
+                has_paused_events=len(paused_events) > 0,
+                paused_events_delay=paused_events_delay,
                 key_paused_events=key_paused_events,
                 active_timer=active_timer,
             )

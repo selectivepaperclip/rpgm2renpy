@@ -24,6 +24,7 @@ screen mapscreen(
     switch_toggler_buttons = [],
     common_event_queuers = [],
     has_paused_events = False,
+    paused_events_delay = 0,
     key_paused_events = [],
     active_timer = None,
 
@@ -203,7 +204,7 @@ screen mapscreen(
         text map_name ypos 10 xpos 10 outlines [ (2, "#000", 0, 0) ]
 
     if has_paused_events:
-        textbutton "Advance Time":
+        textbutton "Advance Time (%s)" % paused_events_delay:
             xpos 5
             yalign 0.9
             background "#000"
