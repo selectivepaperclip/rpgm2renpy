@@ -486,7 +486,16 @@ init python:
                     if (not self.state.map.event_through(map_event.event_data, map_event.page, map_event.page_index)) and (not self.state.map.can_pass_diagonally(x, y, horz, vert)) and not route['skippable']:
                         return
                 elif route_part['code'] == 9: # Move Random
-                    renpy.say(None, "Move Route random movement not supported!")
+                    random_direction = GameDirection.random_direction()
+                    if player_moving:
+                        x = game_state.player_x
+                        y = game_state.player_y
+                    else:
+                        x, y = self.state.map.event_location(event.event_data)
+                    map_event = self.state.map.find_event_for_location(x, y)
+                    if self.state.map.event_through(map_event.event_data, map_event.page, map_event.page_index) or self.state.map.can_pass(x, y, random_direction):
+                        new_direction = random_direction
+                        direction_delta = GameDirection.delta_for_direction(random_direction)
                 elif route_part['code'] in [10, 11]: # Move Toward / Away
                     if player_moving:
                         renpy.say(None, "Move Toward / Away not implemented for player target!")

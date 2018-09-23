@@ -21,6 +21,10 @@ init python:
                 return (1, 0)
 
         @classmethod
+        def random_direction(cls):
+            return random.choice([GameDirection.UP, GameDirection.DOWN, GameDirection.LEFT, GameDirection.RIGHT])
+
+        @classmethod
         def reverse_direction(cls, direction):
             if direction == GameDirection.UP:
                 return GameDirection.DOWN
