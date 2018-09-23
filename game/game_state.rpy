@@ -731,6 +731,12 @@ init python:
                     self.queue_parallel_events(keep_relevant_existing = True, only_if_conditionals = True)
                     return True
 
+        def unpaused_parallel_events(self):
+            if hasattr(self, 'parallel_events') and len(self.parallel_events) > 0:
+                return [e for e in self.parallel_events if (not hasattr(e, 'paused') or e.paused == 0) and not hasattr(e, 'paused_for_key')]
+            else:
+                return []
+
         def paused_move_route_at_page(self, event_id, page_index):
             for existing_move_route in self.move_routes:
                 if event_id == existing_move_route.event_data['id']:
@@ -778,7 +784,8 @@ init python:
                     if this_event.new_map_id:
                         self.transfer_player(this_event)
                     self.events.pop()
-                    if len(self.events) == 0 and self.common_events_index == None and len(self.parallel_events) == 0:
+                    if len(self.events) == 0 and self.common_events_index == None and len(self.unpaused_parallel_events()) == 0:
+                        self.flush_queued_pictures()
                         self.queue_common_and_parallel_events()
                 return True
 
