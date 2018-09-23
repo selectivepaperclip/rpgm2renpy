@@ -650,6 +650,17 @@ init python:
                 # Robot battle in The Artifact Part 2
                 elif self.map.map_id == 70 and self.switches.value(143) == True:
                     self.switches.set_value(149, True)
+                # Skipping rocks in The Artifact Part 2
+                elif self.map.map_id == 83 and self.switches.value(282) == True:
+                    self.switches.set_value(284, True)
+                elif self.map.map_id == 83 and self.switches.value(286) == True:
+                    self.switches.set_value(287, True)
+                elif self.map.map_id == 94:
+                    if any(self.switches.value(event_id) == True for event_id in [303, 304, 305, 306, 307, 308, 309, 310, 313, 314]):
+                        self.switches.set_value(284, True)
+                # End boss in The Artifact Part 2
+                elif self.map.map_id == 112 and self.switches.value(340) == True:
+                    self.switches.set_value(352, True)
 
         def pause(self):
             self.flush_queued_pictures()
