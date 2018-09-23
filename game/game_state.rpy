@@ -656,7 +656,12 @@ init python:
             if len(self.events) == 0:
                 self.queue_parallel_events()
 
+        def cancel_map_path_walk(self):
+            self.map_path = []
+            self.map_path_destination = None
+
         def transfer_player(self, transfer_event):
+            self.cancel_map_path_walk()
             changing_maps = transfer_event.new_map_id != self.map.map_id
             if noisy_events:
                 print "TRANSFERRING PLAYER TO MAP %s: (%s, %s)" % (transfer_event.new_map_id, transfer_event.new_x, transfer_event.new_y)
@@ -821,6 +826,7 @@ init python:
 
             self.events = [e for e in [self.map.find_auto_trigger_event()] if e]
             if len(self.events) > 0:
+                self.cancel_map_path_walk()
                 return True
 
             if hasattr(self, 'map_path') and len(self.map_path) > 0:
