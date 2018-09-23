@@ -44,7 +44,6 @@ init python:
     class GameState(SelectivelyPickle):
         def __init__(self):
             self.common_events_index = None
-            self.parallel_events_index = None
             self.events = []
             self.parallel_events = []
             self.starting_map_id = self.system_data()['startMapId']
