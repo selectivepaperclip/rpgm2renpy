@@ -962,10 +962,14 @@ init python:
                         elif game_data_operand_type == 5: # Character
                             # param1 is character ID
                             if game_data_operand_param1 >= 0:
+                                if game_data_operand_param1 == 0:
+                                    e = self.event_data
+                                else:
+                                    e = self.state.map.find_event_data_at_index(game_data_operand_param1)
                                 if game_data_operand_param2 == 0: # Map X
-                                    value = self.state.map.event_location(self.event_data)[0]
+                                    value = self.state.map.event_location(e)[0]
                                 elif game_data_operand_param2 == 1: # Map Y
-                                    value = self.state.map.event_location(self.event_data)[1]
+                                    value = self.state.map.event_location(e)[1]
                                 elif game_data_operand_param2 == 2: # Direction
                                     # return character.direction();
                                     renpy.say(None, ("Variable control operand 3 not implemented for param 5-%s, plz implement" % game_data_operand_param2))
