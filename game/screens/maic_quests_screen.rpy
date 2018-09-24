@@ -21,6 +21,7 @@ screen maic_quests_screen(
                                 text objective['text']:
                                     if objective['completed']:
                                         color "#0f0"
+                        null height 20
 
                 textbutton "Close":
                     xalign 1.0
