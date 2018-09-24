@@ -19,6 +19,8 @@ init python:
                 return (-1, 0)
             elif direction == GameDirection.RIGHT:
                 return (1, 0)
+            else:
+                raise(RuntimeError("Unknown direction! %s" % direction))
 
         @classmethod
         def random_direction(cls):

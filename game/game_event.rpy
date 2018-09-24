@@ -406,6 +406,9 @@ init python:
                     return GameDirection.DOWN
                 else:
                     return GameDirection.UP
+            # Shouldn't really get here (it means the event position is the same as player position)
+            # ...but inevitably will get here for some reason
+            return GameDirection.UP
 
         def process_move_route(self, event_id, route, return_on_wait = False):
             if not hasattr(self, 'move_route_index'):
