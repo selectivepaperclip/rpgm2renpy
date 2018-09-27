@@ -815,6 +815,8 @@ init python:
                         image_data = page['image']
                         page_index = (len(e['pages']) - 1) - reverse_page_index
                         event_sprite_data = self.event_sprite_data(e, page, page_index)
+                        if event_sprite_data.get('transparent', False):
+                            break
                         if event_sprite_data['characterName'] != '':
                             character_sprite_data = self.character_sprite(event_sprite_data)
                             result.append(loc + character_sprite_data)
@@ -1142,6 +1144,7 @@ init python:
                 'direction': overrides.get('direction', page['image']['direction']),
                 'characterName': overrides.get('characterName', page['image']['characterName']),
                 'characterIndex': overrides.get('characterIndex', page['image']['characterIndex']),
+                'transparent': overrides.get('transparent', False),
                 'pattern': page['image']['pattern']
             }
 

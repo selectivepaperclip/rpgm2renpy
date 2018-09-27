@@ -436,7 +436,7 @@ init python:
 
             for route_part in route['list'][self.move_route_index:-1]:
                 if noisy_events:
-                    print "MOVEMENT ROUTE: %s, event %s, page %s, command %s, target %s, route command %s (%s)" % (
+                    print "MOVEMENT ROUTE: %s, event %s, page %s, command %s, target %s, rc %s (%s)" % (
                         "common" if self.common() else ("map %s" % game_state.map.map_id),
                         self.event_data['id'],
                         self.get_page_index(),
@@ -449,6 +449,7 @@ init python:
                 new_direction = None
                 new_direction_fix = None
                 new_through = None
+                new_transparent = None
                 direction_order = [GameDirection.DOWN, GameDirection.LEFT, GameDirection.RIGHT, GameDirection.UP]
                 if route_part['code'] in [1, 2, 3, 4]: # Move Down / Left / Right / Up
                     new_direction = direction_order[route_part['code'] - 1]
@@ -568,6 +569,10 @@ init python:
                     new_through = True
                 elif route_part['code'] == 38: # Route Through Off
                     new_through = False
+                elif route_part['code'] == 39: # Route Transparent On
+                    new_transparent = True
+                elif route_part['code'] == 40: # Route Transparent Off
+                    new_transparent = False
                 elif route_part['code'] == 41: # Change image
                     new_character_name, new_character_index = route_part['parameters']
                     if player_moving:
@@ -613,6 +618,13 @@ init python:
                         game_state.player_direction = new_direction
                     elif not self.state.map.event_direction_fix(event.event_data, event.page, event.page_index):
                         self.state.map.override_event(event_id, None, 'direction', new_direction)
+
+                if new_transparent:
+                    if player_moving:
+                        # TODO: player transparency
+                        pass
+                    else:
+                        self.state.map.override_event(event_id, event_page_index, 'transparent', new_transparent)
 
                 if new_through != None:
                     if player_moving:
