@@ -1160,8 +1160,10 @@ init python:
             if not hasattr(self, 'event_overrides'):
                 self.event_overrides = {}
             existing_event_overrides = self.event_overrides.get(event_id, None)
-            if (not existing_event_overrides) or (page_index and existing_event_overrides.get('pageIndex', -1) != page_index):
+            if (not existing_event_overrides) or ((page_index != None) and (existing_event_overrides.get('pageIndex', None) != None) and existing_event_overrides.get('pageIndex', -1) != page_index):
                 self.event_overrides[event_id] = {'pageIndex': page_index}
+            if existing_event_overrides and (existing_event_overrides.get('pageIndex', None) == None) and (page_index != None):
+                self.event_overrides[event_id]['pageIndex'] = page_index
             if existing_event_overrides and existing_event_overrides.get('direction', None):
                 # 'direction' applies to all pages, unlike properties like 'characterName' which get clobbered on page change
                 self.event_overrides[event_id]['direction'] = existing_event_overrides['direction']
