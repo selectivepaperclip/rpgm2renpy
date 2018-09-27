@@ -854,6 +854,7 @@ init python:
             return None
 
         def find_event_for_location(self, x, y, only_special = False):
+            candidates = []
             for e in self.active_events():
                 loc = self.event_location(e)
                 if loc[0] == x and loc[1] == y:
@@ -864,8 +865,11 @@ init python:
                                 return None
                             if debug_events:
                                 print "DEBUG_EVENTS: event %s, page -%s / %s" % (e['id'], reverse_page_index, page_index)
-                            return GameEvent(self.state, e, page, page_index)
-            return None
+                            candidates.append(GameEvent(self.state, e, page, page_index))
+                            break
+
+            # Ensure that player / event touch events that have commands get priority over parallel / action button events
+            return next((event for event in reversed(sorted(candidates, key=lambda candidate_event: (candidate_event.page['trigger'] in [1,2], self.has_commands(candidate_event.page))))), None)
 
         def boring_auto_trigger_page(self, page):
             return [command['code'] for command in page['list']] == [0]
