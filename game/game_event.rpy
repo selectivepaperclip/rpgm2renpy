@@ -1427,6 +1427,8 @@ init python:
                         if represents_int(plugin_command_args[0]) and represents_int(plugin_command_args[1]):
                             result = renpy.display_menu([("A QTE is happening!", None), ("Succeed!", True), ("Fail!", False)])
                             self.state.switches.set_value(int(plugin_command_args[1]), result)
+                    elif plugin_command in ['HideMiniLabel', 'ShowMiniLabel', 'JUMPACTION']:
+                        pass
                     else:
                         renpy.say(None, "Plugin command not implemented: '%s'" % plugin_command)
 
