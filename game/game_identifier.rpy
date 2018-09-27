@@ -16,6 +16,8 @@ init python:
             return rpgm_game_data.get('long_name', '') == "Incest Adventure"
         def is_the_artifact_part_2(self):
             return rpgm_game_data.get('long_name', '') == "The Artifact Part 2"
+        def is_the_artifact_part_3(self):
+            return rpgm_game_data.get('long_name', '') == "The Artifact Part 3"
         def is_robots_touch(self):
             return rpgm_game_data.get('long_name', '') == "Robot's Touch"
         def is_taboo_request(self):

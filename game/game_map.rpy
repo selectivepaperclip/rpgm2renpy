@@ -251,7 +251,7 @@ init python:
             self.hide_unpleasant_moving_obstacles()
 
         def hide_unpleasant_moving_obstacles(self):
-            if GameIdentifier().is_ics1():
+            if GameIdentifier().is_ics1() or GameIdentifier().is_the_artifact_part_3():
                 for e in self.active_events():
                     for page in reversed(e['pages']):
                         if self.meets_conditions(e, page['conditions']):
@@ -263,8 +263,10 @@ init python:
                                     continue
 
                                 event_id = command['parameters'][0]
-                                if event_id <= 0:
+                                if event_id < 0:
                                     continue
+                                elif event_id == 0:
+                                    event_id = e['id']
 
                                 event = self.state.map.find_event_at_index(event_id)
                                 if event:

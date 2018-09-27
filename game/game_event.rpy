@@ -678,7 +678,7 @@ init python:
                 return 32
 
         def hide_if_unpleasant_moving_obstacle(self):
-            if GameIdentifier().is_ics1():
+            if GameIdentifier().is_ics1() or GameIdentifier().is_the_artifact_part_3():
                 if self.page['image']['characterName'] and self.page['image']['characterName'].startswith('car'):
                     self.state.map.erased_events[self.event_data['id']] = True
 
