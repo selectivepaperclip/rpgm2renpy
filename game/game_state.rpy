@@ -664,8 +664,13 @@ init python:
                 elif self.map.map_id == 112 and self.switches.value(340) == True:
                     self.switches.set_value(352, True)
 
+        def say_text(self, speaker, spoken_text):
+            self.show_map(True)
+            renpy.say(speaker, spoken_text)
+
         def pause(self):
             self.flush_queued_pictures()
+            self.show_map(True)
             renpy.pause()
 
         def set_game_start_events(self):
@@ -803,6 +808,7 @@ init python:
                     self.events.pop()
                     if len(self.events) == 0 and self.common_events_index == None and len(self.unpaused_parallel_events()) == 0:
                         self.flush_queued_pictures()
+                        self.show_map(True)
                         self.queue_common_and_parallel_events()
                 return True
 
@@ -886,8 +892,7 @@ init python:
                         self.player_x + 1,
                         self.player_y
                     )
-                    self.flush_queued_pictures()
-                    renpy.pause()
+                    self.pause()
 
             if mapdest:
                 # convert old-style mapdests that were x, y tuples to MapClickable objects

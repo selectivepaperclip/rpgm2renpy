@@ -252,8 +252,8 @@ label game:
 
     while end_game == False:
         $ in_interaction = game_state.do_next_thing(mapdest, keyed_common_event)
-        $ game_state.show_map(in_interaction)
         if not in_interaction:
+          $ game_state.show_map(in_interaction)
           $ renpy.checkpoint()
           $ renpy.ui.interact(mouse="screen", type="screen")
         $ mapdest = None

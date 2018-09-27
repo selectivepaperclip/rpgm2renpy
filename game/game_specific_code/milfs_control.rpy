@@ -75,7 +75,7 @@ init python:
             if gain_triad_card_command:
                 groups = gain_triad_card_command.groups()
                 card_id, amount = (int(groups[0]), int(groups[1]))
-                renpy.say(None, "Gained %s DickUp card: %s" % (amount, GameSpecificCodeMilfsControl.CARD_NAMES[card_id]))
+                game_state.say_text(None, "Gained %s DickUp card: %s" % (amount, GameSpecificCodeMilfsControl.CARD_NAMES[card_id]))
                 # TODO: save card so later card ownership commands will work
             elif triad_game_command:
                 groups = triad_game_command.groups()
@@ -106,7 +106,7 @@ init python:
                 if game_state.switches.value(switch_id) != True:
                     game_state.events[-1].disable_choice(choice_index)
             elif line == "Tidloc.exe \"LockPick\",:game,0,5,":
-                renpy.say(None, "You picked the lock!")
+                game_state.say_text(None, "You picked the lock!")
                 game_state.switches.set_value(100, True)
             elif chain_commands_command:
                 groups = chain_commands_command.groups()
@@ -117,7 +117,7 @@ init python:
             elif "start_range_game(" in script_string:
                 return True
             elif script_string == "SceneManager.call(Shop_Triple_Triad)":
-                renpy.say(None, "Card Shop not implemented!")
+                game_state.say_text(None, "Card Shop not implemented!")
                 return True
             else:
                 return False

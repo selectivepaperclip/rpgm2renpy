@@ -723,6 +723,7 @@ init python:
                 if hasattr(game_state, 'queued_pictures') and len(game_state.queued_pictures) > 0:
                     if command['code'] in [101, 102, 103, 104, 301, 302, 303, 354]:
                         game_state.flush_queued_pictures()
+                        game_state.show_map(True)
                         return
 
                 if noisy_events:
@@ -764,9 +765,9 @@ init python:
                             gre = Re()
                             if gre.match(re.compile("([^\n]+?):\s\s*(.+)", re.DOTALL), escaped_text):
                                 speaker, spoken_text = gre.last_match.groups()
-                                renpy.say(speaker, spoken_text)
+                                game_state.say_text(speaker, spoken_text)
                             else:
-                                renpy.say(None, escaped_text)
+                                game_state.say_text(None, escaped_text)
                         except renpy.game.CONTROL_EXCEPTIONS:
                             raise
                         except:
@@ -846,7 +847,7 @@ init python:
                             screen='inventory_choice_screen'
                         )
                     else:
-                        renpy.say(None, "No items to choose...")
+                        game_state.say_text(None, "No items to choose...")
                     self.state.variables.set_value(variable_id, result)
 
                 # Comment
