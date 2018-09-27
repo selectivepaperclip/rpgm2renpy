@@ -1063,7 +1063,7 @@ init python:
                     if hide_unreachable_events:
                         coordinates = [map_clickable for map_clickable in coordinates if map_clickable.reachable]
                     if not show_noop_events:
-                        coordinates = [map_clickable for map_clickable in coordinates if not hasattr(map_clickable, 'has_commands') or map_clickable.has_commands]
+                        coordinates = [map_clickable for map_clickable in coordinates if (not hasattr(map_clickable, 'has_commands') or map_clickable.has_commands) and not (hasattr(map_clickable, 'through') and map_clickable.through)]
 
             x_offset = 0
             y_offset = 0

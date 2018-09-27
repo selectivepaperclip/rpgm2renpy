@@ -66,6 +66,7 @@ init python:
             clicky = False,
             has_commands = True,
             walk_destination = False,
+            through = False,
             solid = False,
             touch_trigger = False,
             action_trigger = False
@@ -79,6 +80,7 @@ init python:
             self.has_commands = has_commands
             self.walk_destination = walk_destination
             self.page_index = page_index
+            self.through = through
             self.solid = solid
             self.touch_trigger = touch_trigger
             self.action_trigger = action_trigger
@@ -1029,7 +1031,7 @@ init python:
                 self._reachability_grid_cache = ReachabilityGridCacheV2()
 
             player_position = (player_x, player_y)
-            events_with_pages = tuple((coord.x, coord.y, coord.page_index) for coord in event_coords)
+            events_with_pages = tuple((coord.x, coord.y, coord.page_index, coord.through) for coord in event_coords)
             cached_grid = self._reachability_grid_cache.get(player_position, events_with_pages)
             if cached_grid:
                 if debug_reachability_grid:
@@ -1058,7 +1060,7 @@ init python:
                     reachability_grid[map_clickable.y][map_clickable.x] = 2
                 # Consider an event impassible if it is triggered on touch (not action) and has any notable commands
                 # this may become untenable depending on how much the definition of has_commands needs to expand
-                elif (hasattr(map_clickable, 'touch_trigger') and map_clickable.touch_trigger) and (hasattr(map_clickable, 'has_commands') and map_clickable.has_commands):
+                elif (hasattr(map_clickable, 'touch_trigger') and map_clickable.touch_trigger) and (hasattr(map_clickable, 'has_commands') and map_clickable.has_commands) and not (hasattr(map_clickable, 'through') and map_clickable.through):
                     reachability_grid[map_clickable.y][map_clickable.x] = 2
 
             max_x = self.width() - 1
@@ -1182,7 +1184,8 @@ init python:
                 special = self.event_is_special(e),
                 clicky = self.clicky_event(e, page),
                 has_commands = self.has_commands(page),
-                solid = GameEvent.page_solid(page),
+                through = self.event_through(e, page, page_index),
+                solid = GameEvent.page_solid(e, page, page_index),
                 touch_trigger = page['trigger'] in [1,2],
                 action_trigger = page['trigger'] in [0]
             )

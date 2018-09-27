@@ -13,8 +13,8 @@ init python:
             self.branch = {}
 
         @classmethod
-        def page_solid(cls, page):
-            return (page['priorityType'] == 1) and not page['through']
+        def page_solid(cls, event_data, page, page_index):
+            return (page['priorityType'] == 1) and not game_state.map.event_through(event_data, page, page_index)
 
         def common(self):
             return self.event_data.has_key('switchId')
@@ -653,7 +653,7 @@ init python:
                             old_map_event = self.state.map.find_event_for_location(current_x, current_y)
                             if not old_map_event or (not self.state.map.event_through(old_map_event.event_data, old_map_event.page, old_map_event.page_index)):
                                 move_distance = abs(delta_x) + abs(delta_y)
-                                if (map_event and GameEvent.page_solid(map_event.page)) or (move_distance == 1 and not self.state.map.can_move_vector(current_x, current_y, delta_x, delta_y)):
+                                if (map_event and GameEvent.page_solid(map_event.event_data, map_event.page, map_event.page_index)) or (move_distance == 1 and not self.state.map.can_move_vector(current_x, current_y, delta_x, delta_y)):
                                       if noisy_events:
                                           print "MOVEMENT COLLIDED AT %s, %s!!!" % (new_x, new_y)
                                       if not route['skippable']:
