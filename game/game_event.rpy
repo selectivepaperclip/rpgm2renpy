@@ -664,6 +664,11 @@ init python:
                     else:
                         self.state.map.override_event_location(event.event_data, (new_x, new_y))
 
+                    if self.parallel() and self.state.map.map_id in rpgm_game_data.get('slowmo_maps', []):
+                        self.move_route_index += 1
+                        self.paused = 3
+                        return
+
                 self.move_route_index += 1
 
         def migrate_global_branch_data(self):
