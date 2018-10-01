@@ -596,6 +596,8 @@ init python:
                         self.state.self_switches.set_value((map_id, event_id, self_switch_name), self_switch_value)
                     elif route_script.startswith('$game_player.no_dash'):
                         pass
+                    elif gre.match('this.setBlendMode\(\d+\)', route_script):
+                        pass
                     elif gre.match('end_anim_loop', route_script):
                         pass
                     else:
