@@ -754,7 +754,7 @@ init python:
                     while len(self.page['list']) > self.list_index + 1 and self.page['list'][self.list_index + 1]['code'] == 401:
                         self.list_index += 1
                         command = self.page['list'][self.list_index]
-                        text = command['parameters'][0]
+                        text = command['parameters'][0].lstrip()
                         # If the previous line didn't end with a space, add a space before joining to the next line
                         if len(accumulated_text) > 0 and not re.search(ends_with_whitespace_pattern, accumulated_text[-1]):
                             accumulated_text.append(' ')
