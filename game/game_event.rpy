@@ -487,7 +487,7 @@ init python:
 
                     map_event = self.state.map.find_event_for_location(x, y)
                     # TODO: may need to account for through-ness of events being moved into
-                    if (not self.state.map.event_through(map_event.event_data, map_event.page, map_event.page_index)) and (not self.state.map.can_pass_diagonally(x, y, horz, vert)) and not route['skippable']:
+                    if ((not map_event or not self.state.map.event_through(map_event.event_data, map_event.page, map_event.page_index))) and (not self.state.map.can_pass_diagonally(x, y, horz, vert)) and not route['skippable']:
                         return
                 elif route_part['code'] == 9: # Move Random
                     random_direction = GameDirection.random_direction()
