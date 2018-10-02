@@ -632,6 +632,7 @@ init python:
                 return GameDirection.UP
 
         def skip_bad_events(self):
+            switch_triggers = rpgm_game_data.get('switch_triggers', None)
             if GameIdentifier().is_milfs_villa():
                 if self.map.map_id == 64 and not self.self_switches.value((64, 1, "B")):
                     self.self_switches.set_value((64, 1, "A"), True)
@@ -663,6 +664,19 @@ init python:
                 # End boss in The Artifact Part 2
                 elif self.map.map_id == 112 and self.switches.value(340) == True:
                     self.switches.set_value(352, True)
+            elif switch_triggers:
+                triggers_for_map = switch_triggers.get(str(self.map.map_id))
+                if not triggers_for_map:
+                    return
+
+                for trigger in triggers_for_map:
+                    if self.switches.value(trigger['activation_switch']) == True:
+                        for switch_id in trigger.get('switches_off', []):
+                            self.switches.set_value(switch_id, False)
+                        for switch_id in trigger.get('switches_on', []):
+                            self.switches.set_value(switch_id, True)
+                        for variable_id, value in trigger.get('variables', []):
+                            self.variables.set_value(variable_id, value)
 
         def say_text(self, speaker, spoken_text):
             self.show_map(True)
