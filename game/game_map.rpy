@@ -90,6 +90,13 @@ init python:
                 return True
             return False
 
+        def is_noop_event(self):
+            if hasattr(self, 'has_commands') and not self.has_commands:
+                return True
+            if hasattr(self, 'through') and self.through and self.action_trigger:
+                return True
+            return False
+
         def reachable_or_clickable(self):
             return (self.reachable if hasattr(self, 'reachable') else True) or (self.clicky if hasattr(self, 'clicky') else False)
 
