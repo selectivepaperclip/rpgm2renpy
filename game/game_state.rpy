@@ -645,32 +645,18 @@ init python:
                 # The engine is almost capable of doing this, but why bother.
                 if self.map.map_id == 4 and self.switches.value(132) == True and not self.switches.value(133) == True:
                     self.switches.set_value(133, True)
-            elif GameIdentifier().is_the_artifact_part_2():
-                # Lockpicking in The Artifact Part 2
-                if self.map.map_id == 68 and self.switches.value(128) == True:
-                    self.switches.set_value(128, False)
-                    self.switches.set_value(134, True)
-                # Robot battle in The Artifact Part 2
-                elif self.map.map_id == 70 and self.switches.value(143) == True:
-                    self.switches.set_value(149, True)
-                # Skipping rocks in The Artifact Part 2
-                elif self.map.map_id == 83 and self.switches.value(282) == True:
-                    self.switches.set_value(284, True)
-                elif self.map.map_id == 83 and self.switches.value(286) == True:
-                    self.switches.set_value(287, True)
-                elif self.map.map_id == 94:
-                    if any(self.switches.value(event_id) == True for event_id in [303, 304, 305, 306, 307, 308, 309, 310, 313, 314]):
-                        self.switches.set_value(284, True)
-                # End boss in The Artifact Part 2
-                elif self.map.map_id == 112 and self.switches.value(340) == True:
-                    self.switches.set_value(352, True)
             elif switch_triggers:
                 triggers_for_map = switch_triggers.get(str(self.map.map_id))
                 if not triggers_for_map:
                     return
 
                 for trigger in triggers_for_map:
-                    if self.switches.value(trigger['activation_switch']) == True:
+                    if 'activation_switch' in trigger:
+                        activation_switches = [trigger['activation_switch']]
+                    else:
+                        activation_switches = trigger['activation_switches']
+
+                    if any(self.switches.value(id) == True for id in activation_switches):
                         for switch_id in trigger.get('switches_off', []):
                             self.switches.set_value(switch_id, False)
                         for switch_id in trigger.get('switches_on', []):
