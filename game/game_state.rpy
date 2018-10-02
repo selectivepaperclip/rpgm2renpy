@@ -813,12 +813,10 @@ init python:
                 if hasattr(self, 'shop_params') and self.shop_params:
                     self.show_shop_ui()
                     return True
-                if this_event.new_map_id and this_event.new_map_id == self.map.map_id:
+                if this_event.new_map_id:
                     self.transfer_player(this_event)
                     this_event.new_map_id = None
                 if this_event.done():
-                    if this_event.new_map_id:
-                        self.transfer_player(this_event)
                     self.events.pop()
                     if len(self.events) == 0 and self.common_events_index == None and len(self.unpaused_parallel_events()) == 0:
                         self.flush_queued_pictures()
