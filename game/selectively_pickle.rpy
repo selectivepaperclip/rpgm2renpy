@@ -1,5 +1,5 @@
 init -15 python:
-    class SelectivelyPickle:
+    class SelectivelyPickle(renpy.object.Object):
         def __getstate__(self):
             map_pickle_values = [(k, v) for k, v in self.__dict__.iteritems() if not k.startswith('_')]
             if debug_pickling:

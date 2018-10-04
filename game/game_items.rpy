@@ -4,11 +4,7 @@ init python:
             pass
 
         def data(self):
-            if not hasattr(self, '_data'):
-                with rpgm_data_file('Items.json') as f:
-                    self._data = json.load(f)
-
-            return self._data
+            return game_file_loader.json_file(rpgm_data_path("Items.json"))
 
         def by_id(self, id):
             for item in self.data():

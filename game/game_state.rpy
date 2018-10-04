@@ -262,28 +262,16 @@ init python:
                 return iter(sorted(self.shown_pictures.iteritems()))
 
         def system_data(self):
-            if not hasattr(self, '_system_data'):
-                with rpgm_data_file('System.json') as f:
-                    self._system_data = json.load(f)
-
-            return self._system_data
+            return game_file_loader.json_file(rpgm_data_path("System.json"))
 
         def common_events_data(self):
-            if not hasattr(self, '_common_events_data'):
-                with rpgm_data_file('CommonEvents.json') as f:
-                    self._common_events_data = json.load(f)
-
-            return self._common_events_data
+            return game_file_loader.json_file(rpgm_data_path("CommonEvents.json"))
 
         def tilesets(self):
-            if not hasattr(self, '_tilesets'):
-                with rpgm_data_file('Tilesets.json') as f:
-                    self._tilesets = json.load(f)
-
-            return self._tilesets
+            return game_file_loader.json_file(rpgm_data_path("Tilesets.json"))
 
         def plugins(self):
-            return rpgm_plugins_loader.json()
+            return game_file_loader.plugins_json()
 
         def replace_names(self, text):
             # Replace statements from actor numbers, e.g. \N[2] with their actor name

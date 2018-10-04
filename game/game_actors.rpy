@@ -13,11 +13,7 @@ init python:
                 self.overrides = {}
 
         def data(self):
-            if not hasattr(self, '_data'):
-                with rpgm_data_file('Actors.json') as f:
-                    self._data = json.load(f)
-
-            return self._data
+            return game_file_loader.json_file(rpgm_data_path("Actors.json"))
 
         def set_property(self, index, property_name, property_value):
             self.populate_override(index)

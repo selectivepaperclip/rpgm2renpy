@@ -282,11 +282,7 @@ init python:
                                     event.hide_if_unpleasant_moving_obstacle()
 
         def data(self):
-            if not hasattr(self, '_data'):
-                with rpgm_data_file("Map%03d.json" % self.map_id) as f:
-                    self._data = json.load(f)
-
-            return self._data
+            return game_file_loader.json_file(rpgm_data_path("Map%03d.json" % self.map_id))
 
         def background_image(self):
             if not hasattr(self, '_background_image') or isinstance(self._background_image, GameMapBackground):

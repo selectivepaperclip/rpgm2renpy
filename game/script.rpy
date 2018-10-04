@@ -21,6 +21,11 @@ define viewport_yadjustment = ui.adjustment()
 define animation_fps = 60.0
 
 init -10 python:
+    # The game file loader caches all the parsed JSON files for the game:
+    # it's deliberately created before the game starts so that RenPy
+    # doesn't keep big expensive copies of all that data in the rollback log.
+    game_file_loader = GameFileLoader()
+
     import glob
     build.classify('rpgmdata', 'all')
     build.classify('rpgmcache/**', None)
@@ -37,30 +42,6 @@ init -10 python:
             self.last_match = re.search(pattern,text)
             return self.last_match
 
-    class PluginsLoader(SelectivelyPickle):
-        def package_json(self):
-            if rpgm_metadata.is_pre_mv_version:
-                return None
-
-            if not hasattr(self, '_package_json'):
-                with rpgm_file('package.json') as f:
-                    self._package_json = json.load(f)
-
-            return self._package_json
-
-        def json(self):
-            if rpgm_metadata.is_pre_mv_version:
-                return []
-
-            if not hasattr(self, '_json'):
-                with rpgm_file('www/js/plugins.js') as f:
-                    # the plugins.js file starts with "var $plugins = ["
-                    # delete everything before the first [
-                    content = f.read()
-                    self._json = json.loads(content[content.find('['):].rstrip().rstrip(';'))
-
-            return self._json
-
     rpgm_dir = 'rpgmdata'
     if not os.path.exists(os.path.join(renpy.config.basedir, rpgm_dir)):
         rpgm_dir = os.path.join('game', 'unpacked').replace('\\', '/')
@@ -71,11 +52,14 @@ init -10 python:
     def rpgm_file(filename):
         return renpy.file(rpgm_path(filename))
 
-    def rpgm_data_file(filename):
+    def rpgm_data_path(filename):
         if rpgm_metadata.is_pre_mv_version:
-            return rpgm_file('JsonData/' + filename)
+            return rpgm_path('JsonData/' + filename)
         else:
-            return rpgm_file('www/data/' + filename)
+            return rpgm_path('www/data/' + filename)
+
+    def rpgm_data_file(filename):
+        return renpy.file(rpgm_data_path(filename))
 
     def supported_image(ext):
         return ext.lower() in [ ".jpg", ".jpeg", ".png", ".webp" ]
@@ -124,8 +108,6 @@ init -10 python:
 
     rpgm_metadata = RpgmMetadata()
 
-    rpgm_plugins_loader = PluginsLoader()
-
 init python:
     import re
     import random
@@ -150,7 +132,7 @@ init python:
         return 'rpgmparallax-' + base.lower()
 
     def mog_title_layer_image():
-        plugins = PluginsLoader().json()
+        plugins = game_file_loader.plugins_json()
         mog_title_layers = next((plugin_data for plugin_data in plugins if plugin_data['name'] == 'MOG_TitleLayers'), None)
         if mog_title_layers:
             layer_data = {}
@@ -175,15 +157,14 @@ init python:
             return LiveComposite(*composite_args)
         return None
 
-    with rpgm_data_file('System.json') as f:
-        system_data = json.load(f)
-        title_screen_file_path = rpgm_metadata.title_screen_file(system_data['title1Name'])
-        if title_screen_file_path:
-            gui.main_menu_background = scale_image(title_screen_file_path)
-        else:
-            title_layer_image = mog_title_layer_image()
-            if title_layer_image:
-                gui.main_menu_background = title_layer_image
+    system_data = game_file_loader.json_file(rpgm_data_path("System.json"))
+    title_screen_file_path = rpgm_metadata.title_screen_file(system_data['title1Name'])
+    if title_screen_file_path:
+        gui.main_menu_background = scale_image(title_screen_file_path)
+    else:
+        title_layer_image = mog_title_layer_image()
+        if title_layer_image:
+            gui.main_menu_background = title_layer_image
 
     for filename in os.listdir(os.path.join(config.basedir, rpgm_metadata.pictures_path)):
         base, ext = os.path.splitext(os.path.basename(filename))
