@@ -776,36 +776,6 @@ init python:
         def do_next_thing(self, mapdest, keyed_common_event):
             self.ensure_initialized_attributes()
             self.skip_bad_events()
-            if len(self.events) > 0:
-                self.previous_parallel_event_pages = []
-
-                this_event = self.events[-1]
-                new_event = this_event.do_next_thing()
-                if new_event:
-                    self.events.append(new_event)
-                    return True
-                if hasattr(self, 'shop_params') and self.shop_params:
-                    self.show_shop_ui()
-                    return True
-                if this_event.new_map_id:
-                    self.transfer_player(this_event)
-                    this_event.new_map_id = None
-                if this_event.done():
-                    self.events.pop()
-                    if len(self.events) == 0 and self.common_events_index == None and len(self.unpaused_parallel_events()) == 0:
-                        self.flush_queued_pictures()
-                        self.show_map(True)
-                        self.queue_common_and_parallel_events()
-                return True
-
-            if self.common_events_index != None and self.common_events_index < len(self.common_events_data()):
-                for event in xrange(self.common_events_index, len(self.common_events_data())):
-                    common_event = self.common_events_data()[self.common_events_index]
-                    self.common_events_index += 1
-                    if common_event['trigger'] > 0 and self.switches.value(common_event['switchId']) == True:
-                        self.events.append(GameEvent(self, common_event, common_event))
-                        return True
-            self.common_events_index = None
 
             if hasattr(self, 'parallel_events') and len(self.parallel_events) > 0:
                 first_never_paused_event = next((e for e in self.parallel_events if not hasattr(e, 'has_ever_paused') or not e.has_ever_paused), None)
@@ -836,6 +806,37 @@ init python:
                                 first_has_paused_event.has_ever_paused = False
                             self.queue_parallel_events(keep_relevant_existing = True)
                     return True
+
+            if len(self.events) > 0:
+                self.previous_parallel_event_pages = []
+
+                this_event = self.events[-1]
+                new_event = this_event.do_next_thing()
+                if new_event:
+                    self.events.append(new_event)
+                    return True
+                if hasattr(self, 'shop_params') and self.shop_params:
+                    self.show_shop_ui()
+                    return True
+                if this_event.new_map_id:
+                    self.transfer_player(this_event)
+                    this_event.new_map_id = None
+                if this_event.done():
+                    self.events.pop()
+                    if len(self.events) == 0 and self.common_events_index == None and len(self.unpaused_parallel_events()) == 0:
+                        self.flush_queued_pictures()
+                        self.show_map(True)
+                        self.queue_common_and_parallel_events()
+                return True
+
+            if self.common_events_index != None and self.common_events_index < len(self.common_events_data()):
+                for event in xrange(self.common_events_index, len(self.common_events_data())):
+                    common_event = self.common_events_data()[self.common_events_index]
+                    self.common_events_index += 1
+                    if common_event['trigger'] > 0 and self.switches.value(common_event['switchId']) == True:
+                        self.events.append(GameEvent(self, common_event, common_event))
+                        return True
+            self.common_events_index = None
 
             if self.requeue_parallel_events_if_changed():
                 return True

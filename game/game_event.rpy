@@ -936,6 +936,9 @@ init python:
                         if switch_on:
                             self.show_parallel_event_animations(i)
 
+                    if not self.parallel():
+                        self.state.queue_parallel_events(keep_relevant_existing = True)
+
                 # Control Variables
                 elif command['code'] == 122:
                     start, end, operation_type, operand = command['parameters'][0:4]
@@ -1063,6 +1066,9 @@ init python:
                     for i in xrange(start, end + 1):
                         self.state.variables.operate_variable(i, operation_type, value)
 
+                    if not self.parallel():
+                        self.state.queue_parallel_events(keep_relevant_existing = True)
+
                 # Control Self Switch
                 elif command['code'] == 123:
                     switch_id, value = command['parameters']
@@ -1074,6 +1080,9 @@ init python:
                     if last_non_common_event:
                         key = (self.state.map.map_id, last_non_common_event.event_data['id'], switch_id)
                         self.state.self_switches.set_value(key, value == 0)
+
+                    if not self.parallel():
+                        self.state.queue_parallel_events(keep_relevant_existing = True)
 
                 # Control Timer
                 elif command['code'] == 124:
