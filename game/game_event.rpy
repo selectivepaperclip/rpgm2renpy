@@ -770,12 +770,7 @@ init python:
                             escaped_text = re.sub('%', '%%', text_to_show)
                             escaped_text = re.sub('\[', '[[', escaped_text)
                             escaped_text = re.sub('\{', '{{', escaped_text)
-                            gre = Re()
-                            if gre.match(re.compile("([^\n]+?):\s\s*(.+)", re.DOTALL), escaped_text):
-                                speaker, spoken_text = gre.last_match.groups()
-                                game_state.say_text(speaker, spoken_text, face_name, face_index)
-                            else:
-                                game_state.say_text(None, escaped_text, face_name, face_index)
+                            self.state.say_text_with_possible_speaker(escaped_text, face_name, face_index)
                         except renpy.game.CONTROL_EXCEPTIONS:
                             raise
                         except:
