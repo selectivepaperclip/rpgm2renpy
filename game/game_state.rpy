@@ -652,8 +652,27 @@ init python:
                         for variable_id, value in trigger.get('variables', []):
                             self.variables.set_value(variable_id, value)
 
-        def say_text(self, speaker, spoken_text):
+        def say_text(self, speaker, spoken_text, face_name, face_index):
             self.show_map(True)
+
+            if face_name and len(face_name) > 0:
+                side_image_size = None
+                if rpgm_metadata.is_pre_mv_version:
+                    side_image_size = 96
+                else:
+                    side_image_size = 144
+
+                game_state.rpgm_side_image = im.Crop(
+                    face_images[rpgm_face_name(face_name)],
+                    (
+                        (face_index % 4) * side_image_size,
+                        (face_index / 4) * side_image_size,
+                        side_image_size,
+                        side_image_size
+                    )
+                )
+            else:
+                game_state.rpgm_side_image = None
             renpy.say(speaker, spoken_text)
 
         def pause(self):

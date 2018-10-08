@@ -8,6 +8,7 @@ define normal_images = {}
 define character_images = {}
 define character_image_sizes = {}
 define parallax_images = {}
+define face_images = {}
 define image_sizes = {}
 define picture_image_sizes = {}
 define mapdest = None
@@ -78,6 +79,7 @@ init -10 python:
                 self.tilesets_path = rpgm_path("Graphics/Tilesets/")
                 self.characters_path = rpgm_path("Graphics/Characters/")
                 self.parallaxes_path = rpgm_path("Graphics/Parallaxes/")
+                self.faces_path = rpgm_path("Graphics/Faces/")
                 self.tile_width = 32
                 self.tile_height = 32
                 possible_choice_plugin_filenames = ['Choces_More.rb', 'LargeChoices.rb', 'More_Choices.rb']
@@ -89,6 +91,7 @@ init -10 python:
                 self.tilesets_path = rpgm_path("www/img/tilesets/")
                 self.characters_path = rpgm_path("www/img/characters/")
                 self.parallaxes_path = rpgm_path("www/img/parallaxes/")
+                self.faces_path = rpgm_path("www/img/faces/")
                 self.tile_width = 48
                 self.tile_height = 48
 
@@ -130,6 +133,9 @@ init python:
 
     def rpgm_parallax_name(base):
         return 'rpgmparallax-' + base.lower()
+
+    def rpgm_face_name(base):
+        return 'rpgmface-' + base.lower()
 
     def mog_title_layer_image():
         plugins = game_file_loader.plugins_json()
@@ -205,6 +211,14 @@ init python:
                 continue
             image_name = rpgm_parallax_name(base)
             parallax_images[image_name] = rpgm_metadata.parallaxes_path + filename
+
+    if os.path.exists(os.path.join(config.basedir, rpgm_metadata.faces_path)):
+        for filename in os.listdir(os.path.join(config.basedir, rpgm_metadata.faces_path)):
+            base, ext = os.path.splitext(os.path.basename(filename))
+            if not supported_image(ext):
+                continue
+            image_name = rpgm_face_name(base)
+            face_images[image_name] = rpgm_metadata.faces_path + filename
 
 label start:
     python:

@@ -749,6 +749,7 @@ init python:
 
                 # Show text
                 elif command['code'] == 101:
+                    face_name, face_index, background, position_type = command['parameters']
                     ends_with_whitespace_pattern = re.compile("\s$")
                     accumulated_text = []
                     while len(self.page['list']) > self.list_index + 1 and self.page['list'][self.list_index + 1]['code'] == 401:
@@ -772,9 +773,9 @@ init python:
                             gre = Re()
                             if gre.match(re.compile("([^\n]+?):\s\s*(.+)", re.DOTALL), escaped_text):
                                 speaker, spoken_text = gre.last_match.groups()
-                                game_state.say_text(speaker, spoken_text)
+                                game_state.say_text(speaker, spoken_text, face_name, face_index)
                             else:
-                                game_state.say_text(None, escaped_text)
+                                game_state.say_text(None, escaped_text, face_name, face_index)
                         except renpy.game.CONTROL_EXCEPTIONS:
                             raise
                         except:
