@@ -509,7 +509,7 @@ init python:
             common_event_effects = [effect for effect in result['effects'] if effect['code'] == 44]
             effect = common_event_effects[0]
             common_event = self.common_events_data()[int(effect['dataId'])]
-            self.events.append(GameEvent(self, common_event, common_event))
+            self.events.append(GameEvent(self, None, common_event, common_event))
             return True
 
         def show_maic_quests(self):
@@ -719,7 +719,7 @@ init python:
 
         def queue_common_event(self, event_id):
             common_event = self.common_events_data()[event_id]
-            self.events.append(GameEvent(self, common_event, common_event))
+            self.events.append(GameEvent(self, None, common_event, common_event))
 
         def finish_active_timer(self):
             if self.timer.frames > 0:
@@ -792,7 +792,7 @@ init python:
                             page_index = (len(e['pages']) - 1) - reverse_page_index
                             event = self.paused_move_route_at_page(e['id'], page_index)
                             if not event:
-                                event = GameEvent(self, e, page, page_index)
+                                event = GameEvent(self, self.map.map_id, e, page, page_index)
                             if not hasattr(event, 'paused') or event.paused == 0:
                                 event.process_move_route(e['id'], page['moveRoute'], return_on_wait = not page['moveRoute']['wait'])
                                 if event.move_route_index >= len(page['moveRoute']['list']) - 1 and page['moveRoute']['repeat']:
@@ -862,7 +862,7 @@ init python:
                     common_event = self.common_events_data()[self.common_events_index]
                     self.common_events_index += 1
                     if common_event['trigger'] > 0 and self.switches.value(common_event['switchId']) == True:
-                        self.events.append(GameEvent(self, common_event, common_event))
+                        self.events.append(GameEvent(self, None, common_event, common_event))
                         return True
             self.common_events_index = None
 
@@ -894,7 +894,7 @@ init python:
 
             if keyed_common_event:
                 common_event = self.common_events_data()[int(keyed_common_event)]
-                self.events.append(GameEvent(self, common_event, common_event))
+                self.events.append(GameEvent(self, None, common_event, common_event))
                 return True
 
             if keyed_function_call:

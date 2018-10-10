@@ -1,7 +1,8 @@
 init python:
     class GameEvent:
-        def __init__(self, state, event_data, page, page_index = None):
+        def __init__(self, state, map_id, event_data, page, page_index = None):
             self.state = state
+            self.map_id = map_id
             self.event_data = event_data
             self.page = page
             self.page_index = page_index
@@ -21,6 +22,11 @@ init python:
 
         def parallel(self):
             return self.page['trigger'] == 4 or (self.common() and self.page['trigger'] == 2)
+
+        def get_map_id(self):
+            if hasattr(self, 'map_id') and self.map_id:
+                return self.map_id
+            return self.state.map.map_id
 
         def get_page_index(self):
             if hasattr(self, 'page_index') and self.page_index != None:
@@ -69,7 +75,7 @@ init python:
             # Self Switches
             elif operation == 2:
                 if len(self.state.events) > 0:
-                    key = (self.state.map.map_id, self.event_data['id'], params[1])
+                    key = (self.get_map_id(), self.event_data['id'], params[1])
                     return self.state.self_switches.value(key) == (params[2] == 0)
             # Timer
             elif operation == 3:
@@ -273,7 +279,7 @@ init python:
                 return
             elif gre.match("\$game_self_switches\[\[\$game_map\.map_id\s*,\s*(\d+)\s*,\s*'(.*?)'\]\] = (\w+)", script_string):
                 groups = gre.last_match.groups()
-                map_id, event_id, self_switch_name, self_switch_value = (self.state.map.map_id, int(groups[0]), groups[1], groups[2] == 'true')
+                map_id, event_id, self_switch_name, self_switch_value = (self.get_map_id(), int(groups[0]), groups[1], groups[2] == 'true')
                 self.state.self_switches.set_value((map_id, event_id, self_switch_name), self_switch_value)
                 return
             elif GameIdentifier().is_milfs_control() and GameSpecificCodeMilfsControl().eval_full_script(script_string):
@@ -437,7 +443,7 @@ init python:
             for route_part in route['list'][self.move_route_index:-1]:
                 if noisy_events:
                     print "MOVEMENT ROUTE: %s, event %s, page %s, command %s, target %s, rc %s (%s)" % (
-                        "common" if self.common() else ("map %s" % game_state.map.map_id),
+                        "common" if self.common() else ("map %s" % self.get_map_id()),
                         self.event_data['id'],
                         self.get_page_index(),
                         self.list_index,
@@ -666,7 +672,7 @@ init python:
                     else:
                         self.state.map.override_event_location(event.event_data, (new_x, new_y))
 
-                    if self.parallel() and self.state.map.map_id in rpgm_game_data.get('slowmo_maps', []):
+                    if self.parallel() and self.get_map_id() in rpgm_game_data.get('slowmo_maps', []):
                         self.move_route_index += 1
                         self.paused = 3
                         return
@@ -681,7 +687,7 @@ init python:
 
         def get_canned_answer(self, variable_id):
             # Aunt's cabinet code
-            if GameIdentifier().is_milfs_villa() and self.state.map.map_id == 48 and variable_id == 109:
+            if GameIdentifier().is_milfs_villa() and self.get_map_id() == 48 and variable_id == 109:
                 return 32
 
         def hide_if_unpleasant_moving_obstacle(self):
@@ -735,7 +741,7 @@ init python:
 
                 if noisy_events:
                     print "COMMAND: %s, event %s, page %s - %s, command %s (%s)" % (
-                        "common" if self.common() else ("map %s" % game_state.map.map_id),
+                        "common" if self.common() else ("map %s" % self.get_map_id()),
                         self.event_data['id'],
                         self.event_data['pages'].index(self.page) if ('pages' in self.event_data) else 'n/a',
                         self.list_index,
@@ -882,7 +888,7 @@ init python:
                 elif command['code'] == 117:
                     common_event = self.state.common_events_data()[command['parameters'][0]]
                     self.list_index += 1
-                    return GameEvent(self.state, common_event, common_event)
+                    return GameEvent(self.state, None, common_event, common_event)
 
                 # Repeat Above
                 elif command['code'] == 413:
@@ -1030,7 +1036,7 @@ init python:
                             renpy.say(None, ("Variable control operand 3 not implemented for type %s, plz implement" % game_data_operand_type))
                         elif game_data_operand_type == 7: # Other
                             if game_data_operand_param1 == 0: # Map ID
-                                value = self.state.map.map_id
+                                value = self.get_map_id()
                             elif game_data_operand_param1 == 1: # Party Members
                                 renpy.say(None, ("Variable control operand 7 not implemented for param %s, plz implement" % game_data_operand_param1))
                             elif game_data_operand_param1 == 2: # Gold
@@ -1074,7 +1080,7 @@ init python:
                         running_events = self.state.events + [self]
                     last_non_common_event = next((e for e in reversed(running_events) if not e.common()), None)
                     if last_non_common_event:
-                        key = (self.state.map.map_id, last_non_common_event.event_data['id'], switch_id)
+                        key = (self.get_map_id(), last_non_common_event.event_data['id'], switch_id)
                         self.state.self_switches.set_value(key, value == 0)
 
                     if not self.parallel():
@@ -1428,7 +1434,7 @@ init python:
                         value = plugin_command_args[0] == 'on'
                         event_id = int(plugin_command_args[1])
                         character = plugin_command_args[2]
-                        self.state.self_switches.set_value((self.state.map.map_id, event_id, character), value)
+                        self.state.self_switches.set_value((self.get_map_id(), event_id, character), value)
                     elif plugin_command == 'ChainCommand':
                         def represents_int(s):
                             try:

@@ -853,7 +853,7 @@ init python:
             for reverse_page_index, page in enumerate(reversed(e['pages'])):
                 if self.meets_conditions(e, page['conditions']):
                     page_index = (len(e['pages']) - 1) - reverse_page_index
-                    return GameEvent(self.state, e, page, page_index)
+                    return GameEvent(self.state, self.map_id, e, page, page_index)
             return None
 
         def find_event_for_location(self, x, y, only_special = False):
@@ -868,7 +868,7 @@ init python:
                                 return None
                             if debug_events:
                                 print "DEBUG_EVENTS: event %s, page -%s / %s" % (e['id'], reverse_page_index, page_index)
-                            candidates.append(GameEvent(self.state, e, page, page_index))
+                            candidates.append(GameEvent(self.state, self.map_id, e, page, page_index))
                             break
 
             # Ensure that player / event touch events that have commands get priority over parallel / action button events
@@ -883,7 +883,7 @@ init python:
                     if self.meets_conditions(e, page['conditions']):
                         page_index = (len(e['pages']) - 1) - reverse_page_index
                         if page['trigger'] == 3 and not self.boring_auto_trigger_page(page):
-                            return GameEvent(self.state, e, page, page_index)
+                            return GameEvent(self.state, self.map_id, e, page, page_index)
                         else:
                             break
             return None
@@ -924,7 +924,7 @@ init python:
                         if page['trigger'] == 4:
                             page_index = (len(e['pages']) - 1) - reverse_page_index
                             if self.has_commands(page):
-                                result.append(GameEvent(self.state, e, page, page_index))
+                                result.append(GameEvent(self.state, self.map_id, e, page, page_index))
                         break
             return result
 
@@ -937,7 +937,7 @@ init python:
                     if self.meets_conditions(e, page['conditions']):
                         if page['trigger'] == 4:
                             page_index = (len(e['pages']) - 1) - reverse_page_index
-                            return GameEvent(self.state, e, page, page_index)
+                            return GameEvent(self.state, self.map_id, e, page, page_index)
                         else:
                             break
             return None
