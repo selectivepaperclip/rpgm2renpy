@@ -27,6 +27,10 @@ init -10 python:
     # doesn't keep big expensive copies of all that data in the rollback log.
     game_file_loader = GameFileLoader()
 
+    # Similarly load the reachability grid cache outside of the game flow
+    # so great big pathfinding grids don't get pickled
+    rpgm_reachability_grid_cache = ReachabilityGridCacheV2()
+
     import glob
     build.classify('rpgmdata', 'all')
     build.classify('rpgmcache/**', None)
