@@ -1246,6 +1246,9 @@ init python:
 
                     picture_args = None
                     if command['code'] == 231:
+                        if len(picture_name) == 0:
+                            self.list_index += 1
+                            return
                         picture_args = {'image_name': rpgm_picture_name(picture_name)}
                     else:
                         duration, wait = command['parameters'][10:12]
