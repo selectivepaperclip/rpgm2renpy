@@ -182,6 +182,9 @@ screen input(prompt):
             text prompt style "input_prompt"
             input id "input"
 
+    if hasattr(game_state, 'rpgm_side_image') and game_state.rpgm_side_image:
+        add game_state.rpgm_side_image xanchor 0.0 yanchor 1.0 xpos 25 ypos config.screen_height - 20
+
 style input_prompt is default
 
 style input_prompt:

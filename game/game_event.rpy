@@ -1335,6 +1335,8 @@ init python:
                 # Get actor name
                 elif command['code'] == 303:
                     actor_index = command['parameters'][0]
+                    actor = self.state.actors.by_index(actor_index)
+                    self.state.set_side_image(actor['faceName'], actor['faceIndex'])
                     actor_name = renpy.input("What name should actor %d have?" % actor_index)
                     self.state.actors.set_property(actor_index, 'name', actor_name)
 

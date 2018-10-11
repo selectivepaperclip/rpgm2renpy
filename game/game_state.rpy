@@ -652,18 +652,7 @@ init python:
                         for variable_id, value in trigger.get('variables', []):
                             self.variables.set_value(variable_id, value)
 
-        def say_text_with_possible_speaker(self, text, face_name, face_index):
-            gre = Re()
-            if gre.match(re.compile("([^\n]+?):\s\s*(.+)", re.DOTALL), text):
-                speaker, spoken_text = gre.last_match.groups()
-                if len(speaker) < 60:
-                    return self.say_text(speaker, spoken_text, face_name, face_index)
-
-            self.say_text(None, text, face_name, face_index)
-
-        def say_text(self, speaker, spoken_text, face_name, face_index):
-            self.show_map(True)
-
+        def set_side_image(self, face_name, face_index):
             if face_name and len(face_name) > 0:
                 side_image_size = None
                 if rpgm_metadata.is_pre_mv_version:
@@ -682,6 +671,19 @@ init python:
                 )
             else:
                 game_state.rpgm_side_image = None
+
+        def say_text_with_possible_speaker(self, text, face_name, face_index):
+            gre = Re()
+            if gre.match(re.compile("([^\n]+?):\s\s*(.+)", re.DOTALL), text):
+                speaker, spoken_text = gre.last_match.groups()
+                if len(speaker) < 60:
+                    return self.say_text(speaker, spoken_text, face_name, face_index)
+
+            self.say_text(None, text, face_name, face_index)
+
+        def say_text(self, speaker, spoken_text, face_name, face_index):
+            self.show_map(True)
+            self.set_side_image(face_name, face_index)
             renpy.say(speaker, spoken_text)
 
         def pause(self):
