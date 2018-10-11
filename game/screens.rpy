@@ -353,7 +353,8 @@ screen main_menu():
 
     style_prefix "main_menu"
 
-    add gui.main_menu_background
+    add gui.main_menu_background:
+        size (config.screen_width, config.screen_height)
 
     ## This empty frame darkens the main menu.
     frame:
@@ -380,10 +381,10 @@ style main_menu_title is main_menu_text
 style main_menu_version is main_menu_text
 
 style main_menu_frame:
-    xsize 280
+    xsize 240
     yfill True
 
-    background "gui/overlay/main_menu.png"
+    background Solid(Color("#000", alpha = 0.75))
 
 style main_menu_vbox:
     xalign 1.0
@@ -416,9 +417,11 @@ screen game_menu(title, scroll=None, yinitial=0.0):
     style_prefix "game_menu"
 
     if main_menu:
-        add gui.main_menu_background
+        add gui.main_menu_background:
+            size (config.screen_width, config.screen_height)
     else:
-        add gui.game_menu_background
+        add gui.game_menu_background:
+            size (config.screen_width, config.screen_height)
 
     frame:
         style "game_menu_outer_frame"
@@ -495,7 +498,7 @@ style game_menu_outer_frame:
     bottom_padding 30
     top_padding 120
 
-    background "gui/overlay/game_menu.png"
+    background Solid(Color("#000", alpha = 0.8))
 
 style game_menu_navigation_frame:
     xsize 280
@@ -1139,7 +1142,8 @@ screen confirm(message, yes_action, no_action):
 
     style_prefix "confirm"
 
-    add "gui/overlay/confirm.png"
+    add Solid(Color("#000", alpha = 0.5)):
+        size (config.screen_width, config.screen_height)
 
     frame:
 
