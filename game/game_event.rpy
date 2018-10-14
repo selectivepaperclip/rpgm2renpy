@@ -1337,7 +1337,11 @@ init python:
                     actor_index = command['parameters'][0]
                     actor = self.state.actors.by_index(actor_index)
                     self.state.set_side_image(actor['faceName'], actor['faceIndex'])
-                    actor_name = renpy.input("What name should actor %d have?" % actor_index)
+                    if hasattr(game_state, 'last_said_text') and game_state.last_said_text:
+                        prompt = game_state.last_said_text
+                    else:
+                        prompt = "What name should actor %d have?" % actor_index
+                    actor_name = renpy.input("{i}%s{/i}" % prompt)
                     self.state.actors.set_property(actor_index, 'name', actor_name)
 
                 # Change state

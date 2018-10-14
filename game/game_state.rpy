@@ -684,6 +684,7 @@ init python:
         def say_text(self, speaker, spoken_text, face_name, face_index):
             self.show_map(True)
             self.set_side_image(face_name, face_index)
+            self.last_said_text = spoken_text
             renpy.say(speaker, spoken_text)
 
         def pause(self):
