@@ -41,19 +41,19 @@ screen mapscreen(
         $ sprite_images_and_positions = game_state.sprite_images_and_positions()
 
     key "K_LEFT" action [
-        Function(game_state.set_player_direction, GameDirection.LEFT),
+        Function(game_state.go_direction, GameDirection.LEFT),
         Jump("game")
     ]
     key "K_RIGHT" action [
-        Function(game_state.set_player_direction, GameDirection.RIGHT),
+        Function(game_state.go_direction, GameDirection.RIGHT),
         Jump("game")
     ]
     key "K_DOWN" action [
-        Function(game_state.set_player_direction, GameDirection.DOWN),
+        Function(game_state.go_direction, GameDirection.DOWN),
         Jump("game")
     ]
     key "K_UP" action [
-        Function(game_state.set_player_direction, GameDirection.UP),
+        Function(game_state.go_direction, GameDirection.UP),
         Jump("game")
     ]
 

@@ -997,8 +997,16 @@ init python:
             new_user_zoom = max(self.user_map_zoom_factor * (1 / 1.5), 1)
             self.set_user_map_zoom(new_user_zoom)
 
-        def set_player_direction(self, direction):
+        def go_direction(self, direction):
             self.player_direction = direction
+            reachability_grid = self.map.reachability_grid_for_current_position()
+            delta = GameDirection.delta_for_direction(direction)
+            new_x = self.player_x + delta[0]
+            new_y = self.player_y + delta[1]
+            if new_x >= 0 and new_y >= 0 and new_y < len(reachability_grid) and new_x < len(reachability_grid[new_y]) and reachability_grid[new_y][new_x] == 3:
+                self.player_x = new_x
+                self.player_y = new_y
+                self.queue_common_and_parallel_events()
 
         def set_user_map_zoom(self, new_map_zoom_factor):
             map_zoom_ratio = new_map_zoom_factor / self.user_map_zoom_factor
