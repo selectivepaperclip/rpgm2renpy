@@ -23,7 +23,7 @@ init python:
                 if i + 1 < len(self.picture_frames):
                     next_picture_frame = self.picture_frames[i + 1]
                     if 'x' in picture_frame and (next_picture_frame['x'] != picture_frame['x'] or next_picture_frame['y'] != picture_frame['y']):
-                        picture_transitions.append(0)
+                        picture_transitions.append(0.0001)
                         picture_transitions.append(MoveTransition(picture_frame.get('wait', 0.001) / animation_fps))
                     else:
                         picture_transitions.append(wait_seconds)
