@@ -27,6 +27,7 @@ screen mapscreen(
     paused_events_delay = 0,
     key_paused_events = [],
     active_timer = None,
+    faded_out = False,
 
     # cruft from old savegames
     sprites = None,
@@ -83,82 +84,84 @@ screen mapscreen(
         key key_str:
             action SetVariable("keyed_function_call", function_call), Jump("game")
 
-    viewport id "map_bg_viewport":
-        xadjustment viewport_xadjustment
-        yadjustment viewport_yadjustment
-        child_size child_size
-        mousewheel False
-        draggable (not in_interaction)
-        scrollbars (not in_interaction)
-        fixed at mapzoom(mapfactor):
-            if parallax_image:
-                add parallax_image:
+    if not faded_out:
+        viewport id "map_bg_viewport":
+            xadjustment viewport_xadjustment
+            yadjustment viewport_yadjustment
+            child_size child_size
+            mousewheel False
+            draggable (not in_interaction)
+            scrollbars (not in_interaction)
+            fixed at mapzoom(mapfactor):
+                if parallax_image:
+                    add parallax_image:
+                        xpos x_offset
+                        ypos y_offset
+
+                add background_image:
+                    id "map_bg_image"
                     xpos x_offset
                     ypos y_offset
 
-            add background_image:
-                id "map_bg_image"
-                xpos x_offset
-                ypos y_offset
+                if background_image:
+                    button:
+                        xpos x_offset + int(player_position[0] * rpgm_metadata.tile_width)
+                        xsize rpgm_metadata.tile_width
+                        ypos y_offset + int(player_position[1] * rpgm_metadata.tile_height)
+                        ysize rpgm_metadata.tile_height
+                        background Color("#00f", alpha = 0.5)
 
-            if background_image:
-                button:
-                    xpos x_offset + int(player_position[0] * rpgm_metadata.tile_width)
-                    xsize rpgm_metadata.tile_width
-                    ypos y_offset + int(player_position[1] * rpgm_metadata.tile_height)
-                    ysize rpgm_metadata.tile_height
-                    background Color("#00f", alpha = 0.5)
-
-            if background_image:
-                for sprite_image_and_position in sprite_images_and_positions:
-                    add sprite_image_and_position['img']:
-                        xpos x_offset + sprite_image_and_position['x']
-                        ypos y_offset + sprite_image_and_position['y']
+                if background_image:
+                    for sprite_image_and_position in sprite_images_and_positions:
+                        add sprite_image_and_position['img']:
+                            xpos x_offset + sprite_image_and_position['x']
+                            ypos y_offset + sprite_image_and_position['y']
 
     for (id, args) in game_state.pictures():
         if ('opacity' not in args) or (args['opacity'] != 0):
             add args['image_name']
 
-    for curated_clickable in curated_clickables:
-        button:
-            xpos curated_clickable['xpos']
-            xsize curated_clickable['xsize']
-            ypos curated_clickable['ypos']
-            ysize curated_clickable['ysize']
-            background Color("#f00", alpha = 0.5)
-            hover_background Color("#00f", alpha = 0.5)
-            tooltip curated_clickable['coord'].tooltip()
-            action SetVariable("mapdest", curated_clickable['coord']), Jump("game")
+    if not faded_out:
+        for curated_clickable in curated_clickables:
+            button:
+                xpos curated_clickable['xpos']
+                xsize curated_clickable['xsize']
+                ypos curated_clickable['ypos']
+                ysize curated_clickable['ysize']
+                background Color("#f00", alpha = 0.5)
+                hover_background Color("#00f", alpha = 0.5)
+                tooltip curated_clickable['coord'].tooltip()
+                action SetVariable("mapdest", curated_clickable['coord']), Jump("game")
 
-    viewport id "map_fg_viewport":
-        xadjustment viewport_xadjustment
-        yadjustment viewport_yadjustment
-        child_size child_size
-        mousewheel False
-        draggable None
-        scrollbars None
-        fixed at mapzoom(mapfactor):
-            for coord in impassible_tiles:
-                button:
-                    xpos x_offset + int(coord[0] * rpgm_metadata.tile_width)
-                    xsize rpgm_metadata.tile_width
-                    ypos y_offset + int(coord[1] * rpgm_metadata.tile_height)
-                    ysize rpgm_metadata.tile_height
-                    background Color("#000", alpha = 0.9)
-                    tooltip("(%s, %s)" % coord)
-                    action NullAction()
+        viewport id "map_fg_viewport":
+            xadjustment viewport_xadjustment
+            yadjustment viewport_yadjustment
+            child_size child_size
+            mousewheel False
+            draggable None
+            scrollbars None
+            fixed at mapzoom(mapfactor):
+                for coord in impassible_tiles:
+                    button:
+                        xpos x_offset + int(coord[0] * rpgm_metadata.tile_width)
+                        xsize rpgm_metadata.tile_width
+                        ypos y_offset + int(coord[1] * rpgm_metadata.tile_height)
+                        ysize rpgm_metadata.tile_height
+                        background Color("#000", alpha = 0.9)
+                        tooltip("(%s, %s)" % coord)
+                        action NullAction()
 
-            for i, coord in enumerate(coords):
-                button:
-                    xpos x_offset + int(coord.x * rpgm_metadata.tile_width)
-                    xsize rpgm_metadata.tile_width
-                    ypos y_offset + int(coord.y * rpgm_metadata.tile_height)
-                    ysize rpgm_metadata.tile_height
-                    background Color(coord.map_color(), alpha = 0.5)
-                    hover_background Color("#00f", alpha = 0.5)
-                    tooltip coord.tooltip()
-                    hovered SetVariable("hover_coord", coord)
-                    action SetVariable("mapdest", coord), Jump("game")
+                for i, coord in enumerate(coords):
+                    button:
+                        xpos x_offset + int(coord.x * rpgm_metadata.tile_width)
+                        xsize rpgm_metadata.tile_width
+                        ypos y_offset + int(coord.y * rpgm_metadata.tile_height)
+                        ysize rpgm_metadata.tile_height
+                        background Color(coord.map_color(), alpha = 0.5)
+                        hover_background Color("#00f", alpha = 0.5)
+                        tooltip coord.tooltip()
+                        hovered SetVariable("hover_coord", coord)
+                        action SetVariable("mapdest", coord), Jump("game")
 
     for hud_group in hud_groups:
         button:

@@ -1210,4 +1210,5 @@ init python:
                 paused_events_delay=paused_events_delay,
                 key_paused_events=key_paused_events,
                 active_timer=active_timer,
+                faded_out=hasattr(self, 'faded_out') and self.faded_out,
             )
