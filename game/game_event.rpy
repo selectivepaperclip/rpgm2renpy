@@ -1393,6 +1393,11 @@ init python:
                 elif command['code'] == 352:
                     renpy.say(None, "RPGMaker would show the save screen right now. You can just open it at your leisure.")
 
+                # Game Over
+                elif command['code'] == 353:
+                    renpy.pause()
+                    renpy.full_restart()
+
                 # Return to title
                 elif command['code'] == 354:
                     renpy.pause()
@@ -1456,6 +1461,9 @@ init python:
                             result = renpy.display_menu([("A QTE is happening!", None), ("Succeed!", True), ("Fail!", False)])
                             self.state.switches.set_value(int(plugin_command_args[1]), result)
                     elif plugin_command in ['HideMiniLabel', 'ShowMiniLabel', 'JUMPACTION']:
+                        pass
+                    elif plugin_command in ['enable_picture']:
+                        # Gallery images in MGA
                         pass
                     else:
                         renpy.say(None, "Plugin command not implemented: '%s'" % plugin_command)
