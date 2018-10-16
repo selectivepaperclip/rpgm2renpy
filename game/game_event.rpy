@@ -733,11 +733,11 @@ init python:
                 self.migrate_global_branch_data()
                 command = self.page['list'][self.list_index]
 
+                recently_rendered_animation_duration = 0
                 if hasattr(game_state, 'queued_pictures') and len(game_state.queued_pictures) > 0:
                     if command['code'] in [101, 102, 103, 104, 301, 302, 303, 354]:
-                        game_state.flush_queued_pictures()
+                        recently_rendered_animation_duration = game_state.flush_queued_pictures()
                         game_state.show_map(True)
-                        return
 
                 if noisy_events:
                     print "COMMAND: %s, event %s, page %s - %s, command %s (%s)" % (
@@ -799,6 +799,9 @@ init python:
 
                     if not hasattr(self, 'choices_to_disable'):
                         self.choices_to_disable = []
+
+                    if recently_rendered_animation_duration > 300:
+                        renpy.pause()
 
                     options = [(game_state.replace_names(text), index) for index, text in enumerate(choice_texts) if index + 1 not in self.choices_to_hide and len(text) > 0]
                     if len(options) > 10:

@@ -204,7 +204,9 @@ init python:
         def flush_queued_pictures(self):
             self.migrate_shown_pictures()
             if len(self.queued_pictures) == 0:
-                return
+                return 0
+
+            longest_animation = 0
 
             frame_data = {}
             for picture_id, picture_args in self.queued_pictures:
@@ -232,9 +234,12 @@ init python:
                     should_loop = 'loop' in last_frame and last_frame['loop']
                     picture_transitions = RpgmAnimationBuilder(picture_frames).build(loop = should_loop)
                     picture_args['image_name'] = RpgmAnimation(*picture_transitions, anim_timebase = True)
+                    longest_animation = max(longest_animation, sum(picture_args['image_name'].delays))
                 self.shown_pictures[picture_id] = picture_args
 
             self.queued_pictures = []
+
+            return longest_animation
 
         def pictures(self):
             self.migrate_shown_pictures()
