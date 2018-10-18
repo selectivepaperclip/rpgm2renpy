@@ -1141,11 +1141,16 @@ init python:
 
                 # Transfer maps
                 elif command['code'] == 201:
-                    method, self.new_map_id, self.new_x, self.new_y, self.new_direction = command['parameters'][0:5]
+                    method = command['parameters'][0]
+                    if method == 0: # Direct designation
+                        self.new_map_id, self.new_x, self.new_y = command['parameters'][1:4]
+                    else: # Designation with variables
+                        self.new_map_id = self.state.variables.value(command['parameters'][1])
+                        self.new_x = self.state.variables.value(command['parameters'][2])
+                        self.new_y = self.state.variables.value(command['parameters'][3])
+                    self.new_direction = command['parameters'][4]
                     if debug_events:
                         print "DEBUG_EVENTS: Map %d" % self.new_map_id
-                    if method != 0:
-                        renpy.say(None, "Method on transfer was nonzero (%d), plz implement!" % method)
 
                 # Set event location
                 elif command['code'] == 203:
