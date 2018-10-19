@@ -731,10 +731,27 @@ init python:
                 character_block_x = 0
                 character_block_y = 0
 
-            sx = (character_block_x + character_pattern_x) * pw
             sy = (character_block_y + character_pattern_y) * ph
+            if is_object_character and 'stepAnime' in image_data and image_data['stepAnime']:
+                img_file = character_images[img_base_filename.lower()]
+                picture_transitions = []
+                for pattern_x in (0, 1, 2, 1):
+                    picture_transitions.append(
+                        Transform(
+                            child = im.Crop(img_file, ((character_block_x + pattern_x) * pw, sy, pw, ph)),
+                            xpos = 0,
+                            ypos = 0,
+                            size = (pw, ph)
+                        )
+                    )
+                    animation_frames = (9 - image_data['moveSpeed']) * 3
+                    picture_transitions.append(animation_frames / animation_fps)
+                    picture_transitions.append(None)
+                img = RpgmAnimation(*picture_transitions)
+            else:
+                sx = (character_block_x + character_pattern_x) * pw
+                img = im.Crop(character_images[img_base_filename.lower()], (sx, sy, pw, ph))
 
-            img = im.Crop(character_images[img_base_filename.lower()], (sx, sy, pw, ph))
             shift_y = 0 if is_object_character else 6
             return (img, pw, ph, shift_y)
 
@@ -1102,6 +1119,8 @@ init python:
                 'characterName': overrides.get('characterName', page['image']['characterName']),
                 'characterIndex': overrides.get('characterIndex', page['image']['characterIndex']),
                 'transparent': overrides.get('transparent', False),
+                'stepAnime': page['stepAnime'],
+                'moveSpeed': page['moveSpeed'],
                 'pattern': page['image']['pattern']
             }
 
