@@ -41,24 +41,24 @@ screen mapscreen(
     if not sprite_images_and_positions:
         $ sprite_images_and_positions = game_state.sprite_images_and_positions()
 
-    key "K_LEFT" action [
-        Function(game_state.go_direction, GameDirection.LEFT),
-        Jump("game")
-    ]
-    key "K_RIGHT" action [
-        Function(game_state.go_direction, GameDirection.RIGHT),
-        Jump("game")
-    ]
-    key "K_DOWN" action [
-        Function(game_state.go_direction, GameDirection.DOWN),
-        Jump("game")
-    ]
-    key "K_UP" action [
-        Function(game_state.go_direction, GameDirection.UP),
-        Jump("game")
-    ]
-
     if not in_interaction:
+        key "K_LEFT" action [
+            Function(game_state.go_direction, GameDirection.LEFT),
+            Jump("game")
+        ]
+        key "K_RIGHT" action [
+            Function(game_state.go_direction, GameDirection.RIGHT),
+            Jump("game")
+        ]
+        key "K_DOWN" action [
+            Function(game_state.go_direction, GameDirection.DOWN),
+            Jump("game")
+        ]
+        key "K_UP" action [
+            Function(game_state.go_direction, GameDirection.UP),
+            Jump("game")
+        ]
+
         key "K_PAGEUP" action [
             Function(game_state.zoom_out),
             Jump("game")
@@ -76,13 +76,13 @@ screen mapscreen(
             Jump("game")
         ]
 
-    for key_str, event_id in common_events_keymap:
-        key key_str:
-            action SetVariable("keyed_common_event", event_id), Jump("game")
+        for key_str, event_id in common_events_keymap:
+            key key_str:
+                action SetVariable("keyed_common_event", event_id), Jump("game")
 
-    for key_str, function_call in function_calls_keymap:
-        key key_str:
-            action SetVariable("keyed_function_call", function_call), Jump("game")
+        for key_str, function_call in function_calls_keymap:
+            key key_str:
+                action SetVariable("keyed_function_call", function_call), Jump("game")
 
     if not faded_out:
         viewport id "map_bg_viewport":
