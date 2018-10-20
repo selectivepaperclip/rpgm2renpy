@@ -981,9 +981,12 @@ init python:
 
             return False
 
-        def user_map_zoom(self):
+        def ensure_user_map_zoom_exists(self):
             if not hasattr(self, 'user_map_zoom_factor'):
                 self.user_map_zoom_factor = 1
+
+        def user_map_zoom(self):
+            self.ensure_user_map_zoom_exists()
             return self.user_map_zoom_factor
 
         def reset_user_zoom(self):
@@ -992,13 +995,11 @@ init python:
             viewport_yadjustment.set_value(0)
 
         def zoom_in(self):
-            if not hasattr(self, 'user_map_zoom_factor'):
-                self.user_map_zoom_factor = 1
+            self.ensure_user_map_zoom_exists()
             self.set_user_map_zoom(self.user_map_zoom_factor * 1.5)
 
         def zoom_out(self):
-            if not hasattr(self, 'user_map_zoom_factor'):
-                self.user_map_zoom_factor = 1
+            self.ensure_user_map_zoom_exists()
             new_user_zoom = max(self.user_map_zoom_factor * (1 / 1.5), 1)
             self.set_user_map_zoom(new_user_zoom)
 
@@ -1121,6 +1122,7 @@ init python:
                 height = self.map.height() * rpgm_metadata.tile_height
 
                 mapfactor = 0.65
+                game_state.reset_user_zoom()
 
                 new_x_range = (mapfactor * width) - config.screen_width
                 viewport_xadjustment.set_range(new_x_range if new_x_range > 0 else 0.0)
