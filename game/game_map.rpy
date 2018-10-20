@@ -40,6 +40,8 @@ init python:
             return False
 
         def is_noop_event(self):
+            if hasattr(self, 'special') and self.special:
+                return False
             if hasattr(self, 'has_commands') and not self.has_commands:
                 return True
             if hasattr(self, 'through') and self.through and self.action_trigger:
