@@ -686,7 +686,7 @@ init python:
 
             self.say_text(None, text, face_name, face_index)
 
-        def say_text(self, speaker, spoken_text, face_name, face_index):
+        def say_text(self, speaker, spoken_text, face_name = None, face_index = None):
             self.show_map(True)
             self.set_side_image(face_name, face_index)
             self.last_said_text = spoken_text
