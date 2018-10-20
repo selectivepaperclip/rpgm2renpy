@@ -31,6 +31,7 @@ and tries to (somewhat) faithfully reproduce the RPGMaker gameplay, but less ann
   * /www/img
   * /www/js
   * /www/movies
+* The MV assets *must be decrypted* for the game to work. ".png" and ".jpg" files instead of .rpgmvp, etc.
 * Load the 'my-game' folder in the RenPy tools, start the game, hope it doesn't crash too much.
 
 ## VX Ace Support
@@ -39,6 +40,7 @@ RPGMaker VX Ace games need to be converted into MV format first.
 
 The process is something like this:
 
+* Ensure the VX Ace files are decrypted before starting.
 * Use the `rvpacker` gem (`gem install rvpacker`) to convert the raw VX Ace data files into .yaml
   * e.g. `rvpacker -a unpack -t ace -d /some/vx/ace/game`
 * Use the `generate_game_json` script to convert the .yaml files into .json files
