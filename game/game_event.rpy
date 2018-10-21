@@ -1468,7 +1468,7 @@ init python:
                         if represents_int(plugin_command_args[0]) and represents_int(plugin_command_args[1]):
                             result = renpy.display_menu([("A QTE is happening!", None), ("Succeed!", True), ("Fail!", False)])
                             self.state.switches.set_value(int(plugin_command_args[1]), result)
-                    elif plugin_command in ['HideMiniLabel', 'ShowMiniLabel', 'JUMPACTION']:
+                    elif plugin_command in ['HideMiniLabel', 'ShowMiniLabel', 'JUMPACTION', 'Light']:
                         pass
                     elif plugin_command in ['enable_picture']:
                         # Gallery images in MGA
