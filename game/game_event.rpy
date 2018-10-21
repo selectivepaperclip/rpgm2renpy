@@ -1226,7 +1226,7 @@ init python:
                 elif command['code'] == 230:
                     wait_time = command['parameters'][0]
                     if self.parallel():
-                        if allow_pause and wait_time >= 45:
+                        if allow_pause and wait_time >= rpgm_game_data.get('pause_wait_time', 45):
                             if noisy_events:
                                 print "WAIT DURING PARALLEL EVENT!! %s" % wait_time
                             self.list_index += 1
