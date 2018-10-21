@@ -22,6 +22,7 @@ def data_dir(game_dir)
 end
 
 script_strings = []
+plugin_strings = []
 
 maps = Dir[File.join(data_dir(game_dir), 'Map[0-9]*')]
 maps.each do |map_path|
@@ -43,10 +44,17 @@ maps.each do |map_path|
                             script_strings.push("[ROUTE]: #{route_part['parameters'][0]}")
                         end
                     end
+                elsif command['code'] == 356
+                    split_params = command['parameters'][0].split(' ')
+                    plugin_strings << split_params[0]
                 end
             end
         end
     end
 end
 
+puts "Script Strings:"
 puts script_strings.map(&:strip).uniq.sort
+
+puts "Plugin Strings:"
+puts plugin_strings.map(&:strip).uniq.sort
