@@ -263,6 +263,7 @@ label game:
         if not in_interaction:
           $ game_state.show_map(in_interaction)
           $ renpy.checkpoint()
+          $ renpy.block_rollback()
           $ renpy.ui.interact(mouse="screen", type="screen")
         $ mapdest = None
         $ keyed_function_call = None

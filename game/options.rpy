@@ -5,10 +5,6 @@
 ## may want to uncomment them when appropriate.
 
 python early:
-    config.hard_rollback_limit = 0
-    config.rollback_enabled = False
-    config.keymap['rollback'] = []
-
     config.searchpath = [ '', renpy.config.gamedir, renpy.config.commondir ]
 
     import json
@@ -21,6 +17,11 @@ python early:
             rpgm_game_data = json.loads(json_without_comments)
     else:
         rpgm_game_data = {"short_name": renpy.file('game_name').read().strip()}
+
+    if 'disable_rollback' in rpgm_game_data and rpgm_game_data['disable_rollback']:
+        config.hard_rollback_limit = 0
+        config.rollback_enabled = False
+        config.keymap['rollback'] = []
 
 ## Basics ######################################################################
 
@@ -41,7 +42,7 @@ define gui.show_name = True
 
 ## The version of the game.
 
-define config.version = "0.7.9"
+define config.version = "0.8.0"
 
 
 ## Text that is placed on the game's about screen. Place the text between the
