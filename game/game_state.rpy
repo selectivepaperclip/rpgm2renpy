@@ -465,6 +465,8 @@ init python:
                 result.append(('i', 'show_inventory'))
             if rpgm_game_data.get('maic_quests', None):
                 result.append(('q', 'show_maic_quests'))
+            if rpgm_game_data.get('molegato_quests', None):
+                result.append(('q', 'show_molegato_quests'))
             return result
 
         def queue_common_and_parallel_events(self):
@@ -515,6 +517,18 @@ init python:
             effect = common_event_effects[0]
             common_event = self.common_events_data()[int(effect['dataId'])]
             self.events.append(GameEvent(self, None, common_event, common_event))
+            return True
+
+        def show_molegato_quests(self):
+            unsolved_quests = []
+            solved_quests = []
+            for quest in rpgm_game_data['molegato_quests']:
+                var_value = game_state.variables.value(quest['var'])
+                if var_value >= 3:
+                    solved_quests.insert(0, quest)
+                elif var_value >= 1:
+                    unsolved_quests.append(quest)
+            result = renpy.call_screen('molegato_quests_screen', unsolved_quests, solved_quests)
             return True
 
         def show_maic_quests(self):
