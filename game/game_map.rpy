@@ -209,6 +209,11 @@ init python:
             self.event_overrides = {}
             self.initialize_erased_events()
             self.hide_unpleasant_moving_obstacles()
+            map_data = self.data()
+            if len(map_data['bgm']['name']) > 0:
+                self.state.queue_background_music(map_data['bgm']['name'], map_data['bgm']['volume'])
+            if len(map_data['bgs']['name']) > 0:
+                self.state.queue_background_sound(map_data['bgs']['name'], map_data['bgs']['volume'])
 
         def hide_unpleasant_moving_obstacles(self):
             if GameIdentifier().is_ics1() or GameIdentifier().is_the_artifact_part_3():

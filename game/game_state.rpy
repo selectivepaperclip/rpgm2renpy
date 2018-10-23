@@ -127,6 +127,89 @@ init python:
             else:
                 print picture
 
+        def flush_queued_content(self):
+            self.flush_queued_pictures()
+            self.flush_queued_sound()
+
+        def queue_background_music(self, name, volume = None):
+            if debug_sound:
+                print "QUEUE BG MUSIC: %s" % name
+            if not name or len(name) == 0:
+                self.next_background_music = {'name': None}
+            else:
+                self.next_background_music = {'name': name, 'volume': volume}
+
+        def queue_background_sound(self, name, volume = None):
+            if debug_sound:
+                print "QUEUE BG SOUND: %s" % name
+            if not name or len(name) == 0:
+                self.next_background_sound = {'name': None}
+            else:
+                self.next_background_sound = {'name': name, 'volume': volume}
+
+        def queue_sound_effect(self, name, volume = None):
+            if debug_sound:
+                print "QUEUE SOUND EFFECT: %s" % name
+            if not name:
+                self.next_sound_effect = {'name': None}
+            else:
+                self.next_sound_effect = {'name': name, 'volume': volume}
+
+        def flush_queued_sound(self):
+            if not hasattr(self, 'next_background_music'):
+                self.next_background_music = None
+            if not hasattr(self, 'next_background_sound'):
+                self.next_background_sound = None
+            if not hasattr(self, 'next_sound_effect'):
+                self.next_sound_effect = None
+            if not hasattr(self, 'current_background_music'):
+                self.current_background_music = None
+            if not hasattr(self, 'current_background_sound'):
+                self.current_background_sound = None
+
+            if debug_sound:
+                if self.next_background_music:
+                    print "FLUSH BG MUSIC!! %s, %s" % (self.current_background_music, self.next_background_music)
+                if self.next_background_sound:
+                    print "FLUSH BG SOUND!! %s, %s" % (self.current_background_music, self.next_background_music)
+                if self.next_sound_effect:
+                    print "FLUSH SOUND EFFECT!! %s" % (self.next_sound_effect)
+
+            if self.next_background_music:
+                if self.next_background_music['name']:
+                    if self.current_background_music and self.current_background_music['name'] == self.next_background_music['name']:
+                        renpy.music.set_volume(self.next_background_music['volume'] / 100.0, channel = 'music')
+                    else:
+                        self.play_on_channel(rpgm_metadata.background_music_path, self.next_background_music, 'music')
+                else:
+                    renpy.music.stop(channel = 'music')
+                self.current_background_music = self.next_background_music
+            self.next_background_music = None
+
+            if self.next_background_sound:
+                if self.next_background_sound['name']:
+                    if self.current_background_sound and self.current_background_sound['name'] == self.next_background_sound['name']:
+                        renpy.music.set_volume(self.next_background_sound['volume'] / 100.0, channel = 'background_sound')
+                    else:
+                        self.play_on_channel(rpgm_metadata.background_sound_path, self.next_background_sound, 'background_sound')
+                else:
+                    renpy.music.stop(channel = 'background_sound')
+                self.current_background_sound = self.next_background_sound
+            self.next_background_sound = None
+
+            if self.next_sound_effect:
+                if self.next_sound_effect['name']:
+                    self.play_on_channel(rpgm_metadata.sound_effects_path, self.next_sound_effect, 'sound')
+                else:
+                    renpy.music.stop(channel = 'sound')
+                self.next_sound_effect = None
+
+        def play_on_channel(self, sound_path, sound_data, channel):
+            filenames = glob.glob(os.path.join(config.basedir, sound_path, sound_data['name'] + '.*'))
+            if len(filenames) > 0:
+                renpy.music.set_volume(sound_data['volume'] / 100.0, channel = channel)
+                renpy.music.play(filenames[0].replace('\\', '/'), channel = channel)
+
         def print_pictures(self):
             for picture_id, picture_data in game_state.shown_pictures.iteritems():
                 print "PICTURE %s:" % picture_id
@@ -707,7 +790,7 @@ init python:
             renpy.say(speaker, spoken_text)
 
         def pause(self):
-            self.flush_queued_pictures()
+            self.flush_queued_content()
             self.show_map(True)
             renpy.pause()
 
@@ -1103,7 +1186,7 @@ init python:
             coordinates = []
             curated_clickables = []
             if not in_interaction:
-                self.flush_queued_pictures()
+                self.flush_queued_content()
                 coordinates = self.map.map_options(self.player_x, self.player_y)
                 if GameIdentifier().is_milfs_control() and GameSpecificCodeMilfsControl().has_curated_clickables(self.map.map_id):
                     curated_clickables = GameSpecificCodeMilfsControl().curated_clickables(coordinates, self.map.map_id)

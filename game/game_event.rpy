@@ -734,10 +734,13 @@ init python:
                 command = self.page['list'][self.list_index]
 
                 recently_rendered_animation_duration = 0
-                if hasattr(game_state, 'queued_pictures') and len(game_state.queued_pictures) > 0:
-                    if command['code'] in [101, 102, 103, 104, 301, 302, 303, 354]:
+
+                interaction_codes = [101, 102, 103, 104, 301, 302, 303, 354]
+                if command['code'] in interaction_codes:
+                    if hasattr(game_state, 'queued_pictures') and len(game_state.queued_pictures) > 0:
                         recently_rendered_animation_duration = game_state.flush_queued_pictures()
                         game_state.show_map(True)
+                    game_state.flush_queued_sound()
 
                 if noisy_events:
                     print "COMMAND: %s, event %s, page %s - %s, command %s (%s)" % (
@@ -1307,9 +1310,41 @@ init python:
                 elif command['code'] == 236:
                     pass
 
-                # Audio
-                elif command['code'] in [241, 242, 243, 244, 245, 246, 249, 250, 251]:
+                # Play BGM (background music)
+                elif command['code'] == 241:
+                    game_state.queue_background_music(command['parameters'][0]['name'], command['parameters'][0]['volume'])
+
+                # Fadeout BGM
+                elif command['code'] == 242:
+                    game_state.queue_background_music(None)
+
+                # Save BGM
+                elif command['code'] == 243:
                     pass
+
+                # Resume BGM
+                elif command['code'] == 244:
+                    pass
+
+                # Play BGS (background sound)
+                elif command['code'] == 245:
+                    game_state.queue_background_sound(command['parameters'][0]['name'], command['parameters'][0]['volume'])
+
+                # Fadeout BGS
+                elif command['code'] == 246:
+                    game_state.queue_background_sound(None)
+
+                # Play ME (effects music)
+                elif command['code'] == 249:
+                    pass
+
+                # Play SE (sound effect)
+                elif command['code'] == 250:
+                    game_state.queue_sound_effect(command['parameters'][0]['name'], command['parameters'][0]['volume'])
+
+                # Stop SE
+                elif command['code'] == 251:
+                    game_state.queue_sound_effect(None)
 
                 # Play Movie
                 elif command['code'] == 261:

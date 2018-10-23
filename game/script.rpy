@@ -1,4 +1,5 @@
 ﻿define debug_events = False
+define debug_sound = False
 define noisy_events = False
 define debug_pickling = False
 define debug_reachability_grid = False
@@ -69,6 +70,8 @@ init -10 python:
     def supported_image(ext):
         return ext.lower() in [ ".jpg", ".jpeg", ".png", ".webp" ]
 
+    renpy.music.register_channel('background_sound', mixer = 'music')
+
     map_cache_directory = os.path.join('rpgmcache', 'maps', 'v1').replace('\\', '/')
     if not os.path.exists(os.path.join(renpy.config.basedir, map_cache_directory)):
         os.makedirs(os.path.join(renpy.config.basedir, map_cache_directory))
@@ -80,6 +83,9 @@ init -10 python:
             if self.is_pre_mv_version:
                 self.pictures_path = rpgm_path("Graphics/Pictures/")
                 self.movies_path = rpgm_path("Movies/")
+                self.background_music_path = rpgm_path("Audio/BGM/")
+                self.background_sound_path = rpgm_path("Audio/BGS/")
+                self.sound_effects_path = rpgm_path("Audio/SE/")
                 self.tilesets_path = rpgm_path("Graphics/Tilesets/")
                 self.characters_path = rpgm_path("Graphics/Characters/")
                 self.parallaxes_path = rpgm_path("Graphics/Parallaxes/")
@@ -92,6 +98,9 @@ init -10 python:
             else:
                 self.pictures_path = rpgm_path("www/img/pictures/")
                 self.movies_path = rpgm_path("www/movies/")
+                self.background_music_path = rpgm_path("www/audio/bgm/")
+                self.background_sound_path = rpgm_path("www/audio/bgs/")
+                self.sound_effects_path = rpgm_path("Audio/se/")
                 self.tilesets_path = rpgm_path("www/img/tilesets/")
                 self.characters_path = rpgm_path("www/img/characters/")
                 self.parallaxes_path = rpgm_path("www/img/parallaxes/")
