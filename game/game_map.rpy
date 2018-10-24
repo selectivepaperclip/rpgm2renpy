@@ -115,6 +115,26 @@ init python:
                 print map_pickle_values
             return dict(map_pickle_values)
 
+        def safe_filename_for_pygame_sdl2_save(self):
+            # pygame_sdl2 seems to sometimes have problems saving to paths that are not pure-ASCII,
+            # "e.g. /Users/José/my-favorite-rpgm-game"
+
+            # internally, pygame_sdl2 uses 'sys.getfilesystemencoding()' to encode unicode
+            # python strings into bytes before calling filesystem APIs. if you send a byte
+            # string for the path instead, it does not do the encode within pygame_sdl2
+
+            # it works well enough on my machine to interpret 'sys.getfilesystemencoding()' to
+            # really mean 'utf-8' when it returns 'mbcs' on a windows machine, but no guarantee
+            # that fixes the problem on all OSes, especially older windows that return 'mbcs'
+
+            # see: https://docs.python.org/2/library/sys.html#sys.getfilesystemencoding
+            # see: https://docs.python.org/3/library/sys.html#sys.getfilesystemencoding
+            # see: https://github.com/renpy/pygame_sdl2/issues/56
+
+            filesystem_encoding = sys.getfilesystemencoding()
+            if filesystem_encoding == 'mbcs':
+                return self.cache_file.encode('utf-8-lemon')
+
         def save(self):
             # Caching code borrowed from https://github.com/renpy/renpy/blob/f40e61dfdfbf723f9eac88bbfec7765b45599682/renpy/display/imagemap.py
             # because it's hard as hell to figure out what incantations to do without source-diving
@@ -135,7 +155,13 @@ init python:
                     else:
                         print ("Image source out of bounds! '%s', imgWidth: %s, imgHeight: %s, sourceX: %s, sourceY: %s, sourceWidth: %s, sourceHeight: %s" % (tile.tileset_name, img_size[0], img_size[1], tile.sx, tile.sy, tile.w, tile.h))
 
-            pygame_sdl2.image.save(surf, self.cache_file)
+            try:
+                pygame_sdl2.image.save(surf, self.cache_file)
+            except pygame_sdl2.error as e:
+                if e.args[0].startswith("Couldn't open"):
+                    pygame_sdl2.image.save(surf, self.safe_filename_for_pygame_sdl2_save())
+                else:
+                    raise
 
     class GameMap(SelectivelyPickle):
         TILE_ID_B      = 0
