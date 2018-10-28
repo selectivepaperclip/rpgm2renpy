@@ -600,6 +600,17 @@ init python:
                         groups = gre.last_match.groups()
                         map_id, event_id, self_switch_name, self_switch_value = (int(groups[0]), int(groups[1]), groups[2], groups[3] == 'true')
                         self.state.self_switches.set_value((map_id, event_id, self_switch_name), self_switch_value)
+                    elif gre.match('MOVE TO: (\d+), (\d+)', route_script):
+                        # Special commands from YEP_MoveRouteCore
+                        # Normmally these would do the proper pathfinding, but for expedience sake just jump to the destination
+                        if player_moving:
+                            x = game_state.player_x
+                            y = game_state.player_y
+                        else:
+                            x, y = self.state.map.event_location(event.event_data)
+                        groups = gre.last_match.groups()
+                        destination_x, destination_y = (int(groups[0]), int(groups[1]))
+                        direction_delta = (destination_x - x, destination_y - y)
                     elif route_script.startswith('$game_player.no_dash'):
                         pass
                     elif gre.match('this.setBlendMode\(\d+\)', route_script):
