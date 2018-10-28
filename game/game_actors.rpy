@@ -40,6 +40,8 @@ init python:
                 overrides['affected_states'] = Set()
 
         def by_index(self, index):
+            if index > len(self.data()) - 1:
+                return None
             actor_data = self.data()[index]
             actor_data.update(self.overrides.get(index, {}))
             return actor_data
