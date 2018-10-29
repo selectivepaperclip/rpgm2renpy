@@ -1522,8 +1522,12 @@ init python:
                             self.state.switches.set_value(int(plugin_command_args[1]), result)
                     elif plugin_command in ['HideMiniLabel', 'ShowMiniLabel', 'JUMPACTION', 'Light']:
                         pass
+                    elif plugin_command in ['ShowGab', 'ClearGab'] or plugin_command.startswith('GabText'):
+                        pass
+                    elif plugin_command in ['FocusCamera', 'ResetFocus', 'WaitForCamera']:
+                        pass
                     elif plugin_command in ['enable_picture']:
-                        # Gallery images in MGA
+                        # MOG_PictureGallery
                         pass
                     elif plugin_command.startswith('textInput'):
                         actor_index = int(plugin_command_args[0])
