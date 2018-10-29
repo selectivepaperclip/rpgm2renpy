@@ -92,7 +92,7 @@ init python:
         pass
 
     class GameMapBackgroundGenerator():
-        def __init__(self, map_id, tiles, cache_file):
+        def __init__(self, map_id, tiles, doodads, cache_file):
             self.map_id = map_id
             self.cache_file = cache_file
 
@@ -107,6 +107,7 @@ init python:
             self.width = (largest_x + 1) * rpgm_metadata.tile_width
             self.height = (largest_y + 1) * rpgm_metadata.tile_height
             self.tiles = tiles
+            self.doodads = doodads
 
         def __getstate__(self):
             map_pickle_values = [(k, v) for k, v in self.__dict__.iteritems() if not k.startswith('_')]
@@ -154,6 +155,47 @@ init python:
                         surf.blit(subsurface, (tile.dx + int(tile.x * rpgm_metadata.tile_width), tile.dy + int(tile.y * rpgm_metadata.tile_height)))
                     else:
                         print ("Image source out of bounds! '%s', imgWidth: %s, imgHeight: %s, sourceX: %s, sourceY: %s, sourceWidth: %s, sourceHeight: %s" % (tile.tileset_name, img_size[0], img_size[1], tile.sx, tile.sy, tile.w, tile.h))
+
+            if len(self.doodads) > 0:
+                glob_special_characters_re = re.compile('([*?[])')
+                for doodad in sorted(self.doodads, key = lambda d: d['z']):
+                    renpy.not_infinite_loop(10)
+                    if 'switchOn' in doodad and len(doodad['switchOn']) > 0 and not all(game_state.switches.value(switch_id) for switch_id in doodad['switchOn']):
+                        continue
+                    if 'switchOff' in doodad and len(doodad['switchOff']) > 0 and any(game_state.switches.value(switch_id) for switch_id in doodad['switchOff']):
+                        continue
+                    doodad_search = glob_special_characters_re.sub(r'[\1]', rpgm_path("www/img/doodads/" + doodad['folder'] + doodad['bitmap']))
+                    doodad_image_path = glob.glob(os.path.join(config.basedir, doodad_search + '.*'))[0].replace("\\", "/")
+                    doodad_x_repeat = 1
+                    doodad_y_repeat = 1
+                    if '[' in doodad_image_path:
+                        match = re.search("\[(\d+)x(\d+)]", doodad_image_path)
+                        doodad_x_repeat = int(match.groups()[0])
+                        doodad_y_repeat = int(match.groups()[1])
+
+                    doodad_surface = renpy.display.im.cache.get(Image(doodad_image_path))
+                    doodad_image_size = doodad_surface.get_size()
+                    if doodad_x_repeat != 1 or doodad_y_repeat != 1:
+                        doodad_image_size = (doodad_image_size[0] / doodad_x_repeat, doodad_image_size[1] / doodad_y_repeat)
+                        doodad_surface = doodad_surface.subsurface((0, 0, doodad_image_size[0], doodad_image_size[1]))
+
+                    rendered_size = doodad_image_size
+                    if doodad['scaleX'] != 100 or doodad['scaleY'] != 100:
+                        x_scale_factor = doodad['scaleX'] / 100.0
+                        y_scale_factor = doodad['scaleY'] / 100.0
+                        if x_scale_factor > 0 and y_scale_factor > 0:
+                            rendered_size = (int(doodad_image_size[0] * x_scale_factor), int(doodad_image_size[1] * y_scale_factor))
+                            doodad_surface = renpy.display.pgrender.transform_scale(doodad_surface, rendered_size)
+                        else:
+                            # TODO - negative factors should mean the sprite is mirrored
+                            print("Failed to render mirrored doodad: %s" % doodad_image_path)
+                    surf.blit(
+                        doodad_surface,
+                        (
+                            doodad['x'] - int(rendered_size[0] * doodad['anchorX']),
+                            doodad['y'] - int(rendered_size[1] * doodad['anchorY'])
+                        )
+                    )
 
             try:
                 pygame_sdl2.image.save(surf, self.cache_file)
@@ -279,8 +321,29 @@ init python:
             return self._background_image
 
         def background_image_cache_file(self):
+            doodads = self.doodads()
+            doodad_descriptions = []
+            if len(doodads) > 0:
+                switches_on = Set()
+                switches_off = Set()
+                for d in doodads:
+                    if 'switchOn' in d and len(d['switchOn']) > 0:
+                        for switch_id in d['switchOn']:
+                            if self.state.switches.value(switch_id):
+                                switches_on.add(switch_id)
+                    if 'switchOff' in d and len(d['switchOff']) > 0:
+                        for switch_id in d['switchOff']:
+                            if not self.state.switches.value(switch_id):
+                                switches_off.add(switch_id)
+                if len(switches_on) > 0:
+                    doodad_descriptions.append('-'.join(["switchOn%s" % switch_id for switch_id in list(switches_on)]))
+                if len(switches_off) > 0:
+                    doodad_descriptions.append('-'.join(["switchOff%s" % switch_id for switch_id in list(switches_off)]))
+
             if hasattr(self, 'tileset_id_override') and self.tileset_id_override:
                 basename = ('Map%03d_tileset%s.png' % (self.map_id, self.tileset_id_override))
+            elif len(doodad_descriptions) > 0:
+                basename = ('Map%03d%s.png' % (self.map_id, '-'.join(doodad_descriptions)))
             else:
                 basename = ('Map%03d.png' % self.map_id)
 
@@ -290,7 +353,7 @@ init python:
             return os.path.join(config.basedir, self.background_image_cache_file()).replace("\\", "/")
 
         def generate_background_image(self):
-            bg = GameMapBackgroundGenerator(self.map_id, self.tiles(), self.background_image_cache_file_absolute())
+            bg = GameMapBackgroundGenerator(self.map_id, self.tiles(), self.doodads(), self.background_image_cache_file_absolute())
             bg.save()
 
         def parallax_image(self):
@@ -732,6 +795,23 @@ init python:
 
                                 result.append(tile)
             return result
+
+        def doodad_data(self):
+            if hasattr(self, '_doodad_data'):
+                return self._doodad_data
+
+            plugins = game_file_loader.plugins_json()
+            self._doodad_data = next((plugin_data for plugin_data in plugins if plugin_data['name'] == 'YEP_GridFreeDoodads'), None)
+            return self._doodad_data
+
+        def doodads(self):
+            if not self.doodad_data():
+                return []
+            doodad_json = game_file_loader.json_file(rpgm_data_path("Doodads.json"))
+            map_doodads = doodad_json[self.map_id]
+            if not map_doodads:
+                return []
+            return map_doodads
 
         def character_sprite(self, image_data):
             img_base_filename = image_data['characterName'].replace(".", "_")
