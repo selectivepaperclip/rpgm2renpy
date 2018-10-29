@@ -732,6 +732,19 @@ init python:
                 while self.page['list'][command_index] and ((self.page['list'][command_index]['code'] in [402, 403, 404]) or self.page['list'][command_index]['indent'] != first_choice_command['indent']):
                     command_index += 1
 
+        def request_actor_name(self, actor_index):
+            actor = self.state.actors.by_index(actor_index)
+            self.state.set_side_image(actor['faceName'], actor['faceIndex'])
+            if hasattr(game_state, 'last_said_text') and game_state.last_said_text:
+                prompt = game_state.last_said_text
+            else:
+                prompt = "What name should actor %d have?" % actor_index
+            actor_name_default = ''
+            if 'suggested_actor_names' in rpgm_game_data:
+                actor_name_default = rpgm_game_data['suggested_actor_names'].get(str(actor_index), '')
+            actor_name = renpy.input("{i}%s{/i}" % prompt, default = actor_name_default)
+            self.state.actors.set_property(actor_index, 'name', actor_name)
+
         def ready_to_continue(self):
             if hasattr(self, 'paused'):
                 return not self.paused
@@ -1389,14 +1402,7 @@ init python:
                 # Get actor name
                 elif command['code'] == 303:
                     actor_index = command['parameters'][0]
-                    actor = self.state.actors.by_index(actor_index)
-                    self.state.set_side_image(actor['faceName'], actor['faceIndex'])
-                    if hasattr(game_state, 'last_said_text') and game_state.last_said_text:
-                        prompt = game_state.last_said_text
-                    else:
-                        prompt = "What name should actor %d have?" % actor_index
-                    actor_name = renpy.input("{i}%s{/i}" % prompt)
-                    self.state.actors.set_property(actor_index, 'name', actor_name)
+                    self.request_actor_name(actor_index)
 
                 # Change state
                 elif command['code'] == 313:
@@ -1519,6 +1525,9 @@ init python:
                     elif plugin_command in ['enable_picture']:
                         # Gallery images in MGA
                         pass
+                    elif plugin_command.startswith('textInput'):
+                        actor_index = int(plugin_command_args[0])
+                        self.request_actor_name(actor_index)
                     else:
                         renpy.say(None, "Plugin command not implemented: '%s'" % plugin_command)
 
