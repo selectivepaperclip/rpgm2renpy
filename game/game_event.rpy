@@ -153,8 +153,9 @@ init python:
                     if hasattr(game_state, 'player_direction'):
                         return game_state.player_direction == direction
                 else:
-                    renpy.say(None, "Direction checks for non-player Character not implemented")
-                    return False
+                    event = self.state.map.find_event_at_index(character_id)
+                    character_direction = self.state.map.event_sprite_data(event.event_data, event.page, event.get_page_index())['direction']
+                    return character_direction == direction
             # Gold
             elif operation == 7:
                 value = params[1]
