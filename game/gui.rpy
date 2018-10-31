@@ -11,9 +11,9 @@ init offset = -2
 init python:
     plugins_json = game_file_loader.plugins_json()
     package_json = game_file_loader.package_json()
-    resolution_plugin = next((plugin_data for plugin_data in plugins_json if plugin_data['name'].startswith('Resolution')), None)
-    screen_resolution_plugin = next((plugin_data for plugin_data in plugins_json if plugin_data['name'].startswith('ScreenResolution')), None)
-    core_engine_plugin = next((plugin_data for plugin_data in plugins_json if plugin_data['name'].startswith('YEP_CoreEngine')), None)
+    resolution_plugin = game_file_loader.plugin_data_startswith('Resolution')
+    screen_resolution_plugin = game_file_loader.plugin_data_startswith('ScreenResolution')
+    core_engine_plugin = game_file_loader.plugin_data_startswith('YEP_CoreEngine')
     screen_size = None
     if resolution_plugin:
         screen_size = int(resolution_plugin['parameters']['Screen Width']), int(resolution_plugin['parameters']['Screen Height'])

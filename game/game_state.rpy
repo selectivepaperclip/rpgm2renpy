@@ -402,8 +402,7 @@ init python:
             if hasattr(self, '_yep_region_restriction_data'):
                 return self._yep_region_restriction_data
 
-            plugins = self.plugins()
-            region_restriction_data = next((plugin_data for plugin_data in plugins if plugin_data['name'] == 'YEP_RegionRestrictions'), None)
+            region_restriction_data = game_file_loader.plugin_data_exact('YEP_RegionRestrictions')
             if region_restriction_data:
                 self._yep_region_restriction_data = region_restriction_data['parameters']
             else:
@@ -431,7 +430,7 @@ init python:
             groups = {}
             for group_data in group_data_list:
                 groups[group_data['parameters']['GroupName']] = group_data
-            main_group = next((plugin_data for plugin_data in plugins if plugin_data['name'] == 'OrangeHud'), None)
+            main_group = game_file_loader.plugin_data_exact('OrangeHud')
             if main_group:
                 groups['main'] = main_group
             self._orange_hud_group_map = groups
@@ -526,8 +525,7 @@ init python:
             return lines
 
         def common_events_keymap(self):
-            plugins = self.plugins()
-            yepp_common_events = next((plugin_data for plugin_data in plugins if plugin_data['name'] == 'YEP_ButtonCommonEvents'), None)
+            yepp_common_events = game_file_loader.plugin_data_exact('YEP_ButtonCommonEvents')
             if not yepp_common_events:
                 return []
 

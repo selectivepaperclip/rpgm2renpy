@@ -151,8 +151,7 @@ init python:
         return 'rpgmface-' + base.lower()
 
     def mog_title_layer_image():
-        plugins = game_file_loader.plugins_json()
-        mog_title_layers = next((plugin_data for plugin_data in plugins if plugin_data['name'] == 'MOG_TitleLayers'), None)
+        mog_title_layers = game_file_loader.plugin_data_exact('MOG_TitleLayers')
         if mog_title_layers:
             layer_data = {}
             layer_line_regexp = re.compile('^L(\d+) (.*)$')

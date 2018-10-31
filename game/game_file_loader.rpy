@@ -34,3 +34,9 @@ init -99 python:
                     self._plugins_json = json.loads(content[content.find('['):].rstrip().rstrip(';'))
 
             return self._plugins_json
+
+        def plugin_data_exact(self, plugin_name):
+            return next((plugin_data for plugin_data in self.plugins_json() if plugin_data['name'] == plugin_name), None)
+
+        def plugin_data_startswith(self, plugin_name):
+            return next((plugin_data for plugin_data in self.plugins_json() if plugin_data['name'].startswith(plugin_name)), None)

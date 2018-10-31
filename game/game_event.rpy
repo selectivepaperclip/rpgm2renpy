@@ -1527,6 +1527,24 @@ init python:
                         pass
                     elif plugin_command in ['FocusCamera', 'ResetFocus', 'WaitForCamera']:
                         pass
+                    elif plugin_command in ['question'] and game_file_loader.plugin_data_exact('RedHatAugust - Q&A'):
+                        word_count_of_question = plugin_command_args[0]
+                        question_typed_without_quotes = plugin_command_args[1]
+                        word_count_of_answer = plugin_command_args[2]
+                        answer_typed_without_quotes = plugin_command_args[3]
+                        word_count_of_correct_response = plugin_command_args[4]
+                        correct_response_typed_without_quotes = plugin_command_args[5]
+                        correct_answer_switchID = plugin_command_args[6]
+                        correct_answer_switchID_status = plugin_command_args[7]
+                        word_count_of_incorrect_response = plugin_command_args[8]
+                        incorrect_response_typed_without_quotes = plugin_command_args[9]
+
+                        answer = renpy.input("{i}%s{/i}" % question_typed_without_quotes)
+                        if answer == answer_typed_without_quotes:
+                            game_state.say_text(None, correct_response_typed_without_quotes)
+                            self.state.switches.set_value(int(correct_answer_switchID), correct_answer_switchID_status == 'true')
+                        else:
+                            game_state.say_text(None, incorrect_response_typed_without_quotes)
                     elif plugin_command in ['enable_picture']:
                         # MOG_PictureGallery
                         pass

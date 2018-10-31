@@ -800,8 +800,7 @@ init python:
             if hasattr(self, '_doodad_data'):
                 return self._doodad_data
 
-            plugins = game_file_loader.plugins_json()
-            self._doodad_data = next((plugin_data for plugin_data in plugins if plugin_data['name'] == 'YEP_GridFreeDoodads'), None)
+            self._doodad_data = game_file_loader.plugin_data_exact('YEP_GridFreeDoodads')
             return self._doodad_data
 
         def doodads(self):
