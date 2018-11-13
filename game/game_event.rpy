@@ -208,6 +208,29 @@ init python:
                     event_x, event_y = self.state.map.event_location(self.event_data)
                     distance = abs(self.state.player_x - event_x) + abs(self.state.player_y - event_y)
                     return distance <= desired_distance
+                elif gre.match("Galv\.PUZ\.isAt\((.*?)\)", params[1]):
+                    args_string = gre.last_match.groups()[0]
+                    if re.match("^[0-9\[\],]+$", args_string):
+                        args = eval(gre.last_match.groups()[0])
+                        if isinstance(args, tuple):
+                            target = args[0]
+                            event_id = args[1]
+                        else:
+                            target = args
+                            event_id = self.event_data['id']
+
+                        event = self.state.map.find_event_at_index(event_id)
+                        event_location = self.state.map.event_location(event.event_data)
+
+                        if not isinstance(target, list):
+                            if target == 0:
+                                target = (self.state.player_x, self.state.player_y)
+                            else:
+                                target_event = self.state.map.find_event_at_index(target)
+                                target = self.state.map.event_location(target_event.event_data)
+                        return tuple(event_location) == tuple(target)
+                    else:
+                        renpy.say(None, "Args too sketch to eval at '%s'" % script_string)
                 else:
                     renpy.say(None, "Conditional statements for Script not implemented\nSee console for full script.")
                     print "Script that could not be evaluated:\n"
@@ -270,6 +293,14 @@ init python:
 
             return True
 
+        def eval_galv_puz_script(self, script_string):
+            gre = Re()
+            if gre.match("Galv\.PUZ\.switch\('event','(\w+)','(\w+)',(\d+)\)", script_string):
+                groups = gre.last_match.groups()
+                map_id, self_switch_name, self_switch_value, event_id = (self.get_map_id(), groups[0], groups[1] == 'on', int(groups[2]))
+                self.state.self_switches.set_value((map_id, event_id, self_switch_name), self_switch_value)
+                return True
+
         def eval_script(self, script_string):
             xhr_compare_command = re.match(re.compile("var xhr = new XMLHttpRequest\(\);.*if\(.*?\) {\n(.*?)}", re.DOTALL), script_string)
 
@@ -283,6 +314,10 @@ init python:
                 map_id, event_id, self_switch_name, self_switch_value = (self.get_map_id(), int(groups[0]), groups[1], groups[2] == 'true')
                 self.state.self_switches.set_value((map_id, event_id, self_switch_name), self_switch_value)
                 return
+            elif script_string.startswith('Galv.PUZ'):
+                result = self.eval_galv_puz_script(script_string)
+                if result:
+                    return
             elif GameIdentifier().is_milfs_control() and GameSpecificCodeMilfsControl().eval_full_script(script_string):
                 return
 
