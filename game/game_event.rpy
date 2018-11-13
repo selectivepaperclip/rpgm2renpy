@@ -1542,11 +1542,16 @@ init python:
                         if represents_int(plugin_command_args[0]) and represents_int(plugin_command_args[1]):
                             result = renpy.display_menu([("A QTE is happening!", None), ("Succeed!", True), ("Fail!", False)])
                             self.state.switches.set_value(int(plugin_command_args[1]), result)
-                    elif plugin_command in ['HideMiniLabel', 'ShowMiniLabel', 'JUMPACTION', 'Light']:
+                    elif plugin_command in ['HideMiniLabel', 'ShowMiniLabel', 'JUMPACTION']:
+                        pass
+                    elif plugin_command in ['Light', 'Tint']:
                         pass
                     elif plugin_command in ['ShowGab', 'ClearGab'] or plugin_command.startswith('GabText'):
                         pass
                     elif plugin_command in ['FocusCamera', 'ResetFocus', 'WaitForCamera']:
+                        pass
+                    elif plugin_command in ['Quest']:
+                        # TODO!!!
                         pass
                     elif plugin_command in ['question'] and game_file_loader.plugin_data_exact('RedHatAugust - Q&A'):
                         word_count_of_question = plugin_command_args[0]
