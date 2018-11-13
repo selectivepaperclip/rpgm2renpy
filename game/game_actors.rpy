@@ -39,9 +39,35 @@ init python:
             if not hasattr(overrides, 'affected_states'):
                 overrides['affected_states'] = Set()
 
+        def add_exp(self, index, exp):
+            actor_data = self.by_index(index)
+            new_level = actor_data['level']
+            actor_data['classExp'][actor_data['classId']] += exp
+            new_exp = actor_data['classExp'][actor_data['classId']]
+            while (new_level < actor_data['maxLevel'] and exp >= self.exp_for_level(index, new_level + 1)):
+                new_level = new_level + 1
+            self.set_property(index, 'level', new_level)
+
+        def add_level(self, index, level_delta):
+            actor_data = self.by_index(index)
+            new_level = actor_data['level'] + level_delta
+            self.set_property(index, 'level', new_level)
+
+        def exp_for_level(self, index, level):
+            actor_data = self.data()[index]
+            class_data = game_file_loader.json_file(rpgm_data_path("Classes.json"))[actor_data['classId']]
+            basis, extra, acc_a, acc_b = class_data['expParams']
+
+            return int(basis * (level-1 ** 0.9 + acc_a / 250.0) * level * (level+1) / (6 + (level ** 2) / 50.0 / acc_b) + (level - 1) * extra)
+
         def by_index(self, index):
             if index > len(self.data()) - 1:
                 return None
             actor_data = self.data()[index]
-            actor_data.update(self.overrides.get(index, {}))
+            overrides = self.overrides.get(index, {})
+            if 'level' not in overrides:
+                overrides['level'] = actor_data['initialLevel']
+            if 'classExp' not in overrides:
+                overrides['classExp'] = {actor_data['classId']: 0}
+            actor_data.update(overrides)
             return actor_data

@@ -993,10 +993,10 @@ init python:
                         elif game_data_operand_type == 2: # Armor
                             value = self.state.party.num_items(self.state.armors.by_id(game_data_operand_param1))
                         elif game_data_operand_type == 3: # Actor
-                            # var actor = $gameActors.actor(param1);
+                            actor_index = command['parameters'][4]
+                            actor = self.state.actors.by_index(actor_index)
                             if game_data_operand_param2 == 0: # Level
-                                # return actor.level;
-                                renpy.say(None, ("Variable control operand 3 not implemented for type 3 (Level), plz implement"))
+                                value = actor['level']
                             elif game_data_operand_param2 == 1: # EXP
                                 # return actor.currentExp();
                                 renpy.say(None, ("Variable control operand 3 not implemented for type 3 (EXP), plz implement"))
@@ -1418,6 +1418,27 @@ init python:
                 # Recover all
                 elif command['code'] == 314:
                     pass
+
+                # Change EXP / Change Level
+                elif command['code'] in [315, 316]:
+                    print command['parameters']
+
+                    operation, operand_type, operand = command['parameters'][2:5]
+                    value = self.state.variables.operate_value(operation, operand_type, operand)
+
+                    if command['parameters'][0] == 0:
+                        if command['parameters'][1] == 0:
+                            actor_indices = self.state.party.members
+                        else:
+                            actor_indices = [command['parameters'][1]]
+                    else:
+                        actor_indices = [self.state.variables.value(command['parameters'][1])]
+
+                    for actor_index in actor_indices:
+                        if command['code'] == 315:
+                            self.state.actors.add_exp(actor_index, value)
+                        elif command['code'] == 316:
+                            self.state.actors.add_level(actor_index, value)
 
                 # Change equipment
                 elif command['code'] == 319:
