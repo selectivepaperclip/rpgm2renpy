@@ -70,6 +70,7 @@ init python:
             self.shown_pictures = {}
             self.queued_pictures = []
             self.everything_reachable = False
+            self.focus_zoom_rect_on_next_map_render = True
 
         def ensure_initialized_attributes(self):
             if not hasattr(self, 'events'):
@@ -808,6 +809,7 @@ init python:
                 print "TRANSFERRING PLAYER TO MAP %s: (%s, %s)" % (transfer_event.new_map_id, transfer_event.new_x, transfer_event.new_y)
             if changing_maps:
                 self.reset_user_zoom()
+                self.focus_zoom_rect_on_next_map_render = True
                 self.map = self.map_registry.get_map(transfer_event.new_map_id)
                 self.map.update_for_transfer()
             self.player_x = transfer_event.new_x
@@ -1205,6 +1207,8 @@ init python:
             parallax_image = self.map.parallax_image()
             width, height = (self.map.image_width, self.map.image_height)
 
+            map_zoom_rect = rpgm_game_data.get('map_zoom_rects', {}).get(str(self.map.map_id), None)
+
             if self.map.is_clicky(self.player_x, self.player_y):
                 # assume we want to show about 40 tiles wide, 22 tiles high
                 # player x, y should be centered in the visible map
@@ -1217,7 +1221,7 @@ init python:
                 height = self.map.height() * rpgm_metadata.tile_height
 
                 mapfactor = 0.65
-                game_state.reset_user_zoom()
+                self.reset_user_zoom()
 
                 new_x_range = (mapfactor * width) - config.screen_width
                 viewport_xadjustment.set_range(new_x_range if new_x_range > 0 else 0.0)
@@ -1242,6 +1246,24 @@ init python:
                 background_image = None
             else:
                 mapfactor = self.calculate_map_factor()
+
+                if map_zoom_rect and hasattr(self, 'focus_zoom_rect_on_next_map_render') and self.focus_zoom_rect_on_next_map_render:
+                    zoom_rect_ul = (map_zoom_rect[0], map_zoom_rect[1])
+                    zoom_rect_lr = (map_zoom_rect[2], map_zoom_rect[3])
+                    rect_size = (zoom_rect_lr[0] - zoom_rect_ul[0], zoom_rect_lr[1] - zoom_rect_ul[1])
+                    user_zoom = min(self.map.width() / float(rect_size[0]), self.map.height() / float(rect_size[1]))
+
+                    # Don't zoom in so far that the pixels are bigger than their natural size
+                    user_zoom = min(1 / mapfactor, user_zoom)
+
+                    self.set_user_map_zoom(user_zoom)
+
+                    centering_nudge_x = max(0, (config.screen_width - (rect_size[0] * rpgm_metadata.tile_width * mapfactor * user_zoom)) / 2)
+                    centering_nudge_y = max(0, (config.screen_height - (rect_size[1] * rpgm_metadata.tile_height * mapfactor * user_zoom)) / 2)
+
+                    viewport_xadjustment.set_value(max(0, (zoom_rect_ul[0] * rpgm_metadata.tile_width * mapfactor * user_zoom) - centering_nudge_x))
+                    viewport_yadjustment.set_value(max(0, (zoom_rect_ul[1] * rpgm_metadata.tile_height * mapfactor * user_zoom) - centering_nudge_y))
+                self.focus_zoom_rect_on_next_map_render = False
 
             hud_pics = self.orange_hud_pictures()
             hud_lines = self.orange_hud_lines()
