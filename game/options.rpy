@@ -5,6 +5,13 @@
 ## may want to uncomment them when appropriate.
 
 python early:
+    # Disable 'auto_movie_channel' which creates dynamically named channels
+    # for every movie. We're only going to display one movie at a time (so far)
+    # so it is not needed. If you let it create channels for every movie,
+    # the rollback/save data gets cluttered with current volume / pause
+    # status for every movie you've loaded at startup.
+    config.auto_movie_channel = False
+
     config.searchpath = [ '', renpy.config.gamedir, renpy.config.commondir ]
 
     import json
