@@ -9,6 +9,10 @@ init python:
         This version instead records the initial time it was rendered and uses that as the basis for frame second counting.
         """
 
+        @classmethod
+        def create(cls, *args, **properties):
+            return RpgmAnimation(*args, **properties)
+
         def __init__(self, *args, **properties):
             """
             There is one keyword argument, apart from the style properties:

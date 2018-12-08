@@ -859,7 +859,7 @@ init python:
                     animation_frames = (9 - image_data['moveSpeed']) * 3
                     picture_transitions.append(animation_frames / animation_fps)
                     picture_transitions.append(None)
-                img = RpgmAnimation(*picture_transitions)
+                img = RpgmAnimation.create(*picture_transitions)
             else:
                 sx = (character_block_x + character_pattern_x) * pw
                 img = im.Crop(character_images[img_base_filename.lower()], (sx, sy, pw, ph))

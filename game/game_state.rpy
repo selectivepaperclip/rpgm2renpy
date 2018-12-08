@@ -317,7 +317,7 @@ init python:
                 else:
                     should_loop = 'loop' in last_frame and last_frame['loop']
                     picture_transitions = RpgmAnimationBuilder(picture_frames).build(loop = should_loop)
-                    picture_args['image_name'] = RpgmAnimation(*picture_transitions, anim_timebase = True)
+                    picture_args['image_name'] = RpgmAnimation.create(*picture_transitions, anim_timebase = True)
                     longest_animation = max(longest_animation, sum(picture_args['image_name'].delays))
                 self.shown_pictures[picture_id] = picture_args
 

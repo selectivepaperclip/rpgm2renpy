@@ -433,7 +433,7 @@ init python:
                     picture_transitions = RpgmAnimationBuilder(picture_frames).build(loop = True)
 
                     if len(picture_transitions) > 1:
-                        game_state.shown_pictures[picture_id] = {"image_name": RpgmAnimation(*picture_transitions)}
+                        game_state.shown_pictures[picture_id] = {"image_name": RpgmAnimation.create(*picture_transitions)}
 
         def direction_to_face_player(self, event_location):
             sx = game_state.player_x - event_location[0]
