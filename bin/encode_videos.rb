@@ -16,7 +16,9 @@ if ARGV.length < 1
 end
 
 game_dir = File.expand_path(ARGV[0])
-pics_dir = File.join(game_dir, 'Graphics', 'Pictures')
+$pics_dir = File.join(game_dir, 'Graphics', 'Pictures')
+$movies_dir = File.join(game_dir, 'Graphics', 'Rpgm2RenpyMovies')
+FileUtils.mkdir_p($movies_dir) if File.exist?($pics_dir)
 
 def detect_animation(commands)
     animations = []
@@ -93,6 +95,26 @@ maps.each do |map_path|
     end
 end
 
+def encode_video(real_animation_frames, outfile)
+    Dir.mktmpdir do |dir|
+        last_ext = nil
+        real_animation_frames.each_with_index do |frame, frame_index|
+            pic_file = Dir[File.join($pics_dir, frame[:image] + '.*')][0]
+            unless pic_file
+                print "COULD NOT FIND #{frame[:image]} in #{$pics_dir}"
+                return
+            end
+            last_ext = File.extname(pic_file)
+            FileUtils.cp(pic_file, File.join(dir, "frame_#{frame_index}#{last_ext}"))
+        end
+
+        pattern = File.join(dir, "frame_%d#{last_ext}")
+        cmd = "#{ENV['FFMPEG_PATH']} -i #{pattern} -vcodec libvpx -r 60 -crf 4 -b:v 0 -auto-alt-ref 0 \"#{outfile}\""
+        puts cmd
+        system(cmd)
+    end
+end
+
 real_animations.each do |real_animation|
     real_animation.each do |picture_id, real_animation_frames|
         animation_name = "#{real_animation_frames[0][:image]}-#{real_animation_frames[-1][:image]}-#{real_animation_frames.length}"
@@ -101,7 +123,7 @@ real_animations.each do |real_animation|
         if avg_waits != avg_waits.to_i
             print real_animation_frames.map { |f| f[:wait] }
         end
-        outfile = File.join(pics_dir, "#{animation_name}.webm")
+        outfile = File.join($movies_dir, "#{animation_name}.webm")
         if File.exists?(outfile)
             next
         end
@@ -109,25 +131,10 @@ real_animations.each do |real_animation|
             next
         end
 
-        Dir.mktmpdir do |dir|
-            last_ext = nil
-            real_animation_frames.each_with_index do |frame, frame_index|
-                pic_file = Dir[File.join(pics_dir, frame[:image] + '.*')][0]
-                unless pic_file
-                    print "COULD NOT FIND #{frame[:image]} in #{pics_dir}"
-                    exit 0
-                end
-                last_ext = File.extname(pic_file)
-                FileUtils.cp(pic_file, File.join(dir, "frame_#{frame_index}#{last_ext}"))
-            end
-
-            pattern = File.join(dir, "frame_%d#{last_ext}")
-            cmd = "#{ENV['FFMPEG_PATH']} -i #{pattern} -vcodec libvpx -r 60 -crf 4 -b:v 0 -auto-alt-ref 0 \"#{outfile}\""
-            puts cmd
-            system(cmd)
-        end
+        encode_video(real_animation_frames, outfile)
     end
 end
+
 
 #pic_groups = {}
 #last_pic_path = nil
