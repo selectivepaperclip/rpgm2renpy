@@ -415,7 +415,7 @@ init python:
                         last_picture_id = newly_activated_command['parameters'][0]
                         image_name = newly_activated_command['parameters'][1]
                         new_frame_data = {"wait": 0, "image_name": rpgm_picture_name(image_name), "x": x, "y": y}
-                        if last_picture_id in frame_data:
+                        if last_picture_id in frame_data and frame_data[last_picture_id][0]['wait'] != 0:
                             frame_data[last_picture_id].append(new_frame_data)
                         else:
                             frame_data[last_picture_id] = [new_frame_data]
