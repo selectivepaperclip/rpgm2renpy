@@ -362,6 +362,11 @@ init python:
         def plugins(self):
             return game_file_loader.plugins_json()
 
+        def escape_text_for_renpy(self, text):
+            escaped_text = re.sub('%', '%%', text)
+            escaped_text = re.sub('\[', '[[', escaped_text)
+            return re.sub('\{', '{{', escaped_text)
+
         def replace_names(self, text):
             # Replace statements from actor numbers, e.g. \N[2] with their actor name
             text = re.sub(r'\\N\[(\d+)\]', lambda m: (self.actors.by_index(int(m.group(1))) or {'name': ''})['name'], text, flags=re.IGNORECASE)

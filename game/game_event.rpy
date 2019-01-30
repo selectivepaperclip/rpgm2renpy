@@ -838,9 +838,7 @@ init python:
                     text_to_show = game_state.replace_names("".join(accumulated_text).strip())
                     if len(text_to_show) > 0:
                         try:
-                            escaped_text = re.sub('%', '%%', text_to_show)
-                            escaped_text = re.sub('\[', '[[', escaped_text)
-                            escaped_text = re.sub('\{', '{{', escaped_text)
+                            escaped_text = game_state.escape_text_for_renpy(text_to_show)
                             self.state.say_text_with_possible_speaker(escaped_text, face_name, face_index)
                         except renpy.game.CONTROL_EXCEPTIONS:
                             raise
@@ -868,7 +866,7 @@ init python:
                     if recently_rendered_animation_duration > 300:
                         renpy.pause()
 
-                    options = [(game_state.replace_names(text), index) for index, text in enumerate(choice_texts) if index + 1 not in self.choices_to_hide and len(text) > 0]
+                    options = [(game_state.escape_text_for_renpy(game_state.replace_names(text)), index) for index, text in enumerate(choice_texts) if index + 1 not in self.choices_to_hide and len(text) > 0]
                     if len(options) > 10:
                         choice_options = []
                         for option_text, option_index in options:
