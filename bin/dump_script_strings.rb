@@ -26,7 +26,11 @@ plugin_strings = []
 
 maps = Dir[File.join(data_dir(game_dir), 'Map[0-9]*')]
 maps.each do |map_path|
-    json = JSON.parse(File.read(map_path))
+    json = begin
+        JSON.parse(File.read(map_path))
+    rescue
+        puts "Could not parse: #{map_path}"
+    end
     json['events'].compact.each do |event_json|
         event_json['pages'].each do |page_json|
             commands = page_json['list']
