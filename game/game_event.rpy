@@ -1588,6 +1588,8 @@ init python:
                     elif plugin_command in ['Quest']:
                         # TODO!!!
                         pass
+                    elif plugin_command in ['AutoSave', 'LAYER', 'LAYER_S']:
+                        pass
                     elif plugin_command in ['question'] and game_file_loader.plugin_data_exact('RedHatAugust - Q&A'):
                         word_count_of_question = plugin_command_args[0]
                         question_typed_without_quotes = plugin_command_args[1]
