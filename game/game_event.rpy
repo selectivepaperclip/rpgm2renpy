@@ -778,6 +778,8 @@ init python:
             actor_name_default = ''
             if 'suggested_actor_names' in rpgm_game_data:
                 actor_name_default = rpgm_game_data['suggested_actor_names'].get(str(actor_index), '')
+            if actor['name']:
+                actor_name_default = actor['name']
             actor_name = renpy.input("{i}%s{/i}" % prompt, default = actor_name_default)
             self.state.actors.set_property(actor_index, 'name', actor_name)
 

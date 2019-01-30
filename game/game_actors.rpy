@@ -2,9 +2,6 @@ init python:
     class GameActors(SelectivelyPickle):
         def __init__(self):
             self.overrides = {
-                1: {
-                    "name": "MCName"
-                }
             }
 
         def __setstate__(self, d):
