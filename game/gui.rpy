@@ -15,14 +15,14 @@ init python:
     screen_resolution_plugin = game_file_loader.plugin_data_startswith('ScreenResolution')
     core_engine_plugin = game_file_loader.plugin_data_startswith('YEP_CoreEngine')
     screen_size = None
-    if resolution_plugin:
+    if rpgm_game_data.get('resolution', None):
+        screen_size = tuple(rpgm_game_data['resolution'])
+    elif resolution_plugin:
         screen_size = int(resolution_plugin['parameters']['Screen Width']), int(resolution_plugin['parameters']['Screen Height'])
     elif screen_resolution_plugin:
         screen_size = int(screen_resolution_plugin['parameters']['Screen Width']), int(screen_resolution_plugin['parameters']['Screen Height'])
     elif core_engine_plugin:
         screen_size = int(core_engine_plugin['parameters']['Screen Width']), int(core_engine_plugin['parameters']['Screen Height'])
-    elif rpgm_game_data.get('resolution', None):
-        screen_size = tuple(rpgm_game_data['resolution'])
     elif rpgm_metadata.is_pre_mv_version:
         screen_size = (1024, 768)
     elif package_json:
