@@ -133,7 +133,14 @@ style window:
     yalign gui.textbox_yalign
     ysize gui.textbox_height
 
-    background Image("gui/textbox.png", xalign=0.5, yalign=1.0)
+    # Edited to stop using textbox.png and allow a more dynamicly sized transparent rectangle
+    background Solid(
+        Color('#000', alpha = 0.8),
+        xsize = config.screen_width,
+        ysize = gui.textbox_height,
+        xalign=0.5,
+        yalign=1.0
+    )
 
 style namebox:
     xpos gui.name_xpos

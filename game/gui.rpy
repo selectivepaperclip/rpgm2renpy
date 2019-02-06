@@ -93,7 +93,10 @@ define gui.name_text_font = "DejaVuSans.ttf"
 define gui.interface_text_font = "DejaVuSans.ttf"
 
 ## The size of normal dialogue text.
-define gui.text_size = 22
+init python:
+    gui.text_size = 22
+    if config.screen_width <= 640:
+        gui.text_size = 14
 
 ## The size of character names.
 define gui.name_text_size = 30
@@ -124,7 +127,10 @@ define gui.game_menu_background = Solid(Color("#5F777F"))
 ## time.
 
 ## The height of the textbox containing dialogue.
-define gui.textbox_height = 185
+init python:
+    gui.textbox_height = 185
+    if config.screen_width <= 640:
+        gui.textbox_height = 120
 
 ## The placement of the textbox vertically on the screen. 0.0 is the top, 0.5 is
 ## center, and 1.0 is the bottom.
