@@ -57,6 +57,7 @@ init python:
             self.map = self.map_registry.get_map(self.starting_map_id)
             self.player_x = self.system_data()['startX']
             self.player_y = self.system_data()['startY']
+            self.player_direction_fix = False
             self.player_direction = GameDirection.DOWN
             self.switches = GameSwitches(self.system_data()['switches'])
             self.self_switches = GameSelfSwitches()
@@ -829,6 +830,10 @@ init python:
             if len(self.events) == 0:
                 self.queue_parallel_events()
 
+        def set_player_direction(self, new_direction):
+            if not hasattr(self, 'player_direction_fix') or self.player_direction_fix == False:
+                self.player_direction = new_direction
+
         def cancel_map_path_walk(self):
             self.map_path = []
             self.map_path_destination = None
@@ -1011,12 +1016,14 @@ init python:
                 return True
 
             if hasattr(self, 'map_path') and len(self.map_path) > 0:
-                self.player_x, self.player_y, self.player_direction = self.map_path.pop()
+                self.player_x, self.player_y, new_direction = self.map_path.pop()
+                self.set_player_direction(new_direction)
                 self.requeue_parallel_events_if_changed(always_run_conditionals = True)
                 return True
 
             if hasattr(self, 'map_path_destination') and self.map_path_destination:
-                x, y, self.player_direction = self.map_path_destination
+                x, y, new_direction = self.map_path_destination
+                self.set_player_direction(new_direction)
                 self.map_path_destination = None
 
                 map_event = self.map.find_event_for_location(x, y) or self.map.find_event_for_location(x, y, only_special = True)
@@ -1055,7 +1062,7 @@ init python:
 
                 if hasattr(mapdest, 'walk_destination') and mapdest.walk_destination:
                     new_x, new_y = mapdest.x, mapdest.y
-                    self.player_direction = self.determine_direction(new_x, new_y)
+                    self.set_player_direction(self.determine_direction(new_x, new_y))
                     self.player_x, self.player_y = new_x, new_y
                     return True
 
@@ -1093,7 +1100,7 @@ init python:
                         else:
                             self.map_path = path_from_destination[1:-1]
                     else:
-                        self.player_direction = self.determine_direction(mapdest.x, mapdest.y)
+                        self.set_player_direction(self.determine_direction(mapdest.x, mapdest.y))
                         if map_event.page['through'] or map_event.page['trigger'] != 0:
                             self.player_x, self.player_y = mapdest.x, mapdest.y
                         else:
@@ -1132,7 +1139,7 @@ init python:
             self.set_user_map_zoom(new_user_zoom)
 
         def go_direction(self, direction):
-            self.player_direction = direction
+            self.set_player_direction(direction)
             reachability_grid = self.map.reachability_grid_for_current_position()
             delta = GameDirection.delta_for_direction(direction)
             new_x = self.player_x + delta[0]

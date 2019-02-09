@@ -670,14 +670,13 @@ init python:
 
                 if new_direction_fix != None:
                     if player_moving:
-                        renpy.say(None, "Movement route direction fix toggling not supported for player")
+                        self.state.player_direction_fix = new_direction_fix
                     else:
                         self.state.map.override_event(event_id, event_page_index, 'directionFix', new_direction_fix)
 
                 if new_direction:
                     if player_moving:
-                        # TODO: check direction fix for player
-                        game_state.player_direction = new_direction
+                        game_state.set_player_direction(new_direction)
                     elif not self.state.map.event_direction_fix(event.event_data, event.page, event.page_index):
                         self.state.map.override_event(event_id, None, 'direction', new_direction)
 
