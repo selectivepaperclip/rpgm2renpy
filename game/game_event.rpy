@@ -357,6 +357,13 @@ init python:
                     groups = matching_command.groups()
                     map_id, event_id, self_switch_name, self_switch_value = (int(groups[0]), int(groups[1]), groups[2], groups[3] == 'true')
                     self.state.self_switches.set_value((map_id, event_id, self_switch_name), self_switch_value)
+                elif line == 'auto_save_game()':
+                    pass
+                elif line == 'combine_choices':
+                    # From the more_choices plugin -- technically a toggle
+                    # to prevent automatically combining menu choice items,
+                    # but there doesn't seem to be any flaw in letting them auto combine all the time
+                    pass
                 elif line == 'SceneManager.push(Scene_Menu);':
                     self.state.show_inventory()
                 elif GameIdentifier().is_milfs_control() and GameSpecificCodeMilfsControl().eval_script(line, script_string):
