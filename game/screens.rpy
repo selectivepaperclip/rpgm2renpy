@@ -98,6 +98,9 @@ style frame:
 screen say(who, what):
     style_prefix "say"
 
+    if hasattr(game_state, 'rpgm_bust_image') and game_state.rpgm_bust_image:
+        add game_state.rpgm_bust_image
+
     window:
         id "window"
 

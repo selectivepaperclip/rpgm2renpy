@@ -1343,11 +1343,32 @@ init python:
                             if not picture_name in picture_image_sizes:
                                 picture_image_sizes[picture_name] = renpy.image_size(normal_images[rpgm_picture_name(picture_name)])
                             image_size = picture_image_sizes[picture_name]
-                            if (scale_x != 100 or scale_y != 100) and not self.skip_image_resize(picture_name, scale_x, scale_y):
-                                image_size = (int(image_size[0] * scale_x / 100.0), int(image_size[1] * scale_y / 100.0))
-                            if image_size[0] > config.screen_width and image_size[1] > config.screen_height:
-                                image_size = (config.screen_width, config.screen_height)
-                            picture_args['size'] = image_size
+                        
+                            iavra_gif_details = self.iavra_gif_details(picture_name)
+                            if iavra_gif_details:
+                                frame_count, frame_delay = iavra_gif_details
+                                picture_frames = []
+                                for i in xrange(0, frame_count):
+                                    frame_width = image_size[0] / frame_count
+                                    frame_img = im.Crop(
+                                        normal_images[rpgm_picture_name(picture_name)],
+                                        (
+                                            i * frame_width,
+                                            0,
+                                            frame_width,
+                                            image_size[1]
+                                        )
+                                    )
+                                    picture_frames.append({"size": (frame_width, image_size[1]), "image_name": frame_img, "wait": frame_delay})
+                                picture_transitions = RpgmAnimationBuilder(picture_frames).build(loop = True)
+                                picture_args["image_name"] = RpgmAnimation.create(*picture_transitions)
+                                picture_args["size"] = (frame_width, image_size[1])
+                            else:
+                                if (scale_x != 100 or scale_y != 100) and not self.skip_image_resize(picture_name, scale_x, scale_y):
+                                    image_size = (int(image_size[0] * scale_x / 100.0), int(image_size[1] * scale_y / 100.0))
+                                if image_size[0] > config.screen_width and image_size[1] > config.screen_height:
+                                    image_size = (config.screen_width, config.screen_height)
+                                picture_args['size'] = image_size
                         if origin == 0: # origin of 0 means x,y is topleft
                             picture_args['x'] = x
                             picture_args['y'] = y
@@ -1661,6 +1682,16 @@ init python:
                     renpy.say(None, "Code %d not implemented, plz fix." % command['code'])
 
                 self.list_index += 1
+
+        def iavra_gif_details(self, image_name):
+            iavra_gif_plugin = game_file_loader.plugin_data_exact('iavra_gif')
+            if iavra_gif_plugin:
+                gre = Re()
+                if gre.search(iavra_gif_plugin['parameters']['File Name Format'], image_name):
+                    strip_img = normal_images[rpgm_picture_name(image_name)]
+                    frame_count, frame_delay = gre.last_match.groups()
+                    return (int(frame_count), int(frame_delay))
+            return None
 
         def skip_image_resize(self, image_name, scale_x, scale_y):
             if scale_x == 85 and scale_y == 85 and GameIdentifier().is_living_with_mia():

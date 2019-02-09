@@ -759,6 +759,7 @@ init python:
                             self.variables.set_value(variable_id, value)
 
         def set_side_image(self, face_name, face_index):
+            game_state.rpgm_bust_image = None
             if face_name and len(face_name) > 0:
                 side_image_size = None
                 if rpgm_metadata.is_pre_mv_version:
@@ -778,6 +779,14 @@ init python:
             else:
                 game_state.rpgm_side_image = None
 
+        def set_bust_image(self, face_name, face_index):
+            game_state.rpgm_side_image = None
+            game_state.rpgm_bust_image = None
+            if face_name and len(face_name) > 0:
+                image_name = rpgm_picture_name(face_name) + '_' + str(face_index + 1)
+                if image_name in normal_images:
+                    game_state.rpgm_bust_image = normal_images[image_name]
+
         def say_text_with_possible_speaker(self, text, face_name, face_index):
             gre = Re()
             if gre.match(re.compile("([^\n]+?):\s\s*(.+)", re.DOTALL), text):
@@ -789,9 +798,26 @@ init python:
 
         def say_text(self, speaker, spoken_text, face_name = None, face_index = None):
             self.show_map(True)
-            self.set_side_image(face_name, face_index)
-            self.last_said_text = spoken_text
-            renpy.say(speaker, spoken_text)
+            if game_file_loader.plugin_data_exact('GALV_MessageBusts'):
+                gre = Re()
+                all_busty_text = []
+                busty_text = spoken_text
+                bust_index = face_index
+                while gre.search("(.*?)\\\\BST\[\[(\d+)](.*)", busty_text):
+                    self.set_bust_image(face_name, bust_index)
+                    before_bust_change, bust_index, after_bust_change = gre.last_match.groups()
+                    bust_index = int(bust_index) - 1
+                    all_busty_text.append(before_bust_change)
+                    renpy.say(speaker, ' '.join(all_busty_text))
+                    busty_text = after_bust_change
+                self.set_bust_image(face_name, bust_index)
+                all_busty_text.append(busty_text)
+                self.last_said_text = ' '.join(all_busty_text)
+                renpy.say(speaker, ' '.join(all_busty_text))
+            else:
+                self.set_side_image(face_name, face_index)
+                self.last_said_text = spoken_text
+                renpy.say(speaker, spoken_text)
 
         def pause(self):
             self.flush_queued_content()
