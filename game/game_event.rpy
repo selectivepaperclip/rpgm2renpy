@@ -1609,6 +1609,8 @@ init python:
                         pass
                     elif plugin_command in ['Light', 'Tint']:
                         pass
+                    elif plugin_command in ['SmartPath']:
+                        pass
                     elif plugin_command in ['ShowGab', 'ClearGab'] or plugin_command.startswith('GabText'):
                         pass
                     elif plugin_command in ['FocusCamera', 'ResetFocus', 'WaitForCamera']:
