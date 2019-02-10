@@ -146,10 +146,7 @@ init python:
                 renpy.not_infinite_loop(10)
                 if len(tile.tileset_name) > 0:
                     img_path = tile_images[tile.tileset_name.replace(".", "_")]
-                    img_size = None
-                    if img_path not in image_sizes:
-                        image_sizes[img_path] = renpy.image_size(img_path)
-                    img_size = image_sizes[img_path]
+                    img_size = image_size_cache.for_path(img_path)
                     if tile.sx + tile.w <= img_size[0] and tile.sy + tile.h <= img_size[1]:
                         subsurface = renpy.display.im.cache.get(Image(img_path)).subsurface((tile.sx, tile.sy, tile.w, tile.h))
                         surf.blit(subsurface, (tile.dx + int(tile.x * rpgm_metadata.tile_width), tile.dy + int(tile.y * rpgm_metadata.tile_height)))
@@ -824,9 +821,7 @@ init python:
             if character_prefix_match and '!' in character_prefix_match.groups()[0]:
                 is_object_character = True
 
-            if not img_base_filename in character_image_sizes:
-                character_image_sizes[img_base_filename] = renpy.image_size(character_images[img_base_filename.lower()])
-            img_size = character_image_sizes[img_base_filename]
+            img_size = image_size_cache.for_path(character_images[img_base_filename.lower()])
 
             pw = img_size[0] / 12
             ph = img_size[1] / 8

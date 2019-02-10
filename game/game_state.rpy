@@ -483,15 +483,12 @@ init python:
                         image = pic_params['FileName']
 
                     picture_name = rpgm_picture_name(image)
-                    if not image in picture_image_sizes:
-                        picture_image_sizes[image] = renpy.image_size(normal_images[picture_name])
-                    image_size = picture_image_sizes[image]
 
                     pics.append({
                         'X': x,
                         'Y': y,
                         'image': picture_name,
-                        'size': image_size
+                        'size': image_size_cache.for_picture_name(picture_name)
                     })
 
             return pics

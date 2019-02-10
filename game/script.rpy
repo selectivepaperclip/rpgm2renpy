@@ -7,11 +7,8 @@ define profile_timings = False
 define tile_images = {}
 define normal_images = {}
 define character_images = {}
-define character_image_sizes = {}
 define parallax_images = {}
 define face_images = {}
-define image_sizes = {}
-define picture_image_sizes = {}
 define mapdest = None
 define keyed_common_event = None
 define keyed_function_call = None
@@ -31,6 +28,8 @@ init -10 python:
     # Similarly load the reachability grid cache outside of the game flow
     # so great big pathfinding grids don't get pickled
     rpgm_reachability_grid_cache = ReachabilityGridCacheV2()
+
+    image_size_cache = ImageSizeCache()
 
     import glob
     build.classify('rpgmdata', 'all')

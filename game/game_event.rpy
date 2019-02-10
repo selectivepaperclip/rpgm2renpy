@@ -1339,9 +1339,7 @@ init python:
                     if picture_args:
                         picture_args['opacity'] = opacity
                         if command['code'] == 231 and not game_state.occluded():
-                            if not picture_name in picture_image_sizes:
-                                picture_image_sizes[picture_name] = renpy.image_size(normal_images[rpgm_picture_name(picture_name)])
-                            image_size = picture_image_sizes[picture_name]
+                            image_size = image_size_cache.for_picture_name(rpgm_picture_name(picture_name))
                         
                             iavra_gif_details = self.iavra_gif_details(picture_name)
                             if iavra_gif_details:
