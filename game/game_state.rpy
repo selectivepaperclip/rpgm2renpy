@@ -999,6 +999,8 @@ init python:
                 for event in xrange(self.common_events_index, len(self.common_events_data())):
                     common_event = self.common_events_data()[self.common_events_index]
                     self.common_events_index += 1
+                    if common_event['id'] in rpgm_game_data.get('erased_common_events', []):
+                        continue
                     if common_event['trigger'] > 0 and self.switches.value(common_event['switchId']) == True:
                         self.events.append(GameEvent(self, None, common_event, common_event))
                         return True
