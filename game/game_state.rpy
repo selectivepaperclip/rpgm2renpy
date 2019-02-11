@@ -746,13 +746,17 @@ init python:
                     if 'activation_switch' in trigger:
                         activation_switches = [trigger['activation_switch']]
                     else:
-                        activation_switches = trigger['activation_switches']
+                        activation_switches = trigger.get('activation_switches', [])
 
-                    if any(self.switches.value(id) == True for id in activation_switches):
+                    if any(self.switches.value(id) == True for id in activation_switches) or any(self.self_switches.value(tuple(id)) for id in trigger.get('activation_self_switches', [])):
                         for switch_id in trigger.get('switches_off', []):
                             self.switches.set_value(switch_id, False)
+                        for self_switch_id in trigger.get('self_switches_off', []):
+                            self.self_switches.set_value(tuple(self_switch_id), False)
                         for switch_id in trigger.get('switches_on', []):
                             self.switches.set_value(switch_id, True)
+                        for self_switch_id in trigger.get('self_switches_on', []):
+                            self.self_switches.set_value(tuple(self_switch_id), True)
                         for variable_id, value in trigger.get('variables', []):
                             self.variables.set_value(variable_id, value)
 
