@@ -1342,24 +1342,27 @@ init python:
                             image_size = image_size_cache.for_picture_name(rpgm_picture_name(picture_name))
                         
                             iavra_gif_details = self.iavra_gif_details(picture_name)
+                            olivia_animated_picture_details = self.olivia_animated_picture_details(picture_name)
                             if iavra_gif_details:
                                 frame_count, frame_delay = iavra_gif_details
-                                picture_frames = []
-                                for i in xrange(0, frame_count):
-                                    frame_width = image_size[0] / frame_count
-                                    frame_img = im.Crop(
-                                        normal_images[rpgm_picture_name(picture_name)],
-                                        (
-                                            i * frame_width,
-                                            0,
-                                            frame_width,
-                                            image_size[1]
-                                        )
-                                    )
-                                    picture_frames.append({"size": (frame_width, image_size[1]), "image_name": frame_img, "wait": frame_delay})
-                                picture_transitions = RpgmAnimationBuilder(picture_frames).build(loop = True)
-                                picture_args["image_name"] = RpgmAnimation.create(*picture_transitions)
-                                picture_args["size"] = (frame_width, image_size[1])
+                                self.bake_filmstrip_image(
+                                  picture_args,
+                                  image = normal_images[rpgm_picture_name(picture_name)],
+                                  image_size = image_size,
+                                  horiz_cells = frame_count,
+                                  vert_cells = 1,
+                                  frame_delay = frame_delay
+                                )
+                            elif olivia_animated_picture_details:
+                                horiz_cells, vert_cells = olivia_animated_picture_details
+                                self.bake_filmstrip_image(
+                                  picture_args,
+                                  image = normal_images[rpgm_picture_name(picture_name)],
+                                  image_size = image_size,
+                                  horiz_cells = horiz_cells,
+                                  vert_cells = vert_cells,
+                                  frame_delay = 4
+                                )
                             else:
                                 if (scale_x != 100 or scale_y != 100) and not self.skip_image_resize(picture_name, scale_x, scale_y):
                                     image_size = (int(image_size[0] * scale_x / 100.0), int(image_size[1] * scale_y / 100.0))
@@ -1608,6 +1611,12 @@ init python:
                         pass
                     elif plugin_command in ['SmartPath']:
                         pass
+                    elif plugin_command in ['AnimatedPicture']:
+                        picture_id = int(plugin_command_args[0])
+                        if plugin_command_args[1] == 'Speed':
+                            desired_delay = int(plugin_command_args[2])
+                            picture = self.state.queued_or_shown_picture(picture_id)
+                            picture['image_name'].reset_frame_delays(desired_delay)
                     elif plugin_command in ['ShowGab', 'ClearGab'] or plugin_command.startswith('GabText'):
                         pass
                     elif plugin_command in ['FocusCamera', 'ResetFocus', 'WaitForCamera']:
@@ -1687,10 +1696,37 @@ init python:
             if iavra_gif_plugin:
                 gre = Re()
                 if gre.search(iavra_gif_plugin['parameters']['File Name Format'], image_name):
-                    strip_img = normal_images[rpgm_picture_name(image_name)]
                     frame_count, frame_delay = gre.last_match.groups()
                     return (int(frame_count), int(frame_delay))
             return None
+
+        def olivia_animated_picture_details(self, image_name):
+            olivia_animated_picture_plugin = game_file_loader.plugin_data_exact('Olivia_AnimatedPictures')
+            if olivia_animated_picture_plugin:
+                gre = Re()
+                if gre.search('\[(\d+)x(\d+)\]', image_name):
+                    horiz_cells, vert_cells = gre.last_match.groups()
+                    return (int(horiz_cells), int(vert_cells))
+
+        def bake_filmstrip_image(self, picture_args, image = None, image_size = None, horiz_cells = 0 , vert_cells = 0, frame_delay = 4):
+            picture_frames = []
+            for y in xrange(0, vert_cells):
+                for x in xrange(0, horiz_cells):
+                    frame_width = image_size[0] / horiz_cells
+                    frame_height = image_size[1] / vert_cells
+                    frame_img = im.Crop(
+                        image,
+                        (
+                            x * frame_width,
+                            y * frame_height,
+                            frame_width,
+                            frame_height
+                        )
+                    )
+                    picture_frames.append({"size": (frame_width, frame_height), "image_name": frame_img, "wait": frame_delay})
+            picture_transitions = RpgmAnimationBuilder(picture_frames).build(loop = True)
+            picture_args["image_name"] = RpgmAnimation.create(*picture_transitions)
+            picture_args["size"] = (frame_width, frame_height)
 
         def skip_image_resize(self, image_name, scale_x, scale_y):
             if scale_x == 85 and scale_y == 85 and GameIdentifier().is_living_with_mia():

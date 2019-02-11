@@ -48,6 +48,10 @@ init python:
             self.delays = delays
             self.transitions = [ transitions[-1] ] + transitions[:-1]
 
+        def reset_frame_delays(self, desired_wait):
+            for i in xrange(0, len(self.delays)):
+                self.delays[i] = desired_wait / animation_fps
+
         def render(self, width, height, st, at):
             if self.anim_timebase:
                 orig_t = at
