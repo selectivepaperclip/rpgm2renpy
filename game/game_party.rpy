@@ -120,3 +120,8 @@ init python:
             total_objectives = len(next(q for q in rpgm_game_data['maic_quests'] if q['id'] == quest_id)['objectives'])
             if len([v for v in objective_activity.values() if v.get('completed', None)]) == total_objectives:
                 self.maic_quest_complete(quest_id)
+
+        def print_items(self):
+            for item_id, quantity in self.items.iteritems():
+                item = game_state.items.by_id(item_id)
+                print str(item_id) + ': ' + item['name'] + ' ' + str(quantity)
