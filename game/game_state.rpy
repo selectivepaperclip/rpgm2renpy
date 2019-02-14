@@ -672,11 +672,12 @@ init python:
             recipes = []
             for item_id in self.party.items:
                 item = self.items.by_id(item_id)
-                recipe_match = re.match('<Item Recipe: (\d+)>', item['note'])
+                recipe_match = re.match('<Item Recipe: ([\d+\s,]+)>', item['note'])
                 if recipe_match:
-                    recipe_item_id = int(recipe_match.groups()[0])
-                    if recipe_item_id not in recipes:
-                        recipes.append(recipe_item_id)
+                    for recipe_item_part in recipe_match.groups()[0].split(','):
+                        recipe_item_id = int(recipe_item_part)
+                        if recipe_item_id not in recipes:
+                            recipes.append(recipe_item_id)
 
             synthesizables = []
             for item_id in recipes:
@@ -685,8 +686,8 @@ init python:
                 if items_and_counts:
                     has_all = True
                     tooltip_lines = []
-                    for (item_name, count) in items_and_counts:
-                        ingredient_item = self.items.by_name(item_name)
+                    for (item_id, count) in items_and_counts:
+                        ingredient_item = self.items.by_id(item_id)
                         tooltip_lines.append("%s: %s" % (ingredient_item['name'], self.party.num_items(ingredient_item)))
                         if self.party.num_items(ingredient_item) < count:
                             has_all = False
@@ -706,14 +707,20 @@ init python:
             ingredients = re.findall(ingredient_pattern, item['note'])[0]
             if ingredients:
                 for ingredient in ingredients.split("\n"):
-                    item_name, count_str = ingredient.split(": ")
-                    items_and_count.append((item_name, int(count_str)))
+                    item_desc, count_str = ingredient.split(": ")
+                    gre = Re()
+                    if gre.match('item (\d+)', item_desc):
+                        items_and_count.append((int(gre.last_match.groups()[0]), int(count_str)))
+                    else:
+                        ingredient_item = self.items.by_name(item_desc)
+                        if ingredient_item:
+                            items_and_count.append((ingredient_item['id'], int(count_str)))
                 return items_and_count
             return None
 
         def synthesize_item(self, item):
-            for (item_name, count) in self.synthesis_ingredients(item):
-                ingredient_item = self.items.by_name(item_name)
+            for (item_id, count) in self.synthesis_ingredients(item):
+                ingredient_item = self.items.by_id(item_id)
                 self.party.gain_item(ingredient_item, -1)
             self.party.gain_item(item, 1)
 
