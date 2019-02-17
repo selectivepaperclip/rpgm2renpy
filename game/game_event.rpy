@@ -1621,6 +1621,8 @@ init python:
                         pass
                     elif plugin_command in ['SmartPath']:
                         pass
+                    elif plugin_command in ['CAM']:
+                        pass
                     elif plugin_command in ['AnimatedPicture']:
                         picture_id = int(plugin_command_args[0])
                         if plugin_command_args[1] == 'Speed':
