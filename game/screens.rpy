@@ -109,13 +109,20 @@ screen say(who, what):
             window:
                 id "namebox"
                 style "namebox"
-                text who id "who"
+                text who id "who":
+                    if hasattr(game_state, 'rpgm_side_image') and game_state.rpgm_side_image:
+                        if config.screen_width < 1024:
+                            xpos 80
 
-        text what id "what"
-
-    if hasattr(game_state, 'rpgm_side_image') and game_state.rpgm_side_image:
-        add game_state.rpgm_side_image xanchor 0.0 yanchor 1.0 xpos 25 ypos config.screen_height - 20
-
+        hbox:
+            if hasattr(game_state, 'rpgm_side_image') and game_state.rpgm_side_image:
+                add game_state.rpgm_side_image xanchor 0.0 yanchor 0.0 xpos 25 ypos 20
+            text what id "what":
+                if hasattr(game_state, 'rpgm_side_image') and game_state.rpgm_side_image:
+                    if config.screen_width < 1024:
+                        xsize gui.dialogue_width - 150
+                    else:
+                        xpos gui.dialogue_xpos - 150
 
 ## Make the namebox available for styling through the Character object.
 init python:
@@ -182,18 +189,21 @@ screen input(prompt):
     style_prefix "input"
 
     window:
+        hbox:
+            if hasattr(game_state, 'rpgm_side_image') and game_state.rpgm_side_image:
+                add game_state.rpgm_side_image xanchor 0.0 yanchor 0.0 xpos 25 ypos 20
+            vbox:
+                xalign gui.dialogue_text_xalign
+                xpos gui.dialogue_xpos
+                if hasattr(game_state, 'rpgm_side_image') and game_state.rpgm_side_image:
+                    if config.screen_width < 1024:
+                        xsize gui.dialogue_width - 150
+                    else:
+                        xpos gui.dialogue_xpos - 150
+                ypos gui.dialogue_ypos
 
-        vbox:
-            xalign gui.dialogue_text_xalign
-            xpos gui.dialogue_xpos
-            xsize gui.dialogue_width
-            ypos gui.dialogue_ypos
-
-            text prompt style "input_prompt"
-            input id "input"
-
-    if hasattr(game_state, 'rpgm_side_image') and game_state.rpgm_side_image:
-        add game_state.rpgm_side_image xanchor 0.0 yanchor 1.0 xpos 25 ypos config.screen_height - 20
+                text prompt style "input_prompt"
+                input id "input"
 
 style input_prompt is default
 
