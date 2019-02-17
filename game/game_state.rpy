@@ -1004,6 +1004,9 @@ init python:
                         self.flush_queued_pictures()
                         self.show_map(True)
                         self.queue_common_and_parallel_events()
+                if this_event.common() and hasattr(this_event, 'paused_for_key') and this_event.paused_for_key:
+                    # Ignore common events that are waiting on keypress, for now.
+                    self.events.pop()
                 return True
 
             if self.common_events_index != None and self.common_events_index < len(self.common_events_data()):
