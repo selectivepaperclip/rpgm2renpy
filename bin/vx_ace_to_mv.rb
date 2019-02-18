@@ -21,8 +21,8 @@ module DEGICA
       #*************************************************************************
 
       convert_actors
-      #convert_classes
-      #convert_skills
+      convert_classes
+      convert_skills
       convert_items
       convert_weapons
       convert_armors
