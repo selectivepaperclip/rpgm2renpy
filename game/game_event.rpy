@@ -1463,14 +1463,14 @@ init python:
 
                 # Change state
                 elif command['code'] == 313:
-                    direct = command['parameters'][0] == 0
-                    actor_index = command['parameters'][1] if direct else self.state.variables.value(command['parameters'][1])
-                    actor = self.state.actors.by_index(actor_index)
-                    state_to_change = command['parameters'][3]
-                    if command['parameters'][2] == 0:
-                        actor.add_state(state_to_change)
-                    else:
-                        actor.remove_state(state_to_change)
+                    actor_indices = self.actor_indices_for_ex_iteration(command['parameters'][0], command['parameters'][1])
+                    for actor_index in actor_indices:
+                        actor = self.state.actors.by_index(actor_index)
+                        state_to_change = command['parameters'][3]
+                        if command['parameters'][2] == 0:
+                            actor.add_state(state_to_change)
+                        else:
+                            actor.remove_state(state_to_change)
 
                 # Recover all
                 elif command['code'] == 314:
@@ -1478,25 +1478,27 @@ init python:
 
                 # Change EXP / Change Level
                 elif command['code'] in [315, 316]:
-                    print command['parameters']
-
                     operation, operand_type, operand = command['parameters'][2:5]
                     value = self.state.variables.operate_value(operation, operand_type, operand)
 
-                    if command['parameters'][0] == 0:
-                        if command['parameters'][1] == 0:
-                            actor_indices = self.state.party.members
-                        else:
-                            actor_indices = [command['parameters'][1]]
-                    else:
-                        actor_indices = [self.state.variables.value(command['parameters'][1])]
-
+                    actor_indices = self.actor_indices_for_ex_iteration(command['parameters'][0], command['parameters'][1])
                     for actor_index in actor_indices:
                         actor = self.state.actors.by_index(actor_index)
                         if command['code'] == 315:
                             actor.add_exp(value)
                         elif command['code'] == 316:
                             actor.add_level(value)
+
+                # Change skills
+                elif command['code'] == 318:
+                    actor_indices = self.actor_indices_for_ex_iteration(command['parameters'][0], command['parameters'][1])
+                    for actor_index in actor_indices:
+                        actor = self.state.actors.by_index(actor_index)
+                        skill_to_change = command['parameters'][3]
+                        if command['parameters'][2] == 0:
+                            actor.learn_skill(skill_to_change)
+                        else:
+                            actor.forget_skill(skill_to_change)
 
                 # Change equipment
                 elif command['code'] == 319:
@@ -1691,6 +1693,16 @@ init python:
                     renpy.say(None, "Code %d not implemented, plz fix." % command['code'])
 
                 self.list_index += 1
+
+        # replicates iterateActorEx in rpgm code
+        def actor_indices_for_ex_iteration(self, param1, param2):
+            if param1 == 0:
+                if param2 == 0:
+                    return self.state.party.members
+                else:
+                    return [param2]
+            else:
+                return [self.state.variables.value(param2)]
 
         def iavra_gif_details(self, image_name):
             iavra_gif_plugin = game_file_loader.plugin_data_exact('iavra_gif')
