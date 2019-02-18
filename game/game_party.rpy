@@ -65,7 +65,7 @@ init python:
                 self.members.remove(actor_index)
 
         def has_actor(self, actor):
-            return actor['id'] in self.members
+            return actor.get_property('id') in self.members
 
         def storage_attribute_for_item(self, item):
             if 'wtypeId' in item:

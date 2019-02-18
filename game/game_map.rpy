@@ -879,10 +879,10 @@ init python:
             lead_actor_id = self.state.party.leader()
             if lead_actor_id:
                 player_character_actor = self.state.actors.by_index(lead_actor_id)
-                if player_character_actor['characterName'] != '':
+                if player_character_actor.get_property('characterName') != '':
                     player_character_sprite_data = {
-                        "characterName": player_character_actor['characterName'],
-                        "characterIndex": player_character_actor['characterIndex'],
+                        "characterName": player_character_actor.get_property('characterName'),
+                        "characterIndex": player_character_actor.get_property('characterIndex'),
                         "pattern": 0,
                         "direction": game_state.player_direction
                     }

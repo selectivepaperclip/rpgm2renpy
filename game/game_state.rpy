@@ -370,7 +370,7 @@ init python:
 
         def replace_names(self, text):
             # Replace statements from actor numbers, e.g. \N[2] with their actor name
-            text = re.sub(r'\\N\[(\d+)\]', lambda m: (self.actors.by_index(int(m.group(1))) or {'name': ''})['name'], text, flags=re.IGNORECASE)
+            text = re.sub(r'\\N\[(\d+)\]', lambda m: (self.actors.actor_name(int(m.group(1)))), text, flags=re.IGNORECASE)
             # Replace statements from variable ids, e.g. \V[2] with their value
             text = re.sub(r'\\V\[(\d+)\]', lambda m: str(self.variables.value(int(m.group(1)))), text, flags=re.IGNORECASE)
             # Remove statements with image replacements, e.g. \I[314]

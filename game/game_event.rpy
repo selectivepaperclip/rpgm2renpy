@@ -95,41 +95,21 @@ init python:
                     if params[2] == 0: # In the Party
                         return self.state.party.has_actor(actor)
                     elif params[2] == 1: # Name
-                        return actor['name'] == n
+                        return actor.get_property('name') == n
+                    elif params[2] == 2: # Class
+                        # TODO
+                        return actor.is_class(n)
+                    elif params[2] == 3: # Skill
+                        return actor.is_learned_skill(n)
+                    elif params[2] == 4: # Weapon
+                        return actor.has_weapon(n)
+                    elif params[2] == 5: # Armor
+                        return actor.has_armor(n)
                     elif params[2] == 6: # State
-                        if hasattr(actor, 'affected_states'):
-                            return n in actor['affected_states']
-                        return False
+                        return actor.is_state_affected(n)
                     else:
                         renpy.say(None, ("Operand %s for Actor conditions not implemented!" % params[2]))
                         return False
-                #var actor = $gameActors.actor(this._params[1]);
-                #if (actor) {
-                #    var n = this._params[3];
-                #    switch (this._params[2]) {
-                #    case 0:  // In the Party
-                #        result = $gameParty.members().contains(actor);
-                #        break;
-                #    case 1:  // Name
-                #        result = (actor.name() === n);
-                #        break;
-                #    case 2:  // Class
-                #        result = actor.isClass($dataClasses[n]);
-                #        break;
-                #    case 3:  // Skill
-                #        result = actor.isLearnedSkill(n);
-                #        break;
-                #    case 4:  // Weapon
-                #        result = actor.hasWeapon($dataWeapons[n]);
-                #        break;
-                #    case 5:  // Armor
-                #        result = actor.hasArmor($dataArmors[n]);
-                #        break;
-                #    case 6:  // State
-                #        result = actor.isStateAffected(n);
-                #        break;
-                #    }
-                #}
             # Enemy
             elif operation == 5:
                 renpy.say(None, "Conditional statements for Enemy not implemented")
@@ -626,8 +606,9 @@ init python:
                     new_character_name, new_character_index = route_part['parameters']
                     if player_moving:
                         actor_index = self.state.party.leader()
-                        self.state.actors.set_property(actor_index, 'characterName', new_character_name)
-                        self.state.actors.set_property(actor_index, 'characterIndex', new_character_index)
+                        actor = self.state.actors.by_index(actor_index)
+                        actor.set_property('characterName', new_character_name)
+                        actor.set_property('characterIndex', new_character_index)
                     else:
                         self.state.map.override_event(event_id, event_page_index, 'characterName', new_character_name)
                         self.state.map.override_event(event_id, event_page_index, 'characterIndex', new_character_index)
@@ -776,7 +757,7 @@ init python:
 
         def request_actor_name(self, actor_index):
             actor = self.state.actors.by_index(actor_index)
-            self.state.set_side_image(actor['faceName'], actor['faceIndex'])
+            self.state.set_side_image(actor.get_property('faceName'), actor.get_property('faceIndex'))
             if hasattr(game_state, 'last_said_text') and game_state.last_said_text:
                 prompt = game_state.last_said_text
             else:
@@ -784,10 +765,10 @@ init python:
             actor_name_default = ''
             if 'suggested_actor_names' in rpgm_game_data:
                 actor_name_default = rpgm_game_data['suggested_actor_names'].get(str(actor_index), '')
-            if actor['name']:
-                actor_name_default = actor['name']
+            elif actor.get_property('name'):
+                actor_name_default = actor.get_property('name')
             actor_name = renpy.input("{i}%s{/i}" % prompt, default = actor_name_default)
-            self.state.actors.set_property(actor_index, 'name', actor_name)
+            actor.set_property('name', actor_name)
 
         def ready_to_continue(self):
             if hasattr(self, 'paused'):
@@ -1047,7 +1028,7 @@ init python:
                             actor_index = command['parameters'][4]
                             actor = self.state.actors.by_index(actor_index)
                             if game_data_operand_param2 == 0: # Level
-                                value = actor['level']
+                                value = actor.get_property('level')
                             elif game_data_operand_param2 == 1: # EXP
                                 # return actor.currentExp();
                                 renpy.say(None, ("Variable control operand 3 not implemented for type 3 (EXP), plz implement"))
@@ -1484,11 +1465,12 @@ init python:
                 elif command['code'] == 313:
                     direct = command['parameters'][0] == 0
                     actor_index = command['parameters'][1] if direct else self.state.variables.value(command['parameters'][1])
+                    actor = self.state.actors.by_index(actor_index)
                     state_to_change = command['parameters'][3]
                     if command['parameters'][2] == 0:
-                        self.state.actors.add_state(actor_index, state_to_change)
+                        actor.add_state(state_to_change)
                     else:
-                        self.state.actors.remove_state(actor_index, state_to_change)
+                        actor.remove_state(state_to_change)
 
                 # Recover all
                 elif command['code'] == 314:
@@ -1510,10 +1492,11 @@ init python:
                         actor_indices = [self.state.variables.value(command['parameters'][1])]
 
                     for actor_index in actor_indices:
+                        actor = self.state.actors.by_index(actor_index)
                         if command['code'] == 315:
-                            self.state.actors.add_exp(actor_index, value)
+                            actor.add_exp(value)
                         elif command['code'] == 316:
-                            self.state.actors.add_level(actor_index, value)
+                            actor.add_level(value)
 
                 # Change equipment
                 elif command['code'] == 319:
@@ -1522,25 +1505,29 @@ init python:
                 # Change actor name
                 elif command['code'] == 320:
                     actor_index, actor_name = command['parameters'][0:2]
-                    self.state.actors.set_property(actor_index, 'name', actor_name)
+                    actor = self.state.actors.by_index(actor_index)
+                    actor.set_property('name', actor_name)
 
                 # Change class
                 elif command['code'] == 321:
                     actor_index, class_index = command['parameters'][0:2]
-                    self.state.actors.set_property(actor_index, 'class_index', class_index)
+                    actor = self.state.actors.by_index(actor_index)
+                    actor.set_property('class_index', class_index)
 
                 # Change actor image
                 elif command['code'] == 322:
                     actor_index, new_character_name, new_character_index, new_face_name, new_face_index = command['parameters'][0:5]
-                    self.state.actors.set_property(actor_index, 'characterName', new_character_name)
-                    self.state.actors.set_property(actor_index, 'characterIndex', new_character_index)
-                    self.state.actors.set_property(actor_index, 'faceName', new_face_name)
-                    self.state.actors.set_property(actor_index, 'faceIndex', new_face_index)
+                    actor = self.state.actors.by_index(actor_index)
+                    actor.set_property('characterName', new_character_name)
+                    actor.set_property('characterIndex', new_character_index)
+                    actor.set_property('faceName', new_face_name)
+                    actor.set_property('faceIndex', new_face_index)
 
                 # Change actor nickname
                 elif command['code'] == 324:
                     actor_index, nickname = command['parameters'][0:2]
-                    self.state.actors.set_property(actor_index, 'nickname', nickname)
+                    actor = self.state.actors.by_index(actor_index)
+                    actor.set_property('nickname', nickname)
 
                 # Enemy / Battle commands
                 elif command['code'] in [331, 332, 333, 334, 335, 336, 337, 339, 340, 342]:
