@@ -16,6 +16,7 @@ init python:
             old_value = self.value(variable_id)
             if operation_type == 0:
                 self.set_value(variable_id, value)
+                return old_value != value
             elif operation_type == 1:
                 self.set_value(variable_id, old_value + value)
             elif operation_type == 2:
@@ -26,6 +27,7 @@ init python:
                 self.set_value(variable_id, old_value / value)
             elif operation_type == 5:
                 self.set_value(variable_id, old_value % value)
+            return True
 
         def operate_value(self, operation, operand_type, operand):
             value = None

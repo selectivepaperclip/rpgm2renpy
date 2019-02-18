@@ -1147,10 +1147,12 @@ init python:
                             renpy.say(None, "Variable control operand 4 not implemented for '%s'" % script_string)
                             value = 0
 
+                    changed_any_variable = False
                     for i in xrange(start, end + 1):
-                        self.state.variables.operate_variable(i, operation_type, value)
+                        changed_this_variable = self.state.variables.operate_variable(i, operation_type, value)
+                        changed_any_variable = (changed_any_variable or changed_this_variable)
 
-                    if not self.parallel():
+                    if changed_any_variable and not self.parallel():
                         self.state.queue_parallel_events(keep_relevant_existing = True)
 
                 # Control Self Switch
