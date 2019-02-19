@@ -452,7 +452,7 @@ init python:
                 event_page_index = self.get_page_index()
                 event = self
             if event_id > 0:
-                if event_page_index == None:
+                if not event:
                     event = self.state.map.find_event_at_index(event_id)
 
                 if not event:
