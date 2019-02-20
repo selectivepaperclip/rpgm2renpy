@@ -1147,12 +1147,14 @@ init python:
                         running_events = self.state.events
                     else:
                         running_events = self.state.events + [self]
+
+                    changed_switch = False
                     last_non_common_event = next((e for e in reversed(running_events) if not e.common()), None)
                     if last_non_common_event:
-                        key = (self.get_map_id(), last_non_common_event.event_data['id'], switch_id)
-                        self.state.self_switches.set_value(key, value == 0)
+                        key = (last_non_common_event.map_id, last_non_common_event.event_data['id'], switch_id)
+                        changed_switch = self.state.self_switches.set_value(key, value == 0)
 
-                    if not self.parallel():
+                    if changed_switch and not self.parallel():
                         self.state.queue_parallel_events(keep_relevant_existing = True)
 
                 # Control Timer
