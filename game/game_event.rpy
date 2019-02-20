@@ -1270,6 +1270,10 @@ init python:
                 elif command['code'] == 213:
                     pass
 
+                # Change Player Followers
+                elif command['code'] == 216:
+                    pass
+
                 # Erase Event
                 elif command['code'] == 214:
                     self.state.map.erased_events[self.event_data['id']] = True

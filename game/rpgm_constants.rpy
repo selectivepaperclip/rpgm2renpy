@@ -85,6 +85,7 @@ init python:
             212: 'Show Character Animation',
             213: 'Show Balloon Icon',
             214: 'Erase Event',
+            216: 'Change Player Followers',
             221: 'Fade Out',
             222: 'Fade In',
             223: 'Tint Screen',
