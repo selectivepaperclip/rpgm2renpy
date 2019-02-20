@@ -1006,6 +1006,7 @@ init python:
 
                 # Control Variables
                 elif command['code'] == 122:
+                    was_random = False
                     start, end, operation_type, operand = command['parameters'][0:4]
                     value = 0
                     if operand == 0:
@@ -1013,6 +1014,7 @@ init python:
                     elif operand == 1:
                         value = self.state.variables.value(command['parameters'][4])
                     elif operand == 2:
+                        was_random = True
                         value = command['parameters'][4] + random.randint(0, command['parameters'][5] - command['parameters'][4]);
                     elif operand == 3:
                         game_data_operand_type = command['parameters'][4]
@@ -1133,7 +1135,7 @@ init python:
                         changed_this_variable = self.state.variables.operate_variable(i, operation_type, value)
                         changed_any_variable = (changed_any_variable or changed_this_variable)
 
-                    if changed_any_variable and not self.parallel():
+                    if changed_any_variable and not was_random and not self.parallel() and not self.common():
                         self.state.queue_parallel_events(keep_relevant_existing = True)
 
                 # Control Self Switch
