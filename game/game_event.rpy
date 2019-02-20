@@ -451,6 +451,8 @@ init python:
             if event_id == self.event_data['id']:
                 event_page_index = self.get_page_index()
                 event = self
+                if event.common():
+                    event = next((e for e in reversed(self.state.events) if not e.common()), None)
             if event_id > 0:
                 if not event:
                     event = self.state.map.find_event_at_index(event_id)
