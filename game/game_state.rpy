@@ -990,6 +990,8 @@ init python:
                 this_event = self.events[-1]
                 new_event = this_event.do_next_thing()
                 if new_event:
+                    if len(self.events) >= 50:
+                        raise RuntimeError("Event stack too big!")
                     self.events.append(new_event)
                     return True
                 if hasattr(self, 'shop_params') and self.shop_params:
