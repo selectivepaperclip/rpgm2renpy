@@ -1,7 +1,8 @@
 init -99 python:
     class GameFileLoader(object):
         def __init__(self):
-            pass
+            self.exact_plugin_cache = {}
+            self.loose_plugin_cache = {}
 
         def json_file(self, filename):
             if not hasattr(self, '_json_files'):
@@ -36,7 +37,15 @@ init -99 python:
             return self._plugins_json
 
         def plugin_data_exact(self, plugin_name):
-            return next((plugin_data for plugin_data in self.plugins_json() if plugin_data['name'] == plugin_name), None)
+            if plugin_name in self.exact_plugin_cache:
+                return self.exact_plugin_cache[plugin_name]
+
+            self.exact_plugin_cache[plugin_name] = next((plugin_data for plugin_data in self.plugins_json() if plugin_data['name'] == plugin_name), None)
+            return self.exact_plugin_cache[plugin_name]
 
         def plugin_data_startswith(self, plugin_name):
-            return next((plugin_data for plugin_data in self.plugins_json() if plugin_data['name'].startswith(plugin_name)), None)
+            if plugin_name in self.loose_plugin_cache:
+                return self.loose_plugin_cache[plugin_name]
+
+            self.loose_plugin_cache[plugin_name] = next((plugin_data for plugin_data in self.plugins_json() if plugin_data['name'].startswith(plugin_name)), None)
+            return self.loose_plugin_cache[plugin_name]
