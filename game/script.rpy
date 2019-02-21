@@ -174,6 +174,10 @@ init python:
             return LiveComposite(*composite_args)
         return None
 
+    if game_file_loader.plugin_data_exact('GALV_MapProjectiles'):
+        renpy.image('crosshair-small-red', im.MatrixColor('custom_gui/crosshair-small.png', im.matrix.colorize("#f00", "#000")))
+        renpy.image('crosshair-small-blue', im.MatrixColor('custom_gui/crosshair-small.png', im.matrix.colorize("#00f", "#000")))
+
     system_data = game_file_loader.json_file(rpgm_data_path("System.json"))
     title_screen_file_path = rpgm_metadata.title_screen_file(system_data['title1Name'])
     if title_screen_file_path:

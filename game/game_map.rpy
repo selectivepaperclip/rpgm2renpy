@@ -15,6 +15,7 @@ init python:
             clicky = False,
             has_commands = True,
             walk_destination = False,
+            projectile_target = False,
             through = False,
             solid = False,
             touch_trigger = False,
@@ -28,6 +29,7 @@ init python:
             self.clicky = clicky
             self.has_commands = has_commands
             self.walk_destination = walk_destination
+            self.projectile_target = projectile_target
             self.page_index = page_index
             self.through = through
             self.solid = solid
@@ -39,8 +41,15 @@ init python:
                 return True
             return False
 
+        def is_projectile_target(self):
+            if hasattr(self, 'projectile_target') and self.projectile_target:
+                return True
+            return False
+
         def is_noop_event(self):
             if hasattr(self, 'special') and self.special:
+                return False
+            if self.is_projectile_target():
                 return False
             if hasattr(self, 'has_commands') and not self.has_commands:
                 return True
@@ -57,6 +66,8 @@ init python:
                     return "#ff8000"
                 else:
                     return '#ffc387'
+            if self.is_projectile_target():
+                return "#00aacc"
             if hasattr(self, 'has_commands') and not self.has_commands:
                 return "#000"
             if self.reachable_or_clickable():
@@ -909,6 +920,14 @@ init python:
         def event_is_special(self, e):
             return bool(re.search('weightSwitch', e['note']))
 
+        def page_is_projectile_target(self, e, page):
+            galv_projectile_plugin = game_file_loader.plugin_data_exact('GALV_MapProjectiles')
+            if galv_projectile_plugin:
+                for command in page['list']:
+                    if command['code'] == 108 and command['parameters'][0] == '<projEffect>':
+                        return True
+            return False
+
         def find_event_data_at_index(self, event_index):
             if not hasattr(self, 'erased_events'):
                 self.initialize_erased_events()
@@ -1267,6 +1286,7 @@ init python:
                 has_commands = self.has_commands(page),
                 through = self.event_through(e, page, page_index),
                 solid = GameEvent.page_solid(e, page, page_index),
+                projectile_target = self.page_is_projectile_target(e, page),
                 touch_trigger = page['trigger'] in [1,2],
                 action_trigger = page['trigger'] in [0]
             )
@@ -1294,7 +1314,7 @@ init python:
                             parameters = page['list'][0]['parameters']
                             if len(parameters) == 1 and parameters[0] == 'click_activate!':
                                 coords.append(map_clickable)
-                        elif self.has_commands(page) or page['priorityType'] > 0:
+                        elif self.has_commands(page) or page['priorityType'] > 0 or map_clickable.is_projectile_target():
                             coords.append(map_clickable)
 
                             if self.has_commands(page) and self.make_surrounding_tiles_walkable(e, page, page_index):

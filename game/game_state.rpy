@@ -1073,7 +1073,13 @@ init python:
                         mapdest[1]
                     )
 
-                if hasattr(mapdest, 'walk_destination') and mapdest.walk_destination:
+                if mapdest.is_projectile_target():
+                    map_event = self.map.find_event_for_location(mapdest.x, mapdest.y)
+                    self.self_switches.set_value((self.map.map_id, map_event.event_data['id'], "A"), True)
+                    self.queue_common_and_parallel_events()
+                    return True
+
+                if mapdest.is_walk_destination():
                     new_x, new_y = mapdest.x, mapdest.y
                     self.set_player_direction(self.determine_direction(new_x, new_y))
                     self.player_x, self.player_y = new_x, new_y
