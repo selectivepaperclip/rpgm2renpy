@@ -305,7 +305,6 @@ init python:
                 variable_set_command = re.match("\$gameVariables\.setValue\((\d+),\s*(.+)\);?", line)
                 mv_self_switch_set_command = re.match("\$gameSelfSwitches\.setValue\(\[(\d+),(\d+),'(.*?)'\], (\w+)\);?", line)
                 ace_self_switch_set_command = re.match("\$game_self_switches\[\[(\d+)\s*,\s*(\d+)\s*,\s*'(.*?)'\]\] = (\w+)", line)
-                hide_choice_command = re.match("hide_choice\((\d+), \"\$gameSwitches\.value\((\d+)\) === (\w+)\"\)", line)
 
                 if rpgm_game_data.get('maic_quests', None):
                     result = self.eval_maic_quests_script(script_string, line)
@@ -327,10 +326,10 @@ init python:
                     variable_id = int(groups[0])
                     value = self.eval_fancypants_value_statement(groups[1])
                     self.state.variables.set_value(variable_id, value)
-                elif hide_choice_command:
-                    groups = hide_choice_command.groups()
-                    choice_id, switch_id, switch_value = (int(groups[0]), int(groups[1]), groups[2] == 'true')
-                    if self.state.switches.value(switch_id) == switch_value:
+                elif gre.match("hide_choice\((\d+),\s*\"([^\"]+)\"\s*\)", line):
+                    groups = gre.last_match.groups()
+                    choice_id, expression = (int(groups[0]), groups[1])
+                    if self.eval_fancypants_value_statement(expression):
                         self.hide_choice(choice_id)
                 elif mv_self_switch_set_command or ace_self_switch_set_command:
                     matching_command = mv_self_switch_set_command or ace_self_switch_set_command
@@ -371,8 +370,19 @@ init python:
                 else:
                     break
 
+            while True:
+                still_has_switches = re.search('\$gameSwitches.value\((\d+)\)', script_string)
+                if still_has_switches:
+                    script_string = re.sub(r'\$gameSwitches.value\((\d+)\)', lambda m: str(self.state.switches.value(int(m.group(1)))), script_string)
+                else:
+                    break
+
+            script_string = re.sub(r'\btrue\b', 'True', script_string)
+            script_string = re.sub(r'\bfalse\b', 'False', script_string)
+            script_string = re.sub(r'===', '==', script_string)
+
             # eval the statement in python-land if it looks like it contains only arithmetic expressions
-            if re.match('^[\d\s.+\-*()\s]+$', script_string):
+            if re.match('^([\d\s.+\-*<>=()\s]|True|False)+$', script_string):
                 return eval(script_string)
             else:
                 renpy.say(None, "Remaining non-evaluatable fancypants value statement: %s" % script_string)
