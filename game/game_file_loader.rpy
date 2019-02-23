@@ -49,3 +49,47 @@ init -99 python:
 
             self.loose_plugin_cache[plugin_name] = next((plugin_data for plugin_data in self.plugins_json() if plugin_data['name'].startswith(plugin_name)), None)
             return self.loose_plugin_cache[plugin_name]
+
+        def galv_quest_data(self):
+            plugin = self.plugin_data_exact('Galv_QuestLog')
+            if not plugin:
+                return {}
+
+            if hasattr(self, 'galv_quest_txt'):
+                return self.galv_quest_txt
+
+            gre = Re()
+            with rpgm_file("www/%s/%s.txt" % (plugin['parameters']['Folder'], plugin['parameters']['File'])) as f:
+                lines = re.sub("\r\n", "\n", f.read()).split("\n")
+                b_index = 0
+                record = False
+                self.galv_quest_txt = {};
+
+                for line in lines:
+                    if len(line) > 0 and line[0] == '<':
+                        if '</quest>' in line:
+                            record = False
+                        elif '<quest' in line:
+                            if gre.search(re.compile("<quest\s*(\d*):(.*)>", re.IGNORECASE), line):
+                                b_index = int(gre.last_match.groups()[0])
+                                this_quest = {
+                                  'name': '???',
+                                  'difficulty': '???',
+                                  'category': '???'
+                                }
+                                self.galv_quest_txt[b_index] = this_quest
+                                this_quest['desc'] = []
+
+                                s = gre.last_match.groups()[1].split('|')
+                                if len(s) > 0:
+                                    this_quest['name'] = game_state.escape_text_for_renpy(game_state.replace_names(s[0]))
+                                if len(s) > 1:
+                                    this_quest['difficulty'] = s[1]
+                                if len(s) > 2:
+                                    this_quest['category'] = s[2]
+
+                                record = True
+                    elif record:
+                        self.galv_quest_txt[b_index]['desc'].append(game_state.escape_text_for_renpy(game_state.replace_names(line)))
+
+            return self.galv_quest_txt

@@ -257,17 +257,52 @@ init python:
         def eval_maic_quests_script(self, script_string, line):
             gre = Re()
             if gre.match("quest\((\d+)\)", line):
-                game_state.party.maic_quest_start(int(gre.last_match.groups()[0]))
+                game_state.party.maic_quest_manager().start(int(gre.last_match.groups()[0]))
             elif gre.match("manually_complete_quest\((\d+)\)", line):
-                game_state.party.maic_quest_complete(int(gre.last_match.groups()[0]))
+                game_state.party.maic_quest_manager().complete(int(gre.last_match.groups()[0]))
             elif gre.match("reveal_objective\((\d+),\s*(\d+)\)", line):
                 quest_id = int(gre.last_match.groups()[0])
                 objective_index = int(gre.last_match.groups()[1])
-                game_state.party.maic_quest_reveal_objective(quest_id, objective_index)
+                game_state.party.maic_quest_manager().reveal_objective(quest_id, objective_index)
             elif gre.match("complete_objective\((\d+),\s*(\d+)\)", line):
                 quest_id = int(gre.last_match.groups()[0])
                 objective_index = int(gre.last_match.groups()[1])
-                game_state.party.maic_quest_complete_objective(quest_id, objective_index)
+                game_state.party.maic_quest_manager().complete_objective(quest_id, objective_index)
+            else:
+                return False
+
+            return True
+
+        def eval_galv_quests_script(self, script_string, line):
+            gre = Re()
+            if not gre.match("Galv\.QUEST", line.strip()):
+                return False
+
+            line = line.strip()
+            if gre.match("Galv\.QUEST\.activate\((\d+)(,.*)?\)", line):
+                status = int(gre.last_match.groups()[0])
+                hide_popup = gre.last_match.groups()[1]
+                game_state.party.galv_quest_manager().activate(status, hide_popup)
+            elif gre.match("Galv\.QUEST\.complete\((\d+)(,.*)?\)", line):
+                status = int(gre.last_match.groups()[0])
+                hide_popup = gre.last_match.groups()[1]
+                game_state.party.galv_quest_manager().complete(status, hide_popup)
+            elif gre.match("Galv\.QUEST\.fail\((\d+)(,.*)?\)", line):
+                status = int(gre.last_match.groups()[0])
+                hide_popup = gre.last_match.groups()[1]
+                game_state.party.galv_quest_manager().fail(status, hide_popup)
+            elif gre.match("Galv\.QUEST\.catStatus\((\d+),(.*)\)", line):
+                game_state.party.galv_quest_manager().cat_status(int(gre.last_match.groups()[0]), gre.last_match.groups()[1] == 'true')
+            elif gre.match("Galv\.QUEST\.objective\((\d+),(.*?),(.*?)(,.*)?\)", line):
+                quest_id = int(gre.last_match.groups()[0])
+                objective_index = int(gre.last_match.groups()[1])
+                status = gre.last_match.groups()[2]
+                hide_popup = gre.last_match.groups()[3]
+                game_state.party.galv_quest_manager().objective(quest_id, objective_index, status, hide_popup)
+            elif gre.match("Galv\.QUEST\.resolution\((\d+),(\d+)(,\d+)?\)", line):
+                quest_id = int(gre.last_match.groups()[0])
+                resolution = int(gre.last_match.groups()[1])
+                game_state.party.galv_quest_manager().resolution(quest_id, resolution)
             else:
                 return False
 
@@ -308,6 +343,11 @@ init python:
 
                 if rpgm_game_data.get('maic_quests', None):
                     result = self.eval_maic_quests_script(script_string, line)
+                    if result:
+                        continue
+
+                if game_file_loader.plugin_data_exact('Galv_QuestLog'):
+                    result = self.eval_galv_quests_script(script_string, line)
                     if result:
                         continue
 

@@ -4,7 +4,7 @@ screen maic_quests_screen(
     modal True
     add Solid(Color("#000", alpha = 0.75))
     frame:
-        area (0.25, 0.1, 500, 500)
+        area (0.1, 0.1, int(config.screen_width * 0.8), 500)
         vbox:
             viewport:
                 scrollbars "vertical"

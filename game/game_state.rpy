@@ -548,6 +548,8 @@ init python:
             result = []
             if GameIdentifier().is_ics1() or rpgm_game_data.get('enable_inventory_key', None):
                 result.append(('i', 'show_inventory'))
+            if game_file_loader.plugin_data_exact('Galv_QuestLog'):
+                result.append(('q', 'show_galv_quests'))
             if rpgm_game_data.get('maic_quests', None):
                 result.append(('q', 'show_maic_quests'))
             if rpgm_game_data.get('molegato_quests', None):
@@ -618,11 +620,15 @@ init python:
 
         def show_maic_quests(self):
             scrubbed_quest_data = []
-            for quest in self.party.maic_quests_active():
+            for quest in self.party.maic_quest_manager().quest_data():
                 quest_copy = quest.copy()
                 quest_copy['description'] = "\n".join([line.strip() for line in quest_copy['description'].split("\n")])
                 scrubbed_quest_data.append(quest_copy)
             result = renpy.call_screen('maic_quests_screen', scrubbed_quest_data)
+            return True
+
+        def show_galv_quests(self):
+            result = renpy.call_screen('galv_quests_screen', self.party.galv_quest_manager().presented_quests())
             return True
 
         def migrate_missing_shop_data(self):
