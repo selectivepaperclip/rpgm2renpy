@@ -1672,6 +1672,10 @@ init python:
                         pass
                     elif plugin_command in ['SmartPath']:
                         pass
+                    elif plugin_command in ['Flashlight']:
+                        pass
+                    elif plugin_command in ['MobileDirPad', 'BUST']:
+                        pass
                     elif plugin_command in ['CAM']:
                         pass
                     elif plugin_command in ['AnimatedPicture']:
