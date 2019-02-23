@@ -351,6 +351,15 @@ init python:
                     if result:
                         continue
 
+                if game_file_loader.plugin_data_exact('YEP_X_ExtMesPack1'):
+                    if gre.match("\$gameSystem\.clearChoiceSettings", line):
+                        self.choices_to_hide = []
+                        continue
+                    elif gre.match("\$gameSystem\.hideChoice\((\d+)", line):
+                        choice_id = int(gre.last_match.groups()[0])
+                        self.hide_choice(choice_id)
+                        continue
+
                 if 'ImageManager' in line:
                     pass
                 elif line == 'Cache.clear':
@@ -889,7 +898,7 @@ init python:
 
                 # Show choices
                 elif command['code'] == 102:
-                    if rpgm_metadata.has_large_choices_plugin:
+                    if rpgm_metadata.has_large_choices_plugin or game_file_loader.plugin_data_exact('YEP_X_ExtMesPack1'):
                         self.merge_show_choice_commands()
 
                     choice_texts, cancel_type = command['parameters'][0:2]
