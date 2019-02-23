@@ -30,6 +30,7 @@ maps.each do |map_path|
         JSON.parse(File.read(map_path))
     rescue
         puts "Could not parse: #{map_path}"
+        next
     end
     json['events'].compact.each do |event_json|
         event_json['pages'].each do |page_json|
@@ -57,8 +58,14 @@ maps.each do |map_path|
     end
 end
 
-puts "Script Strings:"
-puts script_strings.map(&:strip).uniq.sort
+if script_strings.length > 0
+    puts
+    puts "Script Strings:"
+    puts script_strings.map(&:strip).uniq.sort
+end
 
-puts "Plugin Strings:"
-puts plugin_strings.map(&:strip).uniq.sort
+if plugin_strings.length > 0
+    puts
+    puts "Plugin Strings:"
+    puts plugin_strings.map(&:strip).uniq.sort
+end
