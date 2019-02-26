@@ -182,7 +182,9 @@ screen mapscreen(
             size hud_pic['size']
 
     for hud_line in hud_lines:
-        text hud_line['text'] ypos hud_line['Y'] xpos hud_line['X']
+        text hud_line['text']:
+            ypos hud_line['Y']
+            xpos hud_line['X']
 
     if background_image:
         for common_event_queuer in common_event_queuers:

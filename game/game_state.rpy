@@ -528,6 +528,129 @@ init python:
 
             return lines
 
+        def srd_hud_lines(self):
+            plugin = game_file_loader.plugin_data_exact('SRD_HUDMaker')
+            if not plugin:
+                return []
+
+            hud_items = game_file_loader.json_file(rpgm_data_path("MapHUD.json"))
+            lines = []
+            for hud_item in hud_items:
+                if hud_item['type'] in ['Text', 'Gauge']:
+                    if not self.eval_fancypants_value_statement(hud_item['Condition']):
+                        continue
+
+                    if hud_item['type'] == 'Gauge':
+                        value = "%s / %s" % (
+                            self.eval_fancypants_value_statement(hud_item['Cur. Value']),
+                            hud_item['Max Value']
+                        )
+                        x = hud_item['x'] - int(hud_item['Width']) // 2
+                        y = hud_item['y']
+                    else:
+                        value = hud_item['Value']
+                        x = hud_item['x'] - int(hud_item['Max Width']) // 2
+                        y = hud_item['y']
+
+                        result_parts = []
+                        interpolation_start = None
+                        left_braces = None
+                        string_index = 0
+                        while string_index < len(value):
+                            if value[string_index:string_index+2] == '${':
+                                left_braces = 1
+                                string_index = string_index + 1
+                                interpolation_start = string_index + 1
+                            elif value[string_index] == '{':
+                                if left_braces != None:
+                                    left_braces = left_braces + 1
+                            elif value[string_index] == '}':
+                                if left_braces != None:
+                                    left_braces = left_braces - 1
+                                if left_braces == 0:
+                                    script_string = value[interpolation_start:string_index]
+                                    interpolation_start = None
+                                    left_braces = None
+                                    result_parts.append(str(self.eval_fancypants_value_statement(script_string)))
+                            elif left_braces == None:
+                                result_parts.append(value[string_index])
+                            string_index = string_index + 1
+
+                        value = ''.join(result_parts)
+
+                    lines.append({
+                        'layer': hud_item['Layer'],
+                        'X': x,
+                        'Y': y,
+                        'text': self.escape_text_for_renpy(value)
+                    })
+            return sorted(lines, key=lambda p: int(p['layer']))
+
+        def srd_hud_pictures(self):
+            plugin = game_file_loader.plugin_data_exact('SRD_HUDMaker')
+            if not plugin:
+                return []
+
+            hud_items = game_file_loader.json_file(rpgm_data_path("MapHUD.json"))
+            pictures = []
+            for hud_item in hud_items:
+                if hud_item['type'] == 'Picture':
+                    if not self.eval_fancypants_value_statement(hud_item['Condition']):
+                        continue
+
+                    picture_path = game_file_loader.full_path_for_picture(rpgm_path('www/img/SumRndmDde/hud/pictures/' + hud_item['Image']))
+                    size = image_size_cache.for_path(picture_path)
+
+                    picture_data = {
+                        'layer': hud_item['Layer'],
+                        'X': hud_item['x'] - size[0] // 2,
+                        'Y': hud_item['y'] - size[1] // 2,
+                        'image': picture_path,
+                        'size': size
+                    }
+
+                    if hud_item['Scale X'] == '-1':
+                        picture_data['image'] = im.Flip(picture_data['image'], horizontal = True)
+
+                    pictures.append(picture_data)
+
+            return sorted(pictures, key=lambda p: int(p['layer']))
+
+        def eval_fancypants_value_statement(self, script_string):
+            gre = Re()
+            if gre.match('\$gameActors\.actor\((\d+)\)\.name\(\)', script_string):
+                return self.actors.actor_name(int(gre.last_match.groups()[0]))
+            elif gre.match('\$gameActors\.actor\((\d+)\)\.nickname\(\)', script_string):
+                return self.actors.by_index(int(gre.last_match.groups()[0])).get_property('nickname')
+
+            while True:
+                still_has_variables = re.search('\$gameVariables.value\((\d+)\)', script_string)
+                if still_has_variables:
+                    script_string = re.sub(r'\$gameVariables.value\((\d+)\)', lambda m: str(self.variables.value(int(m.group(1)))), script_string)
+                else:
+                    break
+
+            while True:
+                still_has_switches = re.search('\$gameSwitches.value\((\d+)\)', script_string)
+                if still_has_switches:
+                    script_string = re.sub(r'\$gameSwitches.value\((\d+)\)', lambda m: str(self.switches.value(int(m.group(1)))), script_string)
+                else:
+                    break
+
+            script_string = re.sub(r'\btrue\b', 'True', script_string)
+            script_string = re.sub(r'\bfalse\b', 'False', script_string)
+            script_string = re.sub(r'===', '==', script_string)
+            script_string = re.sub(r'&&', ' and ', script_string)
+            script_string = re.sub(r'\|\|', ' or ', script_string)
+
+            # eval the statement in python-land if it looks like it contains only arithmetic expressions
+            if re.match('^([\d\s.+\-*<>=()\s]|True|False|and|or)+$', script_string):
+                return eval(script_string)
+            else:
+                renpy.say(None, "Remaining non-evaluatable fancypants value statement: %s" % script_string)
+                print script_string
+                return 0
+
         def common_events_keymap(self):
             yepp_common_events = game_file_loader.plugin_data_exact('YEP_ButtonCommonEvents')
             if not yepp_common_events:
@@ -1330,8 +1453,8 @@ init python:
                     viewport_yadjustment.set_value(max(0, (zoom_rect_ul[1] * rpgm_metadata.tile_height * mapfactor * user_zoom) - centering_nudge_y))
                 self.focus_zoom_rect_on_next_map_render = False
 
-            hud_pics = self.orange_hud_pictures()
-            hud_lines = self.orange_hud_lines()
+            hud_pics = self.orange_hud_pictures() + self.srd_hud_pictures()
+            hud_lines = self.orange_hud_lines() + self.srd_hud_lines()
             hud_groups = self.orange_hud_groups()
 
             if not in_interaction and draw_impassible_tiles:

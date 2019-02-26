@@ -373,12 +373,12 @@ init python:
                 elif variable_set_command:
                     groups = variable_set_command.groups()
                     variable_id = int(groups[0])
-                    value = self.eval_fancypants_value_statement(groups[1])
+                    value = self.state.eval_fancypants_value_statement(groups[1])
                     self.state.variables.set_value(variable_id, value)
                 elif gre.match("hide_choice\((\d+),\s*\"([^\"]+)\"\s*\)", line):
                     groups = gre.last_match.groups()
                     choice_id, expression = (int(groups[0]), groups[1])
-                    if self.eval_fancypants_value_statement(expression):
+                    if self.state.eval_fancypants_value_statement(expression):
                         self.hide_choice(choice_id)
                 elif mv_self_switch_set_command or ace_self_switch_set_command:
                     matching_command = mv_self_switch_set_command or ace_self_switch_set_command
@@ -410,32 +410,6 @@ init python:
                     clean_line = line.replace("{", "{{").replace("[", "[[")
                     renpy.say(None, "Code 355 not implemented to eval script including line '%s'\nSee console for full script" % clean_line)
                     return
-
-        def eval_fancypants_value_statement(self, script_string):
-            while True:
-                still_has_variables = re.search('\$gameVariables.value\((\d+)\)', script_string)
-                if still_has_variables:
-                    script_string = re.sub(r'\$gameVariables.value\((\d+)\)', lambda m: str(self.state.variables.value(int(m.group(1)))), script_string)
-                else:
-                    break
-
-            while True:
-                still_has_switches = re.search('\$gameSwitches.value\((\d+)\)', script_string)
-                if still_has_switches:
-                    script_string = re.sub(r'\$gameSwitches.value\((\d+)\)', lambda m: str(self.state.switches.value(int(m.group(1)))), script_string)
-                else:
-                    break
-
-            script_string = re.sub(r'\btrue\b', 'True', script_string)
-            script_string = re.sub(r'\bfalse\b', 'False', script_string)
-            script_string = re.sub(r'===', '==', script_string)
-
-            # eval the statement in python-land if it looks like it contains only arithmetic expressions
-            if re.match('^([\d\s.+\-*<>=()\s]|True|False)+$', script_string):
-                return eval(script_string)
-            else:
-                renpy.say(None, "Remaining non-evaluatable fancypants value statement: %s" % script_string)
-                return 0
 
         def show_parallel_event_animations(self, switch_id):
             for newly_activated_event in self.state.map.parallel_events_activated_by_switch(switch_id):
@@ -1186,7 +1160,7 @@ init python:
                     elif operand == 4:
                         script_string = command['parameters'][4]
                         if re.search('\$gameVariables.value\((\d+)\)', script_string):
-                            value = self.eval_fancypants_value_statement(script_string)
+                            value = self.state.eval_fancypants_value_statement(script_string)
                         else:
                             renpy.say(None, "Variable control operand 4 not implemented for '%s'" % script_string)
                             value = 0

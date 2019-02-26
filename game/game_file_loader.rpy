@@ -3,6 +3,7 @@ init -99 python:
         def __init__(self):
             self.exact_plugin_cache = {}
             self.loose_plugin_cache = {}
+            self.full_paths_for_pictures = {}
 
         def json_file(self, filename):
             if not hasattr(self, '_json_files'):
@@ -49,6 +50,17 @@ init -99 python:
 
             self.loose_plugin_cache[plugin_name] = next((plugin_data for plugin_data in self.plugins_json() if plugin_data['name'].startswith(plugin_name)), None)
             return self.loose_plugin_cache[plugin_name]
+
+        def full_path_for_picture(self, path):
+            if not path in self.full_paths_for_pictures:
+                if os.path.exists(path):
+                    self.full_paths_for_pictures[path] = path
+                else:
+                    files = glob.glob(os.path.join(config.basedir, '%s.*' % path))
+                    if len(files) > 0:
+                        self.full_paths_for_pictures[path] = path + os.path.splitext(files[0])[1]
+
+            return self.full_paths_for_pictures.get(path, None)
 
         def galv_quest_data(self):
             plugin = self.plugin_data_exact('Galv_QuestLog')
