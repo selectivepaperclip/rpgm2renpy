@@ -2,6 +2,7 @@ screen mapscreen(
     coords = [],
     curated_clickables = [],
     mapfactor = None,
+    fade_map = False,
     hud_pics = [],
     hud_lines = [],
     hud_groups = [],
@@ -166,6 +167,9 @@ screen mapscreen(
                         tooltip coord.tooltip()
                         hovered SetVariable("hover_coord", coord)
                         action SetVariable("mapdest", coord), Jump("game")
+
+    if fade_map:
+        add Solid(Color("#000", alpha = 0.75))
 
     for hud_group in hud_groups:
         button:

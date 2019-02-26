@@ -875,9 +875,16 @@ init python:
                     if rpgm_metadata.has_large_choices_plugin or game_file_loader.plugin_data_exact('YEP_X_ExtMesPack1'):
                         self.merge_show_choice_commands()
 
-                    choice_texts, cancel_type = command['parameters'][0:2]
+                    choice_texts, cancel_type, background_type, position_type = command['parameters'][0:4]
                     if cancel_type >= len(choice_texts):
                         cancel_type = -2
+
+                    position_type = 0
+                    should_display_on_right = False
+                    if len(command['parameters']) > 3:
+                        position_type = command['parameters'][3]
+                        if position_type == 2 and len(game_state.srd_hud_lines()) > 0:
+                            should_display_on_right = True
 
                     if not hasattr(self, 'choices_to_hide'):
                         self.choices_to_hide = []
@@ -888,8 +895,10 @@ init python:
                     if recently_rendered_animation_duration > 300:
                         renpy.pause()
 
+                    self.state.show_map(in_interaction = True, fade_map = should_display_on_right)
+
                     options = [(game_state.escape_text_for_renpy(game_state.replace_names(text)), index) for index, text in enumerate(choice_texts) if index + 1 not in self.choices_to_hide and len(text) > 0]
-                    if len(options) > 10:
+                    if len(options) > 10 or should_display_on_right:
                         choice_options = []
                         for option_text, option_index in options:
                             choice_options.append({
@@ -898,7 +907,10 @@ init python:
                                 'disabled': True if (option_index + 1) in self.choices_to_disable else False
                             })
 
-                        result = renpy.call_screen("scrollable_show_choices_screen", choice_options)
+                        if len(options) > 10:
+                            result = renpy.call_screen("scrollable_show_choices_screen", choice_options)
+                        elif should_display_on_right:
+                            result = renpy.call_screen("right_aligned_show_choices_screen", choice_options)
                     else:
                         result = renpy.display_menu(options)
                     self.branch[command['indent']] = result

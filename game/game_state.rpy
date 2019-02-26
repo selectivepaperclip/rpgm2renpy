@@ -1370,7 +1370,7 @@ init python:
                 })
             return result
 
-        def show_map(self, in_interaction = False):
+        def show_map(self, in_interaction = False, fade_map = False):
             coordinates = []
             curated_clickables = []
             if not in_interaction:
@@ -1500,6 +1500,7 @@ init python:
                 hud_pics=hud_pics,
                 hud_lines=hud_lines,
                 hud_groups=hud_groups,
+                fade_map=fade_map,
                 map_name=self.map.name(),
                 sprites=None,
                 sprite_images_and_positions=self.sprite_images_and_positions(),
