@@ -5,6 +5,8 @@ init python:
             self.switch_values = [0] * len(switch_names)
 
         def value(self, switch_id):
+            if switch_id >= len(self.switch_values):
+                return False
             return self.switch_values[switch_id]
 
         def set_value(self, switch_id, value):
