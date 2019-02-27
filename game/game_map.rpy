@@ -145,7 +145,7 @@ init python:
 
             filesystem_encoding = sys.getfilesystemencoding()
             if filesystem_encoding == 'mbcs':
-                return self.cache_file.encode('utf-8-lemon')
+                return self.cache_file.encode('utf-8')
 
         def save(self):
             # Caching code borrowed from https://github.com/renpy/renpy/blob/f40e61dfdfbf723f9eac88bbfec7765b45599682/renpy/display/imagemap.py
