@@ -827,7 +827,8 @@ init python:
                     game_state.flush_queued_sound()
 
                 if noisy_events:
-                    print "COMMAND: %s, event %s, page %s - %s, command %s (%s)" % (
+                    print "%sCOMMAND: %s, event %s, page %s - %s, command %s (%s)" % (
+                        ' ' * command['indent'],
                         "common" if self.common() else ("map %s" % self.get_map_id()),
                         self.event_data['id'],
                         self.event_data['pages'].index(self.page) if ('pages' in self.event_data) else 'n/a',
@@ -980,7 +981,11 @@ init python:
                         return
 
                     if noisy_events:
-                        print "conditional: %s, result: %s" % (command['parameters'], branch_result)
+                        print "%sconditional: %s, result: %s" % (
+                            ' ' * command['indent'],
+                            command['parameters'],
+                            branch_result
+                        )
 
                     self.branch[command['indent']] = branch_result
                     if not branch_result:
