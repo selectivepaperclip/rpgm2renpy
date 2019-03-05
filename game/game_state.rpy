@@ -616,6 +616,11 @@ init python:
 
             return sorted(pictures, key=lambda p: int(p['layer']))
 
+        def ysp_videos(self):
+            if not hasattr(self, 'ysp_video_data'):
+                self.ysp_video_data = YspVideoData()
+            return self.ysp_video_data
+
         def eval_fancypants_value_statement(self, script_string):
             gre = Re()
             if gre.match('\$gameActors\.actor\((\d+)\)\.name\(\)', script_string):

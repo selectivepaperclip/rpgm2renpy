@@ -360,6 +360,33 @@ init python:
                         self.hide_choice(choice_id)
                         continue
 
+                if game_file_loader.plugin_data_exact('YSP_VideoPlayer'):
+                    if gre.search("ysp\.VideoPlayer\.loadVideo", line):
+                        continue
+                    elif gre.search("ysp\.VideoPlayer\.releaseVideo", line):
+                        continue
+                    elif gre.search("ysp\.VideoPlayer\.newVideo\(['\"](.*?)['\"],(\d+)\)", line):
+                        id = int(gre.last_match.groups()[1])
+                        path = gre.last_match.groups()[0]
+                        self.state.ysp_videos().new_video(id, path)
+                        continue
+                    elif gre.search("ysp\.VideoPlayer\.playVideoById\((\d+)\)", line):
+                        id = int(gre.last_match.groups()[0])
+                        video_file = self.state.ysp_videos().video_by_id(id)
+                        if video_file:
+                            full_path = os.path.join(config.basedir, rpgm_metadata.movies_path, video_file).replace("\\", "/")
+                            args = {
+                                'image_name': Movie(play=full_path)
+                            }
+                            self.state.shown_pictures[1000 + id] = args
+                        continue
+                    elif gre.search("ysp\.VideoPlayer\.setLoopById\((\d+)\)", line):
+                        continue
+                    elif gre.search("ysp\.VideoPlayer\.stopVideoById\((\d+)\)", line):
+                        id = int(gre.last_match.groups()[0])
+                        game_state.hide_picture(1000 + id)
+                        continue
+
                 if 'ImageManager' in line:
                     pass
                 elif line == 'Cache.clear':
