@@ -652,8 +652,9 @@ init python:
             if re.match('^([\d\s.+\-*<>=()\s]|True|False|and|or)+$', script_string):
                 return eval(script_string)
             else:
-                renpy.say(None, "Remaining non-evaluatable fancypants value statement: %s" % script_string)
-                print script_string
+                renpy.say(None, "Remaining non-evaluatable fancypants value statement: '%s'" % script_string)
+                print "Remaining non-evaluatable fancypants value statement:"
+                print "'%s'" % script_string
                 return 0
 
         def common_events_keymap(self):
