@@ -1398,8 +1398,9 @@ init python:
 
             background_image = self.map.background_image()
             parallax_image = self.map.parallax_image()
+            overlay_ground_image = self.map.overlay_image('ground')
+            overlay_parallax_image = self.map.overlay_image('par')
             width, height = (self.map.image_width, self.map.image_height)
-
             map_zoom_rect = rpgm_game_data.get('map_zoom_rects', {}).get(str(self.map.map_id), None)
 
             if self.map.is_clicky(self.player_x, self.player_y):
@@ -1513,6 +1514,8 @@ init python:
                 common_events_keymap=self.common_events_keymap(),
                 function_calls_keymap=self.function_calls_keymap(),
                 background_image=background_image,
+                overlay_ground_image=overlay_ground_image,
+                overlay_parallax_image=overlay_parallax_image,
                 parallax_image=parallax_image,
                 width=width,
                 height=height,

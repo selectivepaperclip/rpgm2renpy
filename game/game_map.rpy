@@ -322,9 +322,13 @@ init python:
                     self.generate_background_image()
                 self._background_image = Image(self.background_image_cache_file())
             if not hasattr(self, 'image_width'):
-                image_size = renpy.image_size(self._background_image)
-                self.image_width = image_size[0]
-                self.image_height = image_size[1]
+                image_sizes = [renpy.image_size(self._background_image)]
+                if self.overlay_image('ground'):
+                    image_sizes.append(renpy.image_size(self.overlay_image('ground')))
+                if self.overlay_image('parallax'):
+                    image_sizes.append(renpy.image_size(self.overlay_image('parallax')))
+                self.image_width = max(zip(*image_sizes)[0])
+                self.image_height = max(zip(*image_sizes)[1])
 
             return self._background_image
 
@@ -373,6 +377,23 @@ init python:
                     self._parallax_image = None
 
             return self._parallax_image
+
+        def overlay_image(self, image_type):
+            plugin = game_file_loader.plugin_data_exact('OrangeOverlay')
+            if not plugin:
+                return None
+
+            if not hasattr(self, '_overlay_images'):
+                self._overlay_images = {}
+
+            if image_type not in self._overlay_images:
+                has_overlay_of_type = re.search('<%s>' % image_type, self.data()['note'])
+                if has_overlay_of_type:
+                    self._overlay_images[image_type] = os.path.join(config.basedir, rpgm_path('www/img/overlays'), image_type + 's', "%s%s.png" % (image_type, self.map_id)).replace("\\", "/")
+                else:
+                    self._overlay_images[image_type] = None
+
+            return self._overlay_images[image_type]
 
         def clicky_command(self, command):
            return (command['code'] == 108) and (command['parameters'][0] == 'click_activate!')

@@ -13,6 +13,8 @@ screen mapscreen(
     common_events_keymap = None,
     function_calls_keymap = [],
     background_image = None,
+    overlay_ground_image = None,
+    overlay_parallax_image = None,
     parallax_image = None,
     width = None,
     height = None,
@@ -104,6 +106,11 @@ screen mapscreen(
                     xpos x_offset
                     ypos y_offset
 
+                if overlay_ground_image:
+                    add overlay_ground_image:
+                        xpos x_offset
+                        ypos y_offset
+
                 if background_image:
                     button:
                         xpos x_offset + int(player_position[0] * rpgm_metadata.tile_width)
@@ -117,6 +124,11 @@ screen mapscreen(
                         add sprite_image_and_position['img']:
                             xpos x_offset + sprite_image_and_position['x']
                             ypos y_offset + sprite_image_and_position['y']
+
+                if overlay_parallax_image:
+                    add overlay_parallax_image:
+                        xpos x_offset
+                        ypos y_offset
 
     for (id, args) in game_state.pictures():
         if ('opacity' not in args) or (args['opacity'] != 0):
