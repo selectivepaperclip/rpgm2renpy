@@ -528,16 +528,19 @@ init python:
 
             return lines
 
-        def srd_hud_lines(self):
+        def srd_hud_lines(self, in_interaction = False):
             plugin = game_file_loader.plugin_data_exact('SRD_HUDMaker')
             if not plugin:
+                return []
+
+            if plugin['parameters']["Show During Events"] == 'hide' and in_interaction:
                 return []
 
             hud_items = game_file_loader.json_file(rpgm_data_path("MapHUD.json"))
             lines = []
             for hud_item in hud_items:
                 if hud_item['type'] in ['Text', 'Gauge']:
-                    if not self.eval_fancypants_value_statement(hud_item['Condition']):
+                    if len(hud_item['Condition']) > 0 and not self.eval_fancypants_value_statement(hud_item['Condition']):
                         continue
 
                     if hud_item['type'] == 'Gauge':
@@ -586,26 +589,45 @@ init python:
                     })
             return sorted(lines, key=lambda p: int(p['layer']))
 
-        def srd_hud_pictures(self):
+        def srd_hud_pictures(self, in_interaction = False):
             plugin = game_file_loader.plugin_data_exact('SRD_HUDMaker')
             if not plugin:
+                return []
+
+            if plugin['parameters']["Show During Events"] == 'hide' and in_interaction:
                 return []
 
             hud_items = game_file_loader.json_file(rpgm_data_path("MapHUD.json"))
             pictures = []
             for hud_item in hud_items:
-                if hud_item['type'] == 'Picture':
-                    if not self.eval_fancypants_value_statement(hud_item['Condition']):
+                if hud_item['type'] == 'Picture' or hud_item['type'] == 'Picture EX' or hud_item['type'] == 'Image Numbers':
+                    if len(hud_item['Condition']) > 0 and not self.eval_fancypants_value_statement(hud_item['Condition']):
                         continue
 
-                    picture_path = game_file_loader.full_path_for_picture(rpgm_path('www/img/SumRndmDde/hud/pictures/' + hud_item['Image']))
+                    image_name = hud_item['Image']
+                    image_folder = 'pictures'
+                    if hud_item['type'] == 'Picture EX':
+                        image_name = self.eval_fancypants_value_statement(hud_item['Image'])
+                    elif hud_item['type'] == 'Image Numbers':
+                        image_folder = 'numbers'
+
+                    picture_path = game_file_loader.full_path_for_picture(rpgm_path('www/img/SumRndmDde/hud/%s/%s' % (image_folder, image_name)))
                     size = image_size_cache.for_path(picture_path)
+                    if hud_item['type'] == 'Image Numbers':
+                        size = (size[0] // 10, size[1])
+                        value = self.eval_fancypants_value_statement(hud_item['Value'])
+                        image = im.Crop(picture_path, (size[0] * value, 0, size[0], size[1]))
+                    else:
+                        image = picture_path
+
+                    if hud_item['Scale X'] != '1' or hud_item['Scale Y'] != '1':
+                        size = (int(float(hud_item['Scale X']) * size[0]), int(float(hud_item['Scale Y']) * size[1]))
 
                     picture_data = {
                         'layer': hud_item['Layer'],
                         'X': hud_item['x'] - size[0] // 2,
                         'Y': hud_item['y'] - size[1] // 2,
-                        'image': picture_path,
+                        'image': image,
                         'size': size
                     }
 
@@ -1460,8 +1482,8 @@ init python:
                     viewport_yadjustment.set_value(max(0, (zoom_rect_ul[1] * rpgm_metadata.tile_height * mapfactor * user_zoom) - centering_nudge_y))
                 self.focus_zoom_rect_on_next_map_render = False
 
-            hud_pics = self.orange_hud_pictures() + self.srd_hud_pictures()
-            hud_lines = self.orange_hud_lines() + self.srd_hud_lines()
+            hud_pics = self.orange_hud_pictures() + self.srd_hud_pictures(in_interaction = in_interaction)
+            hud_lines = self.orange_hud_lines() + self.srd_hud_lines(in_interaction = in_interaction)
             hud_groups = self.orange_hud_groups()
 
             if not in_interaction and draw_impassible_tiles:
