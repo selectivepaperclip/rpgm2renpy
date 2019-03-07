@@ -1716,8 +1716,7 @@ init python:
                     elif plugin_command in ['FocusCamera', 'ResetFocus', 'WaitForCamera']:
                         pass
                     elif plugin_command in ['Quest']:
-                        # TODO!!!
-                        pass
+                        self.state.party.yep_quest_manager().process_command(plugin_command_args)
                     elif plugin_command in ['AutoSave', 'LAYER', 'LAYER_S']:
                         pass
                     elif plugin_command in ['question'] and game_file_loader.plugin_data_exact('RedHatAugust - Q&A'):

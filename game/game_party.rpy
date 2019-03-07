@@ -83,6 +83,11 @@ init python:
                 self.galv_quest_manager_instance = GalvQuestManager()
             return self.galv_quest_manager_instance
 
+        def yep_quest_manager(self):
+            if not hasattr(self, 'yep_quest_manager_instance'):
+                self.yep_quest_manager_instance = YepQuestManager()
+            return self.yep_quest_manager_instance
+
         def print_items(self):
             for item_id, quantity in self.items.iteritems():
                 item = game_state.items.by_id(item_id)
@@ -264,3 +269,130 @@ init python:
                     'resolution': -1, # the selected resolution to display under the quest description in the quest log. -1 for none.
                     'status': 0 # 0 is not yet completed, 1 is completed, 2 is failed
                 }
+
+    class YepQuestManager(SelectivelyPickle):
+        def __init__(self):
+            self.quest_activity = {}
+
+        def presented_quests(self):
+            result = []
+            for quest_id in sorted(self.quest_activity.keys()):
+                quest_data = game_file_loader.yep_quest_data()["Quest %s" % quest_id]
+                objective_data = quest_data['Objectives List']
+                reward_data = quest_data['Rewards List']
+
+                annotated_objectives = []
+                for objective_index, objective_state in self.quest_activity[quest_id]['objectives'].iteritems():
+                    annotated_objectives.append({
+                        'text': game_state.replace_names(objective_data[objective_index - 1]),
+                        'completed': objective_state['status'] == 'completed',
+                        'failed': objective_state['status'] == 'failed',
+                    })
+
+                annotated_rewards = []
+                for reward_index, reward_state in self.quest_activity[quest_id]['rewards'].iteritems():
+                    annotated_rewards.append({
+                        'text': game_state.replace_names(reward_data[reward_index - 1]),
+                        'claimed': reward_state['status'] == 'claimed',
+                        'denied': reward_state['status'] == 'denied',
+                    })
+
+                presented_quest = {
+                    'title': game_state.replace_names(quest_data['Title']),
+                    'location': game_state.replace_names(quest_data['Location']),
+                    'from': game_state.replace_names(quest_data['From']),
+                    'status': self.quest_activity[quest_id]['status'],
+                    'description': game_state.replace_names(quest_data['Description'][self.quest_activity[quest_id]['description_index'] - 1]).replace("\n", " "),
+                    'subtext': game_state.replace_names(quest_data['Subtext'][self.quest_activity[quest_id]['subtext_index'] - 1]).replace("\n", " "),
+                    'objectives': annotated_objectives,
+                    'rewards': annotated_rewards
+                }
+
+                result.append(presented_quest)
+
+            status_order = ['known', 'completed', 'failed']
+            return sorted(result, key=lambda q: status_order.index(q['status']))
+
+        def process_command(self, args):
+            gre = Re()
+            upcase_args = [arg.upper() for arg in args]
+            if upcase_args[0] == 'ADD':
+                quest_id = int(upcase_args[1])
+                self.__create_quest(quest_id)
+                return
+            elif upcase_args[0:2] == ['SET', 'COMPLETED']:
+                self.set_quest_status(int(upcase_args[2]), 'completed')
+                return
+            elif gre.match("^\d+$", upcase_args[0]):
+                quest_id = int(upcase_args[0])
+                self.__create_quest(quest_id)
+                if upcase_args[1:5] == ['CHANGE', 'DESCRIPTION', 'ENTRY', 'TO']:
+                    self.quest_activity[quest_id]['description_index'] = int(upcase_args[5])
+                    return
+                elif upcase_args[1:4] == ['DESCRIPTION', 'ENTRY', 'TO']:
+                    self.quest_activity[quest_id]['description_index'] = int(upcase_args[4])
+                    return
+                elif upcase_args[1:3] == ['CLAIM', 'REWARD']:
+                    reward_id = int(upcase_args[3])
+                    self.set_reward_status(quest_id, reward_id, 'claimed')
+                    return
+                elif upcase_args[1:4] == ['CLAIM', 'ALL', 'REWARDS']:
+                    total_rewards = len(game_file_loader.yep_quest_data()["Quest %s" % quest_id]['Rewards List'])
+                    for reward_id in xrange(1, total_rewards + 1):
+                        self.set_reward_status(quest_id, reward_id, 'claimed')
+                    return
+                elif upcase_args[1:4] == ['COMPLETE', 'ALL', 'OBJECTIVES']:
+                    total_objectives = len(game_file_loader.yep_quest_data()["Quest %s" % quest_id]['Objectives List'])
+                    for objective_id in xrange(1, total_objectives + 1):
+                        self.set_objective_status(quest_id, objective_id, 'completed')
+                    return
+                elif upcase_args[1:3] == ['COMPLETE', 'OBJECTIVE']:
+                    objective_id = int(upcase_args[3])
+                    self.set_objective_status(quest_id, objective_id, 'completed')
+                    return
+                elif upcase_args[1:3] == ['SET', 'COMPLETED']:
+                    self.set_quest_status(quest_id, 'completed')
+                    return
+                elif upcase_args[1:3] == ['SHOW', 'OBJECTIVE']:
+                    objective_id = int(upcase_args[3])
+                    self.set_objective_status(quest_id, objective_id, 'visible')
+                    return
+                elif upcase_args[1:3] == ['SHOW', 'REWARD']:
+                    reward_id = int(upcase_args[3])
+                    self.set_reward_status(quest_id, reward_id, 'visible')
+                    return
+
+            renpy.say(None, "Don't know how to process YEP_QuestJournal command: %s" % ' '.join(args))
+
+        def set_quest_status(self, quest_id, status):
+            self.__create_quest(quest_id)
+            self.quest_activity[quest_id]['status'] = 'completed'
+
+        def set_objective_status(self, quest_id, objective_id, status):
+            objective_data = self.quest_activity[quest_id]['objectives']
+            if objective_id not in objective_data:
+                objective_data[objective_id] = {}
+            objective_data[objective_id]['status'] = status
+
+        def set_reward_status(self, quest_id, reward_id, status):
+            reward_data = self.quest_activity[quest_id]['rewards']
+            if reward_id not in reward_data:
+                reward_data[reward_id] = {}
+            reward_data[reward_id]['status'] = status
+
+        def __create_quest(self, quest_id):
+            quest_string = ("Quest %s" % quest_id)
+            if quest_id not in self.quest_activity and quest_string in game_file_loader.yep_quest_data():
+                quest_data = game_file_loader.yep_quest_data()[quest_string]
+                self.quest_activity[quest_id] = {
+                    'id': quest_id,
+                    'status': 'known',
+                    'description_index': 1,
+                    'subtext_index': 1,
+                    'objectives': {},
+                    'rewards': {}
+                }
+                for objective_id in quest_data['Visible Objectives']:
+                    self.set_objective_status(quest_id, objective_id, 'visible')
+                for reward_id in quest_data['Visible Rewards']:
+                    self.set_reward_status(quest_id, reward_id, 'visible')

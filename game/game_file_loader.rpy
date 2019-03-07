@@ -105,3 +105,26 @@ init -99 python:
                         self.galv_quest_txt[b_index]['desc'].append(game_state.escape_text_for_renpy(game_state.replace_names(line)))
 
             return self.galv_quest_txt
+
+        def yep_quest_data(self):
+            plugin = self.plugin_data_exact('YEP_QuestJournal')
+            if not plugin:
+                return {}
+
+            if hasattr(self, 'yep_quest_json'):
+                return self.yep_quest_json
+
+            self.yep_quest_json = plugin['parameters']
+            for k, v in self.yep_quest_json.iteritems():
+                if v.startswith('{'):
+                    loaded_quest = json.loads(v)
+
+                    keys_to_parse = ['Visible Objectives', 'Visible Rewards', 'Description', 'Objectives List', 'Rewards List', 'Subtext']
+                    for key_to_parse in keys_to_parse:
+                        if key_to_parse in loaded_quest:
+                            loaded_quest[key_to_parse] = ['' if d == '' else json.loads(d) for d in json.loads(loaded_quest[key_to_parse])]
+
+                    self.yep_quest_json[k] = loaded_quest
+
+
+            return self.yep_quest_json
