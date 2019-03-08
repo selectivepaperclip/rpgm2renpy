@@ -605,13 +605,14 @@ init python:
                         continue
 
                     image_name = hud_item['Image']
-                    image_folder = 'pictures'
+                    image_type_folder = 'pictures'
                     if hud_item['type'] == 'Picture EX':
                         image_name = self.eval_fancypants_value_statement(hud_item['Image'])
                     elif hud_item['type'] == 'Image Numbers':
-                        image_folder = 'numbers'
+                        image_type_folder = 'numbers'
 
-                    picture_path = game_file_loader.full_path_for_picture(rpgm_path('www/img/SumRndmDde/hud/%s/%s' % (image_folder, image_name)))
+                    hud_image_folder = rpgm_game_data.get('hud_image_folder', 'img/SumRndmDde/hud')
+                    picture_path = game_file_loader.full_path_for_picture(rpgm_path('www/%s/%s/%s' % (hud_image_folder, image_type_folder, image_name)))
                     size = image_size_cache.for_path(picture_path)
                     if hud_item['type'] == 'Image Numbers':
                         size = (size[0] // 10, size[1])
