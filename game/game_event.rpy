@@ -1203,11 +1203,7 @@ init python:
                             value = 0
                     elif operand == 4:
                         script_string = command['parameters'][4]
-                        if re.search('\$gameVariables.value\((\d+)\)', script_string):
-                            value = self.state.eval_fancypants_value_statement(script_string)
-                        else:
-                            renpy.say(None, "Variable control operand 4 not implemented for '%s'" % script_string)
-                            value = 0
+                        value = self.state.eval_fancypants_value_statement(script_string)
 
                     changed_any_variable = False
                     for i in xrange(start, end + 1):

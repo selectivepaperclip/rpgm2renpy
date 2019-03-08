@@ -651,9 +651,13 @@ init python:
                 return self.actors.by_index(int(gre.last_match.groups()[0])).get_property('nickname')
 
             while True:
-                still_has_variables = re.search('\$gameVariables.value\((\d+)\)', script_string)
+                variables_regexp = r'\$gameVariables.value\((\d+)\)'
+                still_has_variables = re.search(variables_regexp, script_string)
                 if still_has_variables:
-                    script_string = re.sub(r'\$gameVariables.value\((\d+)\)', lambda m: str(self.variables.value(int(m.group(1)))), script_string)
+                    only_this_variable_remained = gre.match(variables_regexp, script_string)
+                    if only_this_variable_remained:
+                        return self.variables.value(int(gre.last_match.groups()[0]))
+                    script_string = re.sub(variables_regexp, lambda m: str(self.variables.value(int(m.group(1)))), script_string)
                 else:
                     break
 
@@ -669,6 +673,11 @@ init python:
             script_string = re.sub(r'===', '==', script_string)
             script_string = re.sub(r'&&', ' and ', script_string)
             script_string = re.sub(r'\|\|', ' or ', script_string)
+
+            if gre.match('"([^"]+)"', script_string):
+                return gre.last_match.groups()[0]
+            elif gre.match("'([^']+)'", script_string):
+                return gre.last_match.groups()[0]
 
             # eval the statement in python-land if it looks like it contains only arithmetic expressions
             if re.match('^([\d\s.+\-*<>=()\s]|True|False|and|or)+$', script_string):
