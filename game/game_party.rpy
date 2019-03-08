@@ -88,6 +88,11 @@ init python:
                 self.yep_quest_manager_instance = YepQuestManager()
             return self.yep_quest_manager_instance
 
+        def gameus_quest_manager(self):
+            if not hasattr(self, 'gameus_quest_manager_instance'):
+                self.gameus_quest_manager_instance = GameusQuestManager()
+            return self.gameus_quest_manager_instance
+
         def print_items(self):
             for item_id, quantity in self.items.iteritems():
                 item = game_state.items.by_id(item_id)
@@ -271,6 +276,10 @@ init python:
                 }
 
     class YepQuestManager(SelectivelyPickle):
+        @classmethod
+        def valid_command(cls, plugin_command):
+            return plugin_command.upper() == 'QUEST' and game_file_loader.plugin_data_exact('YEP_QuestJournal')
+
         def __init__(self):
             self.quest_activity = {}
 
@@ -396,3 +405,93 @@ init python:
                     self.set_objective_status(quest_id, objective_id, 'visible')
                 for reward_id in quest_data['Visible Rewards']:
                     self.set_reward_status(quest_id, reward_id, 'visible')
+
+    class GameusQuestManager(SelectivelyPickle):
+        @classmethod
+        def valid_command(cls, plugin_command):
+            return plugin_command.upper() == 'QUEST' and game_file_loader.plugin_data_exact('GameusQuestSystem')
+
+        def __init__(self):
+            self.quest_activity = {}
+
+        def presented_quests(self):
+            quests_json = game_file_loader.json_file(rpgm_data_path("Quests.json"))
+            result = []
+            for quest_id in sorted(self.quest_activity.keys()):
+                quest_data = quests_json[quest_id]
+
+                annotated_steps = []
+                current_step = self.quest_activity[quest_id]['current_step']
+                for step_index, step_data in enumerate(quest_data['steps']):
+                    if step_index > current_step:
+                        break
+
+                    step_text_parts = [step_data[0]]
+                    if step_data[1] == True:
+                        var_val = game_state.variables.value(step_data[2])
+                        max_val = step_data[3]
+                        if step_data[4]:
+                            step_text_parts.append((" %s" % math.floor(float(var_val) / max_val * 100)) + '%')
+                        else:
+                            step_text_parts.append(" %s / %s" % (var_val, max_val))
+
+                    annotated_steps.append({
+                        'text': ''.join(step_text_parts),
+                        'completed': current_step > step_index or self.quest_activity[quest_id]['status'] == 'completed',
+                        'failed': self.quest_activity[quest_id]['status'] == 'failed',
+                    })
+
+                presented_quest = {
+                    'name': quest_data['name'],
+                    'description': quest_data['desc'],
+                    'steps': annotated_steps,
+                    'status': self.quest_activity[quest_id]['status']
+                }
+
+                result.append(presented_quest)
+
+            status_order = ['progress', 'completed', 'failed']
+            return sorted(result, key=lambda q: status_order.index(q['status']))
+
+        def process_command(self, args):
+            gre = Re()
+            upcase_args = [arg.upper() for arg in args]
+            if upcase_args[0] == 'OPEN':
+                return
+
+            quest_id = int(upcase_args[1])
+            if upcase_args[0] == 'REMOVE':
+                if quest_id in self.quest_activity:
+                    del self.quest_activity[quest_id]
+                return
+
+            self.__create_quest(quest_id)
+            quest_json = game_file_loader.json_file(rpgm_data_path("Quests.json"))[quest_id]
+            if upcase_args[0] == 'ADD':
+                return
+            elif upcase_args[0] == 'NEXTSTEP':
+                self.quest_activity[quest_id]['current_step'] = min(self.quest_activity[quest_id]['current_step'] + 1, len(quest_json['steps']) - 1)
+                return
+            elif upcase_args[0] == 'BACKSTEP':
+                self.quest_activity[quest_id]['current_step'] = max(self.quest_activity[quest_id]['current_step'] - 1, 0)
+                return
+            elif upcase_args[0] == 'COMPLETE':
+                # TODO: rewards?
+                self.quest_activity[quest_id]['status'] = 'completed'
+                return
+            elif upcase_args[0] == 'FAIL':
+                self.quest_activity[quest_id]['status'] = 'failed'
+                return
+            elif upcase_args[0] == 'RESET':
+                del self.quest_activity[quest_id]
+                self.__create_quest(quest_id)
+                return
+
+            renpy.say(None, "Don't know how to process GameusQuestSystem command: %s" % ' '.join(args))
+
+        def __create_quest(self, quest_id):
+            if quest_id not in self.quest_activity and len(game_file_loader.json_file(rpgm_data_path("Quests.json"))) > quest_id:
+                self.quest_activity[quest_id] = {
+                    'status': 'progress',
+                    'current_step': 0
+                }

@@ -701,11 +701,13 @@ init python:
                 result.append(('i', 'show_inventory'))
             if game_file_loader.plugin_data_exact('Galv_QuestLog'):
                 result.append(('q', 'show_galv_quests'))
-            if game_file_loader.plugin_data_exact('YEP_QuestJournal'):
+            elif game_file_loader.plugin_data_exact('YEP_QuestJournal'):
                 result.append(('q', 'show_yep_quests'))
-            if rpgm_game_data.get('maic_quests', None):
+            elif game_file_loader.plugin_data_exact('GameusQuestSystem'):
+                result.append(('q', 'show_gameus_quests'))
+            elif rpgm_game_data.get('maic_quests', None):
                 result.append(('q', 'show_maic_quests'))
-            if rpgm_game_data.get('molegato_quests', None):
+            elif rpgm_game_data.get('molegato_quests', None):
                 result.append(('q', 'show_molegato_quests'))
             return result
 
@@ -786,6 +788,10 @@ init python:
 
         def show_yep_quests(self):
             result = renpy.call_screen('yep_quests_screen', self.party.yep_quest_manager().presented_quests())
+            return True
+
+        def show_gameus_quests(self):
+            result = renpy.call_screen('gameus_quests_screen', self.party.gameus_quest_manager().presented_quests())
             return True
 
         def migrate_missing_shop_data(self):
