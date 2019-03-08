@@ -986,8 +986,8 @@ init python:
 
         def say_text(self, speaker, spoken_text, face_name = None, face_index = None):
             self.show_map(True)
+            gre = Re()
             if game_file_loader.plugin_data_exact('GALV_MessageBusts'):
-                gre = Re()
                 all_busty_text = []
                 busty_text = spoken_text
                 bust_index = face_index
@@ -1004,8 +1004,13 @@ init python:
                 renpy.say(speaker, ' '.join(all_busty_text))
             else:
                 self.set_side_image(face_name, face_index)
-                self.last_said_text = spoken_text
-                renpy.say(speaker, spoken_text)
+                if game_file_loader.plugin_data_exact('GALV_TimedMessagePopups') and gre.search("<c:.*?>(.*)", spoken_text):
+                    # EX: "<c:800|800,90,0>\\C[11]\\fb   YOU HAVE MET JANE   "
+                    notification_text = gre.last_match.groups()[0]
+                    renpy.notify(notification_text)
+                else:
+                    self.last_said_text = spoken_text
+                    renpy.say(speaker, spoken_text)
 
         def pause(self):
             self.flush_queued_content()
