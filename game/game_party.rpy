@@ -4,7 +4,7 @@ init python:
         MAX_ITEMS = 99
 
         def __init__(self):
-            self.members = [1]
+            self.members = game_file_loader.json_file(rpgm_data_path("System.json"))['partyMembers']
             self.items = {}
             self.armors = {}
             self.weapons = {}
