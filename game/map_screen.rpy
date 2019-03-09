@@ -26,6 +26,7 @@ screen mapscreen(
     in_interaction = False,
     switch_toggler_buttons = [],
     common_event_queuers = [],
+    galv_screen_buttons = {},
     has_paused_events = False,
     paused_events_delay = 0,
     key_paused_events = [],
@@ -209,6 +210,13 @@ screen mapscreen(
                 ypos common_event_queuer['ypos']
                 background "#000"
                 action Function(game_state.queue_common_event, common_event_queuer['event_id']), Jump("game")
+
+        for galv_screen_button_id, galv_screen_button in galv_screen_buttons.iteritems():
+            button:
+                background galv_screen_button['image']
+                xpos galv_screen_button['x']
+                ypos galv_screen_button['y']
+                action Function(game_state.queue_common_event, galv_screen_button['event_id']), Jump("game")
 
     for switch_toggler in switch_toggler_buttons:
         textbutton switch_toggler['text']:

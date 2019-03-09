@@ -1526,6 +1526,8 @@ init python:
             if GameIdentifier().is_my_summer() and self.switches.value(1) == True:
                 common_event_queuers.append({"text": 'Show Status', "event_id": 1, "ypos": 100})
 
+            galv_screen_buttons = self.galv_screen_buttons if hasattr(self, 'galv_screen_buttons') else {}
+
             paused_events = []
             key_paused_events = []
             if hasattr(self, 'parallel_events'):
@@ -1577,6 +1579,7 @@ init python:
                 in_interaction=in_interaction,
                 switch_toggler_buttons=switch_toggler_buttons,
                 common_event_queuers=common_event_queuers,
+                galv_screen_buttons=galv_screen_buttons,
                 has_paused_events=len(paused_events) > 0,
                 paused_events_delay=paused_events_delay,
                 key_paused_events=key_paused_events,
