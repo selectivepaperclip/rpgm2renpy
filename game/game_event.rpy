@@ -337,7 +337,6 @@ init python:
                 return
 
             for line in script_string.split("\n"):
-                variable_set_command = re.match("\$gameVariables\.setValue\((\d+),\s*(.+)\);?", line)
                 mv_self_switch_set_command = re.match("\$gameSelfSwitches\.setValue\(\[(\d+),(\d+),'(.*?)'\], (\w+)\);?", line)
                 ace_self_switch_set_command = re.match("\$game_self_switches\[\[(\d+)\s*,\s*(\d+)\s*,\s*'(.*?)'\]\] = (\w+)", line)
 
@@ -397,8 +396,8 @@ init python:
                     pass
                 elif line.startswith('cam_set('):
                     pass
-                elif variable_set_command:
-                    groups = variable_set_command.groups()
+                elif gre.match("\$gameVariables\.setValue\((\d+),\s*(.+)\);?", line):
+                    groups = gre.last_match.groups()
                     variable_id = int(groups[0])
                     value = self.state.eval_fancypants_value_statement(groups[1])
                     self.state.variables.set_value(variable_id, value)
