@@ -643,10 +643,10 @@ init python:
                 elif route_part['code'] in [23, 24]: # Turn Random 90deg, Turn Random
                     renpy.say(None, "Move Route random turn commands not supported!")
                 elif route_part['code'] == 25: # Turn Toward
-                    loc = self.state.map.event_location(event.event_data)
+                    loc = self.state.map.event_location(self.event_data)
                     new_direction = self.direction_to_face_player(loc)
                 elif route_part['code'] == 26: # Turn Away
-                    loc = self.state.map.event_location(event.event_data)
+                    loc = self.state.map.event_location(self.event_data)
                     new_direction = GameDirection.reverse_direction(self.direction_to_face_player(loc))
                 elif route_part['code'] == 27: # Route Switch On
                     self.state.switches.set_value(route_part['parameters'][0], True)
