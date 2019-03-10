@@ -230,7 +230,7 @@ init python:
                 self.list_index += 1
 
         def finish_event(self):
-            self.list_index = len(self.page['list']) - 1
+            self.list_index = len(self.page['list'])
 
         def jump_to(self, index, current_indent):
             current_index = self.list_index
