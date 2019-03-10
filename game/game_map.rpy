@@ -1108,6 +1108,9 @@ init python:
             has_commands = False
             has_wait = False
             for command in page['list']:
+                if command['code'] == 45:
+                    if GalvEventSpawnTimers.has_timer(command):
+                        return True
                 if command['code'] not in [0]:
                     has_commands = True
                 elif command['code'] == 15:

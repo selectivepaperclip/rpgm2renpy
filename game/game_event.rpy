@@ -353,6 +353,9 @@ init python:
                 if GalvScreenButtons.process_script(script_string):
                     continue
 
+                if GalvEventSpawnTimers.process_script(self, script_string):
+                    continue
+
                 if game_file_loader.plugin_data_exact('YEP_X_ExtMesPack1'):
                     if gre.match("\$gameSystem\.clearChoiceSettings", line):
                         self.choices_to_hide = []
@@ -704,6 +707,8 @@ init python:
                     elif gre.match('this.setBlendMode\(\d+\)', route_script):
                         pass
                     elif gre.match('end_anim_loop', route_script):
+                        pass
+                    elif GalvEventSpawnTimers.process_move_route(self, route_script):
                         pass
                     else:
                         print "Script that could not be evaluated:\n"

@@ -31,6 +31,7 @@ screen mapscreen(
     paused_events_delay = 0,
     key_paused_events = [],
     active_timer = None,
+    event_timers = [],
     faded_out = False,
 
     # cruft from old savegames
@@ -243,7 +244,7 @@ screen mapscreen(
             background "#000"
             action Function(game_state.unpause_parallel_events), Jump("game")
 
-    if len(key_paused_events) > 0 or active_timer:
+    if len(key_paused_events) > 0 or active_timer or len(event_timers) > 0:
         vbox:
             xalign 0.9
             yalign 0.8
@@ -251,6 +252,10 @@ screen mapscreen(
                 textbutton active_timer['text']:
                     background "#000"
                     action Function(game_state.finish_active_timer), Jump("game")
+            for event_id in event_timers:
+                textbutton ("Trigger Event Timer %s" % event_id):
+                    background "#000"
+                    action Function(GalvEventSpawnTimers.run_timer_actions, game_state.map), Jump("game")
             for key_paused_event_data in key_paused_events:
                 hbox:
                     textbutton key_paused_event_data['text']:
