@@ -1537,8 +1537,25 @@ init python:
 
                 # Battle
                 elif command['code'] == 301:
-                    result = renpy.display_menu([("A battle is happening!", None), ("You Win!", 0), ("You Escape!", 1), ("You Lose!", 2)])
-                    self.branch[command['indent']] = result
+                    troop_id = None
+                    if command['parameters'][0] == 0:
+                        troop_id = command['parameters'][1]
+                    elif command['parameters'][0] == 1:
+                        troop_id = self.state.variables.value(command['parameters'][1])
+                    else:
+                        troop_id = self.map.random_encounter_troop_id(self.state.player_x, self.state.player_y)
+
+                    troop_json = game_file_loader.json_file(rpgm_data_path("Troops.json"))
+                    if troop_id > 0 and troop_id < len(troop_json):
+                        troop_data = troop_json[troop_id]
+
+                        result = renpy.display_menu([
+                            ("A battle with '%s'!" % game_state.escape_text_for_renpy(troop_data['name']), None),
+                            ("You Win!", 0),
+                            ("You Escape!", 1),
+                            ("You Lose!", 2)
+                        ])
+                        self.branch[command['indent']] = result
 
                 # Shop
                 elif command['code'] == 302:

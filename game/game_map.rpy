@@ -1386,6 +1386,22 @@ init python:
 
             return []
 
+        def random_encounter_troop_id(self, x, y):
+            encounter_list = []
+            weight_sum = 0
+            for encounter in self.data()['encounterList']:
+                region_id = self.tile_region(x, y)
+                if len(encounter['regionSet']) == 0 or region_id in encounter['regionSet']:
+                    encounter_list.append(encounter)
+                    weight_sum += encounter['weight']
+            if weight_sum > 0:
+                value = random.randint(0, weight_sum)
+                for encounter in encounter_list:
+                    value -= encounter['weight']
+                    if value < 0:
+                        return encounter['troopId']
+            return 0
+
         def name(self):
             if 'displayName' in self.data() and len(self.data()['displayName']) > 0:
                 return self.data()['displayName']
