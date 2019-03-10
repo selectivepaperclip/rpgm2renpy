@@ -204,6 +204,10 @@ init python:
 
                         if not isinstance(target, list):
                             if target == 0:
+                                # Hack: if the event is coming toward the player, assume it will inevitably reach
+                                if event.page['moveType'] == 2:
+                                    return True
+
                                 target = (self.state.player_x, self.state.player_y)
                             else:
                                 target_event = self.state.map.find_event_at_index(target)
