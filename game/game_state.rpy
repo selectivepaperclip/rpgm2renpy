@@ -23,6 +23,24 @@ init python:
                 raise(RuntimeError("Unknown direction! %s" % direction))
 
         @classmethod
+        def direction_for_a_to_face_b(cls, a, b):
+            sx = b[0] - a[0]
+            sy = b[1] - a[1]
+            if abs(sx) > abs(sy):
+                if sx > 0:
+                    return GameDirection.RIGHT
+                else:
+                    return GameDirection.LEFT
+            elif abs(sy) > 0:
+                if sy > 0:
+                    return GameDirection.DOWN
+                else:
+                    return GameDirection.UP
+            # Shouldn't really get here (it means the event position is the same as player position)
+            # ...but inevitably will get here for some reason
+            return GameDirection.UP
+
+        @classmethod
         def random_direction(cls):
             return random.choice([GameDirection.UP, GameDirection.DOWN, GameDirection.LEFT, GameDirection.RIGHT])
 
@@ -1279,31 +1297,7 @@ init python:
                     if hasattr(mapdest, 'teleport'):
                         self.player_x, self.player_y = mapdest.x, mapdest.y
                     elif hasattr(mapdest, 'reachable') and mapdest.reachable and not self.everything_is_reachable():
-                        reachability_grid = self.map.reachability_grid_for_current_position()
-
-                        path_from_destination = None
-                        preferred_approach_direction = map_event.preferred_approach_direction()
-                        if preferred_approach_direction:
-                            delta_x, delta_y = GameDirection.delta_for_direction(GameDirection.reverse_direction(preferred_approach_direction))
-                            adjacent_x, adjacent_y, adjacent_direction = mapdest.x + delta_x, mapdest.y + delta_y, preferred_approach_direction
-                            if reachability_grid[adjacent_y][adjacent_x] == 3:
-                                path_from_adjacent_square = self.map.path_from_destination(self.player_x, self.player_y, adjacent_x, adjacent_y) or []
-                                path_from_destination = [(mapdest.x, mapdest.y, preferred_approach_direction)] + path_from_adjacent_square
-
-                        if not path_from_destination:
-                            if hasattr(mapdest, 'reachable_via_counter'):
-                                before_counter_x, before_counter_y = mapdest.reachable_via_counter
-                                path_from_destination = self.map.path_from_destination(self.player_x, self.player_y, before_counter_x, before_counter_y)
-                            else:
-                                path_from_destination = self.map.path_from_destination(self.player_x, self.player_y, mapdest.x, mapdest.y)
-
-                        adjacent_x, adjacent_y, adjacent_direction = path_from_destination[0]
-                        self.map_path_destination = (mapdest.x, mapdest.y, adjacent_direction)
-
-                        if hasattr(mapdest, 'reachable_via_counter') or map_event.page['through'] or (map_event.page['priorityType'] != 1 and not self.map.is_impassible(mapdest.x, mapdest.y, adjacent_direction)):
-                            self.map_path = path_from_destination
-                        else:
-                            self.map_path = path_from_destination[1:-1]
+                        self.assign_map_path(mapdest, map_event)
                     else:
                         self.set_player_direction(self.determine_direction(mapdest.x, mapdest.y))
                         if map_event.page['through'] or map_event.page['trigger'] != 0:
@@ -1320,6 +1314,37 @@ init python:
                 return True
 
             return False
+
+        def assign_map_path(self, mapdest, map_event):
+            reachability_grid = self.map.reachability_grid_for_current_position()
+            path_from_destination = None
+            preferred_approach_direction = map_event.preferred_approach_direction()
+            if preferred_approach_direction:
+                delta_x, delta_y = GameDirection.delta_for_direction(GameDirection.reverse_direction(preferred_approach_direction))
+                adjacent_x, adjacent_y, adjacent_direction = mapdest.x + delta_x, mapdest.y + delta_y, preferred_approach_direction
+                if reachability_grid[adjacent_y][adjacent_x] == 3:
+                    path_from_adjacent_square = self.map.path_from_destination(self.player_x, self.player_y, adjacent_x, adjacent_y) or []
+                    path_from_destination = [(mapdest.x, mapdest.y, preferred_approach_direction)] + path_from_adjacent_square
+
+            if not path_from_destination:
+                if hasattr(mapdest, 'reachable_via_counter'):
+                    before_counter_x, before_counter_y = mapdest.reachable_via_counter
+                    final_direction = GameDirection.direction_for_a_to_face_b((before_counter_x, before_counter_y), (mapdest.x, mapdest.y))
+                    if before_counter_x == self.player_x and before_counter_y == self.player_y:
+                        self.set_player_direction(final_direction)
+                        return
+                    final_turn = [(before_counter_x, before_counter_y, final_direction)]
+                    path_from_destination = final_turn + self.map.path_from_destination(self.player_x, self.player_y, before_counter_x, before_counter_y)
+                else:
+                    path_from_destination = self.map.path_from_destination(self.player_x, self.player_y, mapdest.x, mapdest.y)
+
+            adjacent_x, adjacent_y, adjacent_direction = path_from_destination[0]
+            self.map_path_destination = (mapdest.x, mapdest.y, adjacent_direction)
+
+            if hasattr(mapdest, 'reachable_via_counter') or map_event.page['through'] or (map_event.page['priorityType'] != 1 and not self.map.is_impassible(mapdest.x, mapdest.y, adjacent_direction)):
+                self.map_path = path_from_destination
+            else:
+                self.map_path = path_from_destination[1:-1]
 
         def ensure_user_map_zoom_exists(self):
             if not hasattr(self, 'user_map_zoom_factor'):

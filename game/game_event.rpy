@@ -492,21 +492,7 @@ init python:
                         game_state.shown_pictures[picture_id] = {"image_name": RpgmAnimation.create(*picture_transitions)}
 
         def direction_to_face_player(self, event_location):
-            sx = game_state.player_x - event_location[0]
-            sy = game_state.player_y - event_location[1]
-            if abs(sx) > abs(sy):
-                if sx > 0:
-                    return GameDirection.RIGHT
-                else:
-                    return GameDirection.LEFT
-            elif abs(sy) > 0:
-                if sy > 0:
-                    return GameDirection.DOWN
-                else:
-                    return GameDirection.UP
-            # Shouldn't really get here (it means the event position is the same as player position)
-            # ...but inevitably will get here for some reason
-            return GameDirection.UP
+            return GameDirection.direction_for_a_to_face_b(event_location, (game_state.player_x, game_state.player_y))
 
         def process_move_route(self, event_id, route, return_on_wait = False):
             if not hasattr(self, 'move_route_index'):
