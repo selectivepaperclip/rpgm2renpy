@@ -4,16 +4,19 @@ screen shopscreen(shop_items = None, purchase_only = None):
     add Solid(Color("#000", alpha = 0.75))
 
     frame:
-        xalign 0.1
-        yalign 0.23
+        xalign 0.5
+        yalign 0.1
+        xsize config.screen_width - 10
+        ymaximum config.screen_height - 10
         background Color("#005", alpha = 0.75)
 
         vbox:
             textbutton "Leave":
+                xanchor 1.0
+                xpos config.screen_width - 20
                 background "#000"
                 hover_background "#00f"
                 action Hide("shopscreen"), Jump("game")
-                xalign 1.0
 
             text "Money: %s" % game_state.party.gold
 
