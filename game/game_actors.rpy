@@ -34,6 +34,8 @@ init python:
                 overrides['level'] = actor_data['initialLevel']
             if 'classExp' not in overrides:
                 overrides['classExp'] = {actor_data['classId']: 0}
+            if 'hp' not in overrides or 'mp' not in overrides:
+                self.recover_all()
 
         def populate_states(self):
             if not 'affected_states' in self.overrides:
@@ -42,6 +44,16 @@ init python:
         def populate_skills(self):
             if not 'learned_skills' in self.overrides:
                 self.overrides['learned_skills'] = Set()
+
+        def populate_param_plus(self):
+            if not 'param_plus' in self.overrides:
+                self.overrides['param_plus'] = [0,0,0,0,0,0,0,0]
+
+        def populate_hp_mp(self):
+            if 'hp' not in self.overrides:
+                self.overrides['hp'] = self.param(0) # Max HP
+            if 'mp' not in self.overrides:
+                self.overrides['mp'] = self.param(1) # Max MP
 
         def set_property(self, property_name, property_value):
             self.overrides[property_name] = property_value
@@ -96,8 +108,7 @@ init python:
         def add_exp(self, exp):
             new_level = self.overrides['level']
             self.overrides['classExp'][self.get_property('classId')] += exp
-            new_exp = self.overrides['classExp'][self.get_property('classId')]
-            while (new_level < self.get_property('maxLevel') and exp >= self.exp_for_level(new_level + 1)):
+            while (new_level < self.get_property('maxLevel') and self.current_exp() >= self.exp_for_level(new_level + 1)):
                 new_level = new_level + 1
             self.set_property('level', new_level)
 
@@ -105,8 +116,46 @@ init python:
             new_level = self.overrides['level'] + level_delta
             self.set_property('level', new_level)
 
+        def change_hp(self, value):
+            self.populate_hp_mp()
+            self.overrides['hp'] += value
+
+        def change_mp(self, value):
+            self.populate_hp_mp()
+            self.overrides['mp'] += value
+
+        def recover_all(self):
+            self.overrides['hp'] = self.param(0) # Max HP
+            self.overrides['mp'] = self.param(1) # Max MP
+
+        def param_base(self, param_id):
+            class_data = self.current_class()
+            return class_data['params'][param_id][self.overrides['level']]
+
+        def param_plus(self, param_id):
+            self.populate_param_plus()
+            # TODO: equipment
+            return self.overrides['param_plus'][param_id]
+
+        def hp(self):
+            self.populate_hp_mp()
+            return self.get_property('hp')
+
+        def mp(self):
+            self.populate_hp_mp()
+            return self.get_property('mp')
+
+        def param(self, param_id):
+            return self.param_base(param_id) + self.param_plus(param_id)
+
+        def current_class(self):
+            return game_file_loader.json_file(rpgm_data_path("Classes.json"))[self.get_property('classId')]
+
+        def current_exp(self):
+            return self.overrides['classExp'][self.get_property('classId')]
+
         def exp_for_level(self, level):
-            class_data = game_file_loader.json_file(rpgm_data_path("Classes.json"))[self.get_property('classId')]
+            class_data = self.current_class()
             basis, extra, acc_a, acc_b = class_data['expParams']
 
             return int(basis * (level-1 ** 0.9 + acc_a / 250.0) * level * (level+1) / (6 + (level ** 2) / 50.0 / acc_b) + (level - 1) * extra)

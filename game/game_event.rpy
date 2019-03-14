@@ -1103,24 +1103,19 @@ init python:
                         elif game_data_operand_type == 2: # Armor
                             value = self.state.party.num_items(self.state.armors.by_id(game_data_operand_param1))
                         elif game_data_operand_type == 3: # Actor
-                            actor_index = command['parameters'][4]
+                            actor_index = game_data_operand_param1
                             actor = self.state.actors.by_index(actor_index)
                             if game_data_operand_param2 == 0: # Level
                                 value = actor.get_property('level')
                             elif game_data_operand_param2 == 1: # EXP
-                                # return actor.currentExp();
-                                renpy.say(None, ("Variable control operand 3 not implemented for type 3 (EXP), plz implement"))
-                            elif game_data_operand_param2 == 1: # HP
-                                # return actor.hp;
-                                renpy.say(None, ("Variable control operand 3 not implemented for type 3 (HP), plz implement"))
-                            elif game_data_operand_param2 == 1: # MP
-                                # return actor.mp;
-                                renpy.say(None, ("Variable control operand 3 not implemented for type 3 (MP), plz implement"))
+                                value = actor.current_exp()
+                            elif game_data_operand_param2 == 2: # HP
+                                value = actor.hp()
+                            elif game_data_operand_param2 == 3: # MP
+                                value = actor.mp()
                             else: # Parameter
-                                # if (param2 >= 4 && param2 <= 11) {
-                                #    return actor.param(param2 - 4);
-                                # }
-                                renpy.say(None, ("Variable control operand 3 not implemented for actor parameter, plz implement"))
+                                if game_data_operand_param2 >= 4 and game_data_operand_param2 <= 11:
+                                    value = actor.param(game_data_operand_param2 - 4)
                         elif game_data_operand_type == 4: # Enemy
                             #    var enemy = $gameTroop.members()[param1];
                             #    if (enemy) {
@@ -1558,6 +1553,21 @@ init python:
                     actor_index = command['parameters'][0]
                     self.request_actor_name(actor_index)
 
+                # Change HP / MP
+                elif command['code'] in [311, 312]:
+                    operation, operand_type, operand = command['parameters'][2:5]
+                    value = self.state.variables.operate_value(operation, operand_type, operand)
+                    actor_indices = self.actor_indices_for_ex_iteration(command['parameters'][0], command['parameters'][1])
+                    for actor_index in actor_indices:
+                        actor = self.state.actors.by_index(actor_index)
+                        if command['code'] == 311:
+                            allow_death = command['parameters'][5]
+                            # TODO: process death by HP change, I guess?
+                            actor.change_hp(value)
+                        elif command['code'] == 312:
+                            print "Change MP by %s" % value
+                            actor.change_mp(value)
+
                 # Change state
                 elif command['code'] == 313:
                     actor_indices = self.actor_indices_for_ex_iteration(command['parameters'][0], command['parameters'][1])
@@ -1571,7 +1581,10 @@ init python:
 
                 # Recover all
                 elif command['code'] == 314:
-                    pass
+                    actor_indices = self.actor_indices_for_ex_iteration(command['parameters'][0], command['parameters'][1])
+                    for actor_index in actor_indices:
+                        actor = self.state.actors.by_index(actor_index)
+                        actor.recover_all()
 
                 # Change EXP / Change Level
                 elif command['code'] in [315, 316]:
