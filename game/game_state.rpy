@@ -727,6 +727,7 @@ init python:
             result = []
             if GameIdentifier().is_ics1() or rpgm_game_data.get('enable_inventory_key', None):
                 result.append(('i', 'show_inventory'))
+
             if game_file_loader.plugin_data_exact('Galv_QuestLog'):
                 result.append(('q', 'show_galv_quests'))
             elif game_file_loader.plugin_data_exact('YEP_QuestJournal'):
@@ -821,6 +822,14 @@ init python:
         def show_gameus_quests(self):
             result = renpy.call_screen('gameus_quests_screen', self.party.gameus_quest_manager().presented_quests())
             return True
+
+        def toggle_ask_for_random(self):
+            if not hasattr(self, 'ask_for_random') or not self.ask_for_random:
+                self.ask_for_random = True
+                renpy.notify('Ask For Random mode turned ON')
+            else:
+                self.ask_for_random = False
+                renpy.notify('Ask For Random mode turned OFF')
 
         def migrate_missing_shop_data(self):
             if not hasattr(self, 'armors'):
@@ -997,7 +1006,7 @@ init python:
             gre = Re()
             if gre.match(re.compile("([^\n]+?):\s\s*(.+)", re.DOTALL), text):
                 speaker, spoken_text = gre.last_match.groups()
-                if len(speaker) < 60:
+                if len(speaker) < 20:
                     return self.say_text(speaker, spoken_text, face_name, face_index)
 
             self.say_text(None, text, face_name, face_index)

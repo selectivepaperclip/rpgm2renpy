@@ -38,6 +38,13 @@ init python:
                     self.page_index = index
                     return self.page_index
 
+        def get_random_int(self, lower, upper):
+            if hasattr(game_state, 'ask_for_random') and game_state.ask_for_random:
+                user_result = renpy.call_screen("random_int_selection_screen", lower, upper)
+                return int(user_result)
+            else:
+                return lower + random.randint(0, upper - lower)
+
         def preferred_approach_direction(self):
             for command in self.page['list'][0:2]:
                 if command['code'] == 111 and command['parameters'][0] == 6:
@@ -1091,7 +1098,7 @@ init python:
                         value = self.state.variables.value(command['parameters'][4])
                     elif operand == 2:
                         was_random = True
-                        value = command['parameters'][4] + random.randint(0, command['parameters'][5] - command['parameters'][4]);
+                        value = self.get_random_int(command['parameters'][4], command['parameters'][5])
                     elif operand == 3:
                         game_data_operand_type = command['parameters'][4]
                         game_data_operand_param1 = command['parameters'][5]

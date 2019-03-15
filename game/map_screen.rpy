@@ -89,6 +89,9 @@ screen mapscreen(
             key key_str:
                 action SetVariable("keyed_function_call", function_call), Jump("game")
 
+    key 'r':
+        action Function(game_state.toggle_ask_for_random)
+
     if not faded_out:
         viewport id "map_bg_viewport":
             xadjustment viewport_xadjustment
