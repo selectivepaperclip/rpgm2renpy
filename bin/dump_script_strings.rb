@@ -3,11 +3,19 @@
 require 'json'
 require 'fileutils'
 require 'awesome_print'
+require 'optparse'
 
 if ARGV.length < 1
   puts "Usage: #{$0} path/to/an/rpgmaker/xp/vx/or/vxace/game"
   exit 0
 end
+
+options = {}
+OptionParser.new do |opts|
+  opts.on("-v", "--[no-]verbose", "Run verbosely") do |v|
+    options[:verbose] = v
+  end
+end.parse!
 
 game_dir = File.expand_path(ARGV[0])
 
@@ -50,8 +58,12 @@ maps.each do |map_path|
                         end
                     end
                 elsif command['code'] == 356
-                    split_params = command['parameters'][0].split(' ')
-                    plugin_strings << split_params[0]
+                    if options[:verbose]
+                        plugin_strings << command['parameters'][0]
+                    else
+                        split_params = command['parameters'][0].split(' ')
+                        plugin_strings << split_params[0]
+                    end
                 end
             end
         end
