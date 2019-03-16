@@ -54,6 +54,11 @@ init python:
             if storage_attribute[item['id']] == 0:
                 del storage_attribute[item['id']]
 
+        def gain_exp(self, value):
+            for actor_index in self.members:
+                actor = game_state.actors.by_index(actor_index)
+                actor.add_exp(value)
+
         def add_actor(self, actor_index):
             if actor_index not in self.members:
                 self.members.append(actor_index)
