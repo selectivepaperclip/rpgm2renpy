@@ -99,7 +99,10 @@ init python:
         gui.text_size = 14
 
 ## The size of character names.
-define gui.name_text_size = 30
+init python:
+    gui.name_text_size = 30
+    if config.screen_width <= 640:
+        gui.name_text_size = 18
 
 ## The size of text in the game's user interface.
 define gui.interface_text_size = 22
@@ -172,10 +175,17 @@ init python:
     if config.screen_width <= 1024:
         gui.dialogue_xpos = 60
 
-define gui.dialogue_ypos = 50
+init python:
+    gui.dialogue_ypos = 58
+    if config.screen_width <= 1024:
+        gui.dialogue_ypos = 30
 
 ## The maximum width of dialogue text, in pixels.
-define gui.dialogue_width = 744
+init python:
+    gui.dialogue_width = 744
+    if gui.dialogue_width + gui.dialogue_xpos > config.screen_width:
+        gui.dialogue_width = config.screen_width - gui.dialogue_xpos
+
 
 ## The horizontal alignment of the dialogue text. This can be 0.0 for left-
 ## aligned, 0.5 for centered, and 1.0 for right-aligned.
