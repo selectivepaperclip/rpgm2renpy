@@ -195,6 +195,41 @@ init python:
                     event_x, event_y = self.state.map.event_location(self.event_data)
                     distance = abs(self.state.player_x - event_x) + abs(self.state.player_y - event_y)
                     return distance <= desired_distance
+                elif gre.match("Galv\.DETECT\.event\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(true|false)\s*\)", params[1]):
+                    event_id = int(gre.last_match.groups()[0])
+                    desired_distance = int(gre.last_match.groups()[1])
+                    line_of_sight = gre.last_match.groups()[2] != 'false'
+
+                    event_data = self.state.map.data()['events'][event_id]
+                    event_x, event_y = self.state.map.event_location(event_data)
+                    distance = math.sqrt((self.state.player_x - event_x) ** 2 + (self.state.player_y - event_y) ** 2)
+
+                    if distance <= desired_distance:
+                        if line_of_sight:
+                            event = self.state.map.find_event_at_index(event_id)
+                            if not event:
+                                return False
+                            event_direction = self.state.map.event_sprite_data(event.event_data, event.page, event.get_page_index())['direction']
+                            if event_direction == GameDirection.DOWN:
+                                if event_y > self.state.player_y:
+                                    return False
+                            elif event_direction == GameDirection.LEFT:
+                                if event_x < self.state.player_x:
+                                    return False
+                            elif event_direction == GameDirection.RIGHT:
+                                if event_x > self.state.player_x:
+                                    return False
+                            elif event_direction == GameDirection.UP:
+                                if event_y < self.state.player_y:
+                                    return False
+
+                            # TODO: the more complicated line of sight calculation
+                            return False
+                        else:
+                            return True
+
+                    return False
+
                 elif gre.match("Galv\.PUZ\.isAt\((.*?)\)", params[1]):
                     args_string = gre.last_match.groups()[0]
                     if re.match("^[0-9\[\],]+$", args_string):
