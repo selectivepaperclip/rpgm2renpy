@@ -430,6 +430,8 @@ init python:
                     self.state.self_switches.set_value((map_id, event_id, self_switch_name), self_switch_value)
                 elif line == 'auto_save_game()':
                     pass
+                elif line.startswith('DataManager.saveGame'):
+                    pass
                 elif line == 'combine_choices':
                     # From the more_choices plugin -- technically a toggle
                     # to prevent automatically combining menu choice items,
