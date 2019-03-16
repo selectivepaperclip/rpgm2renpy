@@ -1126,6 +1126,12 @@ init python:
 
                 # Control Variables
                 elif command['code'] == 122:
+                    if noisy_events:
+                        print "%scontrol vars: %s" % (
+                            ' ' * command['indent'],
+                            command['parameters']
+                        )
+
                     was_random = False
                     start, end, operation_type, operand = command['parameters'][0:4]
                     value = 0
