@@ -37,6 +37,12 @@ init -99 python:
 
             return self._plugins_json
 
+        def has_active_plugin(self, plugin_name):
+            plugin = self.plugin_data_exact(plugin_name)
+            if not plugin:
+                return False
+            return plugin['status']
+
         def plugin_data_exact(self, plugin_name):
             if plugin_name in self.exact_plugin_cache:
                 return self.exact_plugin_cache[plugin_name]

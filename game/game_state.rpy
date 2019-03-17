@@ -383,8 +383,15 @@ init python:
 
         def escape_text_for_renpy(self, text):
             escaped_text = re.sub('%', '%%', text)
+            escaped_text = re.sub('\{', '{{', escaped_text)
+
+            # Colorized text
+            escaped_text = re.sub(r'\\C\[(\d+)\]', lambda m: "{color=%s}" % rpgm_colors.text_color(int(m.group(1))), escaped_text, flags=re.IGNORECASE)
+            escaped_text = re.sub(r'\\C', "{/color}", escaped_text, flags=re.IGNORECASE)
+
             escaped_text = re.sub('\[', '[[', escaped_text)
-            return re.sub('\{', '{{', escaped_text)
+
+            return escaped_text
 
         def replace_names(self, text):
             # Replace statements from actor numbers, e.g. \N[2] with their actor name
@@ -408,8 +415,11 @@ init python:
             text = re.sub(r'\\fn\<.*?\>\s*', '', text)
             text = re.sub(r'\\f[rbi]\s*', '', text)
 
-            # Remove fancy characters from GALV_VisualNovelChoices.js
-            text = re.sub(r'\\C\[(\d+)\]', '', text, flags=re.IGNORECASE)
+            # Color code handling (\C[n] and \C) is handled in escape_text_for_renpy since it
+            # generates RenPy color codes which would otherwise need to be unescaped later
+
+            if game_file_loader.has_active_plugin('YEP_MessageCore'):
+                text = re.sub(r'\s*<(?:BR|line break)>\s*', "\n", text, flags=re.IGNORECASE);
 
             # Replace statements from literal strings, e.g. \n<Doug> with that string followed by a colon
             # these names would normally show in a box on top of the message window; the strategy

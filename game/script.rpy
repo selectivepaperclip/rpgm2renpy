@@ -30,6 +30,7 @@ init -10 python:
     rpgm_reachability_grid_cache = ReachabilityGridCacheV2()
 
     image_size_cache = ImageSizeCache()
+    rpgm_colors = RpgmColors()
 
     import glob
     build.classify('rpgmdata', 'all')
@@ -89,6 +90,7 @@ init -10 python:
                 self.characters_path = rpgm_path("Graphics/Characters/")
                 self.parallaxes_path = rpgm_path("Graphics/Parallaxes/")
                 self.faces_path = rpgm_path("Graphics/Faces/")
+                self.window_png_path = rpgm_path("Graphics/System/Window.png")
                 self.tile_width = 32
                 self.tile_height = 32
                 possible_choice_plugin_filenames = ['Choces_More.rb', 'LargeChoices.rb', 'More_Choices.rb']
@@ -104,6 +106,7 @@ init -10 python:
                 self.characters_path = rpgm_path("www/img/characters/")
                 self.parallaxes_path = rpgm_path("www/img/parallaxes/")
                 self.faces_path = rpgm_path("www/img/faces/")
+                self.window_png_path = rpgm_path("www/img/system/Window.png")
                 self.tile_width = 48
                 self.tile_height = 48
 
