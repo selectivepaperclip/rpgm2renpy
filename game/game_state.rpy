@@ -1469,6 +1469,39 @@ init python:
                 })
             return result
 
+        def picture_common_events(self):
+            plugin = game_file_loader.plugin_data_exact('YEP_PictureCommonEvents')
+            if not plugin or not plugin['status']:
+                return []
+            if not hasattr(self, '_real_picture_common_events'):
+                self._real_picture_common_events = []
+                for k, v in plugin['parameters'].iteritems():
+                    if k.startswith('Picture') and v != "0":
+                        self._real_picture_common_events.append((k, v))
+
+            result = []
+            for desc, common_event_id in self._real_picture_common_events:
+                desc_parts = desc.split(' ')
+                picture_id = int(desc_parts[1])
+                if desc_parts[2] != 'Click':
+                    renpy.say(None, "Don't know how to deal with picture common event with action %s" % desc_parts[2])
+                    continue
+
+                picture = self.queued_or_shown_picture(picture_id)
+                if not picture:
+                    continue
+                print picture
+
+                size = picture.get('final_size') or picture.get('size')
+                result.append({
+                    'x': picture.get('final_x') or picture.get('x'),
+                    'y': picture.get('final_y') or picture.get('y'),
+                    'xsize': size[0],
+                    'ysize': size[1],
+                    'common_event_id': int(common_event_id)
+                })
+            return result
+
         def show_map(self, in_interaction = False, fade_map = False):
             coordinates = []
             curated_clickables = []
@@ -1623,6 +1656,7 @@ init python:
                 in_interaction=in_interaction,
                 switch_toggler_buttons=switch_toggler_buttons,
                 common_event_queuers=common_event_queuers,
+                picture_common_events=self.picture_common_events(),
                 galv_screen_buttons=galv_screen_buttons,
                 has_paused_events=len(paused_events) > 0,
                 paused_events_delay=paused_events_delay,
