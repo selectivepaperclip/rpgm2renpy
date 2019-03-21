@@ -4,6 +4,8 @@ init python:
             return game_state.system_data()['gameTitle'] in ['Living with Mia Act 1 - REMASTERED', 'My Sister Mia v1.0full']
         def is_living_with_mia_part_2(self):
             return game_state.system_data()['gameTitle'] in ['My Sister Mia v1.0full']
+        def is_lust_epidemic(self):
+            return rpgm_game_data.get('short_name', '') == 'lust-epidemic'
         def is_milfs_control(self):
             return rpgm_game_data.get('long_name', '') == "Milf's Control"
         def is_milfs_villa(self):

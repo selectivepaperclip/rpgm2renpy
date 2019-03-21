@@ -258,6 +258,10 @@ init python:
                     else:
                         renpy.say(None, "Args too sketch to eval at '%s'" % script_string)
                 else:
+                    fancypants_eval = self.state.eval_fancypants_value_statement(params[1])
+                    if fancypants_eval in [True, False]:
+                        return fancypants_eval
+
                     renpy.say(None, "Conditional statements for Script not implemented\nSee console for full script.")
                     print "Script that could not be evaluated:\n"
                     print params[1]
@@ -379,6 +383,8 @@ init python:
                 result = self.eval_galv_puz_script(script_string)
                 if result:
                     return
+            elif GameIdentifier().is_lust_epidemic() and GameSpecificCodeLustEpidemic().eval_full_script(script_string):
+                return
             elif GameIdentifier().is_milfs_control() and GameSpecificCodeMilfsControl().eval_full_script(script_string):
                 return
 
@@ -1012,12 +1018,20 @@ init python:
                     if len(choices) > 0:
                         item_options = [(text, index) for text, index in choices]
                         screen_args = {}
-                        if GameIdentifier().is_my_summer():
-                            # only show the cancel button the status screen for my_summer, could be a little fragile
+                        if GameIdentifier().is_my_summer() or GameIdentifier().is_lust_epidemic():
+                            # only show the cancel button the status screen for NLT games, could be a little fragile
                             current_event = self.state.events[-1]
                             if current_event.common() and current_event.event_data['id'] == 1:
                                 screen_args["background"] = False
                                 screen_args["allow_cancel"] = True
+                            screen_args["xsize"] = 1.0
+                            screen_args["xpos"] = 0
+                            screen_args["ypos"] = 30
+                            screen_args["ysize"] = 150
+                            screen_args["rows"] = int(math.ceil(len(item_options) / 4.0))
+                            screen_args["cols"] = 4
+                        else:
+                            screen_args["rows"] = len(item_options)
 
                         result = renpy.display_menu(
                             sorted(item_options, key=lambda opt: opt[0]),
@@ -1768,6 +1782,8 @@ init python:
                     elif TerraxLighting.is_lighting_command(plugin_command):
                         pass
                     elif plugin_command in ['SmartPath']:
+                        pass
+                    elif plugin_command in ['MobileUI']:
                         pass
                     elif plugin_command in ['Flashlight']:
                         pass

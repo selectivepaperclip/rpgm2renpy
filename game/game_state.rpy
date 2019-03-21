@@ -1,4 +1,13 @@
 init python:
+    import sys
+
+    PY3 = sys.version_info[0] == 3
+
+    if PY3:
+        string_types = str,
+    else:
+        string_types = basestring,
+
     class GameDirection(object):
         UP = 8
         DOWN = 2
@@ -678,15 +687,26 @@ init python:
                 return self.actors.actor_name(int(gre.last_match.groups()[0]))
             elif gre.match('\$gameActors\.actor\((\d+)\)\.nickname\(\)', script_string):
                 return self.actors.by_index(int(gre.last_match.groups()[0])).get_property('nickname')
+            elif gre.match('\$gameVariables\.value\((\d+)\)\.replace\(\"([^"]+)\", \"([^"]+)\"\);?', script_string):
+                variable_id = int(gre.last_match.groups()[0])
+                return self.variables.value(variable_id).replace(gre.last_match.groups()[1], gre.last_match.groups()[2])
+
+            variables_regexp = r'\$gameVariables.value\((\d+)\)'
+            only_variables_regexp = r'^\s*%s;?\s*$' % variables_regexp
+            def var_replace(m):
+                variable_value = self.variables.value(int(m.group(1)))
+                if isinstance(variable_value, string_types):
+                    return "\"%s\"" % variable_value
+                else:
+                    return json.dumps(variable_value)
 
             while True:
-                variables_regexp = r'\$gameVariables.value\((\d+)\)'
                 still_has_variables = re.search(variables_regexp, script_string)
                 if still_has_variables:
-                    only_this_variable_remained = gre.match(variables_regexp, script_string)
+                    only_this_variable_remained = gre.match(only_variables_regexp, script_string)
                     if only_this_variable_remained:
                         return self.variables.value(int(gre.last_match.groups()[0]))
-                    script_string = re.sub(variables_regexp, lambda m: str(self.variables.value(int(m.group(1)))), script_string)
+                    script_string = re.sub(variables_regexp, var_replace, script_string)
                 else:
                     break
 
@@ -703,13 +723,22 @@ init python:
             script_string = re.sub(r'&&', ' and ', script_string)
             script_string = re.sub(r'\|\|', ' or ', script_string)
 
-            if gre.match('"([^"]+)"', script_string):
+            if re.match('"[^"]+" == "[^"]+"', script_string):
+                return eval(script_string)
+            elif gre.match('"([^"]+)"', script_string):
                 return gre.last_match.groups()[0]
             elif gre.match("'([^']+)'", script_string):
                 return gre.last_match.groups()[0]
+            elif gre.match("Math\.floor\((.+)\);?", script_string):
+                return int(math.floor(self.eval_fancypants_value_statement(gre.last_match.groups()[0])))
 
             # eval the statement in python-land if it looks like it contains only arithmetic expressions
-            if re.match('^([\d\s.+\-*<>=()\s]|True|False|and|or)+$', script_string):
+            if re.match('^([\d\s.+\-*/<>=()\s]|True|False|and|or)+$', script_string):
+                # Hack statements like "3 / 4" into "3 / (4 * 1.0)" so division works like javascript
+                # remove this if ever using a version of RenPy on Python 3, I guess.
+                if "'" not in script_string and '"' not in script_string and re.search("\/\s*\d+", script_string):
+                    script_string = re.sub('\/\s*(\d+)', lambda m: "/ (%s * 1.0)" % m.group(1), script_string)
+                    print script_string
                 return eval(script_string)
             else:
                 renpy.say(None, "Remaining non-evaluatable fancypants value statement: '%s'" % script_string)
@@ -1601,6 +1630,9 @@ init python:
             if GameIdentifier().is_milfs_villa() and not in_interaction:
                 common_event_queuers.append({"text": 'Combine Items', "event_id": 1, "ypos": 140})
             if GameIdentifier().is_my_summer() and self.switches.value(1) == True:
+                common_event_queuers.append({"text": 'Show Status', "event_id": 1, "ypos": 100})
+            # Lust Epidemic overwrites the 'showMenu()' JS function to just call common event 1
+            if GameIdentifier().is_lust_epidemic() and not in_interaction:
                 common_event_queuers.append({"text": 'Show Status', "event_id": 1, "ypos": 100})
 
             galv_screen_buttons = self.galv_screen_buttons if hasattr(self, 'galv_screen_buttons') else {}
