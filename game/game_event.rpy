@@ -392,6 +392,9 @@ init python:
                 mv_self_switch_set_command = re.match("\$gameSelfSwitches\.setValue\(\[(\d+),(\d+),'(.*?)'\], (\w+)\);?", line)
                 ace_self_switch_set_command = re.match("\$game_self_switches\[\[(\d+)\s*,\s*(\d+)\s*,\s*'(.*?)'\]\] = (\w+)", line)
 
+                if gre.search("^\s*\/\/", line): # Comments, e.g. // Hello world
+                    continue
+
                 if rpgm_game_data.get('maic_quests', None):
                     result = self.eval_maic_quests_script(script_string, line)
                     if result:
