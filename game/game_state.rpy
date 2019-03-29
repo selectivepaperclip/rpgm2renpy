@@ -506,6 +506,7 @@ init python:
 
             if game_file_loader.has_active_plugin('YEP_MessageCore'):
                 text = re.sub(r'\s*<(?:BR|line break)>\s*', "\n", text, flags=re.IGNORECASE);
+                text = re.sub(r'\s*<wordwrap>\s*', "", text, flags=re.IGNORECASE);
 
             # Replace statements from literal strings, e.g. \n<Doug> with that string followed by a colon
             # these names would normally show in a box on top of the message window; the strategy
