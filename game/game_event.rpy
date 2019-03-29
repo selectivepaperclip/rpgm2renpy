@@ -1441,6 +1441,7 @@ init python:
 
                     if picture_args:
                         picture_args['opacity'] = opacity
+                        picture_args['blend_mode'] = blend_mode
                         if command['code'] == 231 and not game_state.occluded():
                             image_size = image_size_cache.for_picture_name(rpgm_picture_name(picture_name))
                         

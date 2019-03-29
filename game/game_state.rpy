@@ -366,6 +366,12 @@ init python:
 
             for picture_id, picture_frames in frame_data.iteritems():
                 last_frame = picture_frames[-1]
+                if last_frame['opacity'] <= 10:
+                    # more hacks
+                    last_frame['opacity'] = 0
+                if last_frame['blend_mode'] != 0:
+                    # other blend modes are not supported for now
+                    last_frame['opacity'] = 0
                 picture_args = {
                     "final_x": last_frame.get('x', 0),
                     "final_y": last_frame.get('y', 0),
