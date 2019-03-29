@@ -1055,13 +1055,6 @@ init python:
                             break
             return None
 
-        def parallel_events_activated_by_switch(self, switch_id):
-            result = []
-            for e in self.state.common_events_data():
-                if e and e['trigger'] == 2 and e['switchId'] == switch_id:
-                    result.append(e)
-            return result
-
         def meets_conditions(self, event_data, conditions):
             if conditions['switch1Valid']:
                 if not self.state.switches.value(conditions['switch1Id']):

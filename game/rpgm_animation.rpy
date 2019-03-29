@@ -23,6 +23,8 @@ init python:
 
             properties.setdefault('style', 'animation')
             self.anim_timebase = properties.pop('anim_timebase', True)
+            self.first_loop_index = properties.pop('first_loop_index', None)
+            self.event_command_references = properties.pop('event_command_references', [])
 
             super(RpgmAnimation, self).__init__(**properties)
 
@@ -61,9 +63,20 @@ init python:
             if not hasattr(self, 'first_rendered_t'):
                 self.first_rendered_t = orig_t
 
-            t = (orig_t - self.first_rendered_t) % sum(self.delays)
+            if hasattr(self, 'past_first_loop_index') and self.past_first_loop_index:
+                t = (orig_t - self.first_rendered_t - sum(self.delays[0:self.first_loop_index])) % sum(self.delays[self.first_loop_index:-1])
+            else:
+                t = (orig_t - self.first_rendered_t) % sum(self.delays)
 
-            for image, prev, delay, trans in zip(self.images, self.prev_images, self.delays, self.transitions):
+            for index, (image, prev, delay, trans) in enumerate(zip(self.images, self.prev_images, self.delays, self.transitions)):
+                # Mark the animation as having hit the looping part
+                if hasattr(self, 'first_loop_index') and self.first_loop_index and index >= self.first_loop_index:
+                    self.past_first_loop_index = True
+
+                # Skip the non-looping part of the animation if we've already reached the looping part
+                if hasattr(self, 'past_first_loop_index') and self.past_first_loop_index and index < self.first_loop_index:
+                    continue
+
                 if t < delay:
                     if not renpy.game.less_updates:
                         renpy.display.render.redraw(self, delay - t)

@@ -74,6 +74,33 @@ init python:
             self.player_restricted_regions = [r_id for r_id in [self.player_restrict, self.all_restrict] if r_id != 0]
             self.player_allowed_regions = [r_id for r_id in [self.player_allow, self.all_allow] if r_id != 0]
 
+    class ParallelEventMetadata():
+        def __init__(self, state):
+            self.state = state
+            self.clear()
+
+        def clear(self):
+            self.interest_in_switches = {}
+
+        def register_interest_in_switch_id(self, parallel_event_id, switch_id):
+            if switch_id not in self.interest_in_switches:
+                self.interest_in_switches[switch_id] = Set()
+            self.interest_in_switches[switch_id].add(parallel_event_id)
+
+        def events_activated_by_switch(self, switch_id):
+            result = []
+            for e in self.state.common_events_data():
+                if e and e['trigger'] == 2 and e['switchId'] == switch_id:
+                    result.append(e)
+            if switch_id in self.interest_in_switches:
+                event_set = self.interest_in_switches[switch_id]
+                if event_set:
+                    for event_id in event_set:
+                        e = self.state.common_events_data()[event_id]
+                        if e and e['trigger'] == 2 and self.state.switches.value(e['switchId']):
+                            result.append(e)
+            return result
+
     class GameState(SelectivelyPickle):
         def __init__(self):
             self.common_events_index = None
@@ -258,22 +285,15 @@ init python:
                     'image_name': shown_picture['image_name'],
                     'opacity': shown_picture['opacity']
                 }
-                if wait:
+                if duration and duration != 0:
                     reconstructed_picture_args['wait'] = duration
-                if 'final_x' in shown_picture:
-                    reconstructed_picture_args.update({
-                        'x': shown_picture['final_x'],
-                        'y': shown_picture['final_y'],
-                        'size': shown_picture['final_size']
-                    })
-                elif 'x' in shown_picture:
-                    reconstructed_picture_args.update({
-                        'x': shown_picture['x'],
-                        'y': shown_picture['y'],
-                        'size': shown_picture['size']
-                    })
+                reconstructed_picture_args.update({
+                    'x': shown_picture.get('final_x') or shown_picture.get('x'),
+                    'y': shown_picture.get('final_y') or shown_picture.get('y'),
+                    'size': shown_picture.get('final_size') or shown_picture.get('size')
+                })
                 self.queued_pictures.append((picture_id, reconstructed_picture_args))
-            elif queued_picture and wait:
+            elif queued_picture and duration and duration != 0:
                 queued_picture['wait'] = duration
             self.queued_pictures.append((picture_id, args))
 
@@ -307,11 +327,24 @@ init python:
         def wait(self, frames):
             self.migrate_shown_pictures()
             if len(self.queued_pictures) > 0:
+                # TODO: it might be more appropriate to set the wait for every image added since the last wait
                 last_picture_id, last_picture_args = self.queued_pictures[-1]
+#
+                # if the image being added to is a loopy one (sourced from a parallel event)
+                # only add wait frames if the event causing this wait is the same event the queued picture came from)
+                if 'loop' in last_picture_args and last_picture_args['loop'] and len(self.events) > 0:
+                    if last_picture_args['event_command_reference'][0:3] != self.events[-1].event_command_reference()[0:3]:
+                        return
+
                 if 'wait' in last_picture_args:
                     last_picture_args['wait'] += frames
                 else:
                     last_picture_args['wait'] = frames
+
+        def parallel_event_metadata(self):
+            if not hasattr(self, 'parallel_event_metadata_instance'):
+                self.parallel_event_metadata_instance = ParallelEventMetadata(self)
+            return self.parallel_event_metadata_instance
 
         def flush_queued_pictures(self):
             self.migrate_shown_pictures()
@@ -337,21 +370,59 @@ init python:
                     "final_x": last_frame.get('x', 0),
                     "final_y": last_frame.get('y', 0),
                     "final_size": last_frame.get('final_size', None) or last_frame.get('size', None),
-                    "opacity": picture_frames[-1].get('opacity', 255),
+                    "opacity": last_frame.get('opacity', 255),
                     "size": None
                 }
+
+                if isinstance(picture_frames[0]['image_name'], RpgmAnimation):
+                    # If the base image is already an RpgmAnimation, potentially drop the additional queued frames
+                    if self.check_for_redundant_frames(picture_id, picture_frames[0]['image_name'], picture_frames[1:]):
+                        longest_animation = max(longest_animation, sum(picture_frames[0]['image_name'].delays))
+                        continue
+
                 if len(picture_frames) == 1:
                     picture_args['image_name'] = RpgmAnimationBuilder.image_for_picture(picture_frames[0])
                 else:
                     should_loop = 'loop' in last_frame and last_frame['loop']
+                    first_loop_index = next((i for i, picture_frame in enumerate(picture_frames) if 'loop' in picture_frame and picture_frame['loop']), None)
                     picture_transitions = RpgmAnimationBuilder(picture_frames).build(loop = should_loop)
-                    picture_args['image_name'] = RpgmAnimation.create(*picture_transitions, anim_timebase = True)
+                    picture_args['image_name'] = RpgmAnimation.create(
+                        *picture_transitions,
+                        anim_timebase = True,
+                        first_loop_index = first_loop_index,
+                        event_command_references = [frame.get('event_command_reference', None) for frame in picture_frames]
+                    )
                     longest_animation = max(longest_animation, sum(picture_args['image_name'].delays))
                 self.shown_pictures[picture_id] = picture_args
 
             self.queued_pictures = []
 
             return longest_animation
+
+        def check_for_redundant_frames(self, picture_id, rpgm_animation, new_picture_frames):
+            if not hasattr(rpgm_animation, 'event_command_references'):
+                return False
+
+            # All the following old/new frame sequences should return true
+            # abab -> ab
+            # abc -> abc
+            # abab -> ababab
+
+            new_event_command_references = [frame.get('event_command_reference', None) for frame in new_picture_frames]
+
+            # Check if the new frames are exactly equal to the last n frames of the existing animation
+            if len(new_event_command_references) <= len(rpgm_animation.event_command_references):
+                return rpgm_animation.event_command_references[-len(new_picture_frames):] == new_event_command_references
+
+            # Check if any possible redundant sequences of the new frames are equal to the last n frames of the existing animation
+            unique_references_count = len(Set(new_event_command_references))
+            for group_size in xrange(2, len(new_event_command_references) / unique_references_count + 1):
+                if len(new_event_command_references) % group_size == 0:
+                    groups = [new_event_command_references[i:i+group_size] for i in xrange(0, len(new_event_command_references), group_size)]
+                    if groups.count(groups[0]) == len(groups) and rpgm_animation.event_command_references[-len(groups[0]):] == groups[0]:
+                        return True
+
+            return False
 
         def pictures(self):
             self.migrate_shown_pictures()
@@ -738,7 +809,6 @@ init python:
                 # remove this if ever using a version of RenPy on Python 3, I guess.
                 if "'" not in script_string and '"' not in script_string and re.search("\/\s*\d+", script_string):
                     script_string = re.sub('\/\s*(\d+)', lambda m: "/ (%s * 1.0)" % m.group(1), script_string)
-                    print script_string
                 return eval(script_string)
             else:
                 renpy.say(None, "Remaining non-evaluatable fancypants value statement: '%s'" % script_string)
@@ -1360,6 +1430,8 @@ init python:
                 if debug_events:
                     print "DEBUG_EVENTS: %d,%d" % (mapdest.x, mapdest.y)
                 return True
+
+            self.parallel_event_metadata().clear()
 
             return False
 

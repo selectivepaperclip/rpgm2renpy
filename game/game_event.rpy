@@ -56,7 +56,11 @@ init python:
             operation = params[0]
             # Switches
             if operation == 0:
-                return self.state.switches.value(params[1]) == (params[2] == 0)
+                switch_id = params[1]
+                if self.parallel():
+                    game_state.parallel_event_metadata().register_interest_in_switch_id(self.event_data['id'], switch_id)
+
+                return self.state.switches.value(switch_id) == (params[2] == 0)
             # Variable
             elif operation == 1:
                 value1 = self.state.variables.value(params[1])
@@ -501,48 +505,11 @@ init python:
                     return
 
         def show_parallel_event_animations(self, switch_id):
-            for newly_activated_event in self.state.map.parallel_events_activated_by_switch(switch_id):
-                frame_data = {}
-                last_picture_id = None
-                not_an_animation = False
-                for newly_activated_command in newly_activated_event['list']:
-                    if newly_activated_command['code'] in [101]:
-                        not_an_animation = True
-                        break
-
-                    x, y = None, None
-                    if newly_activated_command['code'] in [231]:
-                        if newly_activated_command['parameters'][3] == 0:
-                            x = newly_activated_command['parameters'][4]
-                            y = newly_activated_command['parameters'][5]
-                        else:
-                            x = game_state.variables.value(newly_activated_command['parameters'][4])
-                            y = game_state.variables.value(newly_activated_command['parameters'][5])
-
-                    # TODO: isn't responsive to conditionals in event
-                    if newly_activated_command['code'] == 231:
-                        last_picture_id = newly_activated_command['parameters'][0]
-                        image_name = newly_activated_command['parameters'][1]
-                        new_frame_data = {"wait": 0, "image_name": rpgm_picture_name(image_name), "x": x, "y": y}
-                        if last_picture_id in frame_data and frame_data[last_picture_id][0]['wait'] != 0:
-                            frame_data[last_picture_id].append(new_frame_data)
-                        else:
-                            frame_data[last_picture_id] = [new_frame_data]
-                    elif newly_activated_command['code'] == 230 and last_picture_id:
-                        frame_data[last_picture_id][-1]['wait'] += newly_activated_command['parameters'][0]
-
-                if not_an_animation:
-                    continue
-                    
-                for picture_id, picture_frames in frame_data.iteritems():
-                    if len(picture_frames) == 1:
-                        game_state.shown_pictures[picture_id] = {"image_name": RpgmAnimationBuilder.image_for_picture(picture_frames[0])}
-                        continue
-
-                    picture_transitions = RpgmAnimationBuilder(picture_frames).build(loop = True)
-
-                    if len(picture_transitions) > 1:
-                        game_state.shown_pictures[picture_id] = {"image_name": RpgmAnimation.create(*picture_transitions)}
+            for newly_activated_event in self.state.parallel_event_metadata().events_activated_by_switch(switch_id):
+                if noisy_events:
+                    print "EVENT ACTIVATED BY SWITCH: %s" % newly_activated_event['id']
+                e = GameEvent(self.state, None, newly_activated_event, newly_activated_event)
+                self.state.events.append(e)
 
         def direction_to_face_player(self, event_location):
             return GameDirection.direction_for_a_to_face_b(event_location, (game_state.player_x, game_state.player_y))
@@ -1516,6 +1483,8 @@ init python:
                         if self.parallel():
                             picture_args['loop'] = True
 
+                        picture_args['event_command_reference'] = self.event_command_reference()
+
                         if command['code'] == 231:
                             game_state.show_picture(picture_id, picture_args)
                         else:
@@ -1875,6 +1844,14 @@ init python:
                     renpy.say(None, "Code %d not implemented, plz fix." % command['code'])
 
                 self.list_index += 1
+
+        def event_command_reference(self):
+            return (
+                'common' if self.common() else self.map_id,
+                self.event_data['id'],
+                None if self.common() else self.page_index,
+                self.list_index
+            )
 
         # replicates iterateActorEx in rpgm code
         def actor_indices_for_ex_iteration(self, param1, param2):
