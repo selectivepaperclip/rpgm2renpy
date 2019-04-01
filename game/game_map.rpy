@@ -1065,8 +1065,12 @@ init python:
                     return False
 
             if conditions['variableValid']:
-                if self.state.variables.value(conditions['variableId']) < conditions['variableValue']:
-                    return False
+                if conditions['variableValue'] < 0 and rpgm_game_data.get('has_negative_variable_value_hack', None):
+                    if self.state.variables.value(conditions['variableId']) != abs(conditions['variableValue']):
+                        return False
+                else:
+                    if self.state.variables.value(conditions['variableId']) < conditions['variableValue']:
+                        return False
 
             if conditions['selfSwitchValid']:
                 key = (self.state.map.map_id, event_data['id'], conditions['selfSwitchCh'])

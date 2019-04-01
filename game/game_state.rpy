@@ -788,6 +788,10 @@ init python:
                 else:
                     break
 
+            if rpgm_metadata.is_pre_mv_version:
+                script_string = re.sub(r'\$game_player\.x', str(game_state.player_x), script_string)
+                script_string = re.sub(r'\$game_player\.y', str(game_state.player_y), script_string)
+
             while True:
                 still_has_switches = re.search('\$gameSwitches.value\((\d+)\)', script_string)
                 if still_has_switches:
