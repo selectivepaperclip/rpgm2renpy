@@ -610,7 +610,8 @@ init python:
 
         def orange_hud_lines(self):
             plugins = self.plugins()
-            line_data_list = [plugin_data for plugin_data in plugins if plugin_data['name'].startswith('OrangeHudLine') or plugin_data['name'].startswith('OrangeHudGold')]
+            supported_line_types = ['OrangeHudLine', 'OrangeHudGold', 'OrangeHudClock']
+            line_data_list = [plugin_data for plugin_data in plugins if any(plugin_data['name'].startswith(line_type) for line_type in supported_line_types)]
 
             group_map = self.orange_hud_group_map()
             lines = []
@@ -625,6 +626,10 @@ init python:
                 if switch_id < 1 or self.switches.value(switch_id) == True:
                     if line_data['name'] == 'OrangeHudGold':
                         replaced_text = line_params['Pattern'].replace('%1', str(self.party.gold))
+                    elif line_data['name'] == 'OrangeHudClock':
+                        replaced_text = line_params['Pattern'].replace('%1', "%02d" % self.variables.value(int(line_params['VariableHour'])))
+                        replaced_text = replaced_text.replace('%2', "%02d" % self.variables.value(int(line_params['VariableMinute'])))
+                        replaced_text = replaced_text.replace('%3', "%02d" % self.variables.value(int(line_params['VariableSecond'])))
                     else:
                         replaced_text = line_params['Pattern'].replace('%1', str(self.variables.value(int(line_params['VariableId']))))
                     # Remove color codes, e.g. \c[24] - for my_summer
