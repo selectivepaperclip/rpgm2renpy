@@ -824,7 +824,7 @@ init python:
                 # Hack statements like "3 / 4" into "3 / (4 * 1.0)" so division works like javascript
                 # remove this if ever using a version of RenPy on Python 3, I guess.
                 if "'" not in script_string and '"' not in script_string and re.search("\/\s*\d+", script_string):
-                    script_string = re.sub('\/\s*(\d+)', lambda m: "/ (%s * 1.0)" % m.group(1), script_string)
+                    script_string = re.sub('\/\s*(\d+)(?![.])', lambda m: "/ (%s * 1.0)" % m.group(1), script_string)
                 return eval(script_string)
             else:
                 renpy.say(None, "Remaining non-evaluatable fancypants value statement: '%s'" % script_string)
