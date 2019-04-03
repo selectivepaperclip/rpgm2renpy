@@ -1236,7 +1236,8 @@ init python:
 
         def override_tileset(self, tileset_id):
             self.tileset_id_override = tileset_id
-            delattr(self, '_background_image')
+            if hasattr(self, '_background_image'):
+                delattr(self, '_background_image')
 
         def override_event_location(self, event_data, loc):
             if not hasattr(self, 'event_location_overrides'):
