@@ -615,15 +615,18 @@ init python:
                         new_direction = random_direction
                         direction_delta = GameDirection.delta_for_direction(random_direction)
                 elif route_part['code'] in [10, 11]: # Move Toward / Away
-                    if player_moving:
-                        renpy.say(None, "Move Toward / Away not implemented for player target!")
-                    loc = self.state.map.event_location(event.event_data)
+                    loc = self.state.map.event_location(self.event_data)
                     new_direction = self.direction_to_face_player(loc)
 
                     if route_part['code'] == 10:
                         direction_delta = GameDirection.delta_for_direction(new_direction)
                     else:
                         direction_delta = GameDirection.delta_for_direction(GameDirection.reverse_direction(new_direction))
+
+                    delta_x, delta_y = direction_delta
+                    self.move_route_move_object(delta_x, delta_y, player_moving = False, event = self, skippable = route['skippable'])
+                    self.move_route_index += 1
+                    continue
                 elif route_part['code'] in [12, 13]: # Move Forward / Backward
                     if player_moving:
                         current_direction = game_state.player_direction
@@ -663,12 +666,15 @@ init python:
                     new_direction = GameDirection.reverse_direction(current_direction)
                 elif route_part['code'] in [23, 24]: # Turn Random 90deg, Turn Random
                     renpy.say(None, "Move Route random turn commands not supported!")
-                elif route_part['code'] == 25: # Turn Toward
+                elif route_part['code'] == [25, 26]: # Turn Toward / Turn Away
                     loc = self.state.map.event_location(self.event_data)
-                    new_direction = self.direction_to_face_player(loc)
-                elif route_part['code'] == 26: # Turn Away
-                    loc = self.state.map.event_location(self.event_data)
-                    new_direction = GameDirection.reverse_direction(self.direction_to_face_player(loc))
+                    if route_part['code'] == 25:
+                        new_direction = self.direction_to_face_player(loc)
+                    else:
+                        new_direction = GameDirection.reverse_direction(self.direction_to_face_player(loc))
+                    self.move_route_set_direction(new_direction, event = self)
+                    self.move_route_index += 1
+                    continue
                 elif route_part['code'] == 27: # Route Switch On
                     self.state.switches.set_value(route_part['parameters'][0], True)
                 elif route_part['code'] == 28: # Route Switch Off
@@ -743,10 +749,7 @@ init python:
                         self.state.map.override_event(event_id, event_page_index, 'directionFix', new_direction_fix)
 
                 if new_direction:
-                    if player_moving:
-                        game_state.set_player_direction(new_direction)
-                    elif not self.state.map.event_direction_fix(event.event_data, event.page, event.page_index):
-                        self.state.map.override_event(event_id, None, 'direction', new_direction)
+                    self.move_route_set_direction(new_direction, player_moving = player_moving, event = event)
 
                 if new_transparent:
                     if player_moving:
@@ -763,35 +766,7 @@ init python:
 
                 delta_x, delta_y = direction_delta
                 if delta_x != 0 or delta_y != 0:
-                    if player_moving:
-                        current_x, current_y = game_state.player_x, game_state.player_y
-                    else:
-                        loc = self.state.map.event_location(event.event_data)
-                        if not loc:
-                            break
-                        current_x, current_y = loc
-
-                    new_x, new_y = current_x + delta_x, current_y + delta_y
-                    if new_x < 0 or new_y < 0 or new_x > self.state.map.width() - 1 or new_y > self.state.map.height() - 1:
-                        break
-
-                    moving_object_does_not_collide = (player_moving and game_state.everything_is_reachable()) or (event and self.state.map.event_through(event.event_data, event.page, event.page_index))
-                    if not moving_object_does_not_collide:
-                        map_event = self.state.map.find_event_for_location(new_x, new_y)
-                        if not map_event or (not self.state.map.event_through(map_event.event_data, map_event.page, map_event.page_index)):
-                            old_map_event = self.state.map.find_event_for_location(current_x, current_y)
-                            if not old_map_event or (not self.state.map.event_through(old_map_event.event_data, old_map_event.page, old_map_event.page_index)):
-                                move_distance = abs(delta_x) + abs(delta_y)
-                                if (map_event and GameEvent.page_solid(map_event.event_data, map_event.page, map_event.page_index)) or (move_distance == 1 and not self.state.map.can_move_vector(current_x, current_y, delta_x, delta_y)):
-                                      if noisy_events:
-                                          print "MOVEMENT COLLIDED AT %s, %s!!!" % (new_x, new_y)
-                                      if not route['skippable']:
-                                          return
-
-                    if player_moving: # Player Character
-                        game_state.player_x, game_state.player_y = new_x, new_y
-                    else:
-                        self.state.map.override_event_location(event.event_data, (new_x, new_y))
+                    self.move_route_move_object(delta_x, delta_y, player_moving = player_moving, event = event, skippable = route['skippable'])
 
                     if self.parallel() and self.get_map_id() in rpgm_game_data.get('slowmo_maps', []):
                         self.move_route_index += 1
@@ -799,6 +774,43 @@ init python:
                         return
 
                 self.move_route_index += 1
+
+        def move_route_set_direction(self, new_direction, player_moving = False, event = None):
+            if player_moving:
+                game_state.set_player_direction(new_direction)
+            elif not self.state.map.event_direction_fix(event.event_data, event.page, event.page_index):
+                self.state.map.override_event(event.event_data['id'], None, 'direction', new_direction)
+
+        def move_route_move_object(self, delta_x, delta_y, player_moving = False, event = None, skippable = False):
+            if player_moving:
+                current_x, current_y = game_state.player_x, game_state.player_y
+            else:
+                loc = self.state.map.event_location(event.event_data)
+                if not loc:
+                    return
+                current_x, current_y = loc
+
+            new_x, new_y = current_x + delta_x, current_y + delta_y
+            if new_x < 0 or new_y < 0 or new_x > self.state.map.width() - 1 or new_y > self.state.map.height() - 1:
+                return
+
+            moving_object_does_not_collide = (player_moving and game_state.everything_is_reachable()) or (event and self.state.map.event_through(event.event_data, event.page, event.page_index))
+            if not moving_object_does_not_collide:
+                map_event = self.state.map.find_event_for_location(new_x, new_y)
+                if not map_event or (not self.state.map.event_through(map_event.event_data, map_event.page, map_event.page_index)):
+                    old_map_event = self.state.map.find_event_for_location(current_x, current_y)
+                    if not old_map_event or (not self.state.map.event_through(old_map_event.event_data, old_map_event.page, old_map_event.page_index)):
+                        move_distance = abs(delta_x) + abs(delta_y)
+                        if (map_event and GameEvent.page_solid(map_event.event_data, map_event.page, map_event.page_index)) or (move_distance == 1 and not self.state.map.can_move_vector(current_x, current_y, delta_x, delta_y)):
+                              if noisy_events:
+                                  print "MOVEMENT COLLIDED AT %s, %s!!!" % (new_x, new_y)
+                              if not skippable:
+                                  return
+
+            if player_moving: # Player Character
+                game_state.player_x, game_state.player_y = new_x, new_y
+            else:
+                self.state.map.override_event_location(event.event_data, (new_x, new_y))
 
         def migrate_global_branch_data(self):
             if not hasattr(self, 'branch') and hasattr(game_state, 'branch'):
