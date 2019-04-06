@@ -415,6 +415,12 @@ init python:
                 if GalvEventSpawnTimers.process_script(self, script_string):
                     continue
 
+                if game_file_loader.plugin_data_exact('YEP_X_MessageSpeedOpt'):
+                    if gre.search("ConfigManager\.messageSpeed", line):
+                        continue
+                    elif gre.search("Yanfly\.Param\.MsgSpeedOptDefault", line):
+                        continue
+
                 if game_file_loader.plugin_data_exact('YEP_X_ExtMesPack1'):
                     if gre.match("\$gameSystem\.clearChoiceSettings", line):
                         self.choices_to_hide = []
