@@ -1757,7 +1757,7 @@ init python:
                             self.state.switches.set_value(int(plugin_command_args[1]), result)
                     elif plugin_command in ['HideMiniLabel', 'ShowMiniLabel', 'JUMPACTION']:
                         pass
-                    elif plugin_command.upper() in ['HIDE_CHOICE']:
+                    elif plugin_command.upper() in ['HIDE_CHOICE', 'HIDECHOICE']:
                         self.hide_choice(int(plugin_command_args[0]))
                     elif TerraxLighting.is_lighting_command(plugin_command):
                         pass
