@@ -1462,6 +1462,7 @@ init python:
                     path_from_adjacent_square = self.map.path_from_destination(self.player_x, self.player_y, adjacent_x, adjacent_y) or []
                     path_from_destination = [(mapdest.x, mapdest.y, preferred_approach_direction)] + path_from_adjacent_square
 
+            approaching_from_counter = False
             if not path_from_destination:
                 if hasattr(mapdest, 'reachable_via_counter'):
                     before_counter_x, before_counter_y = mapdest.reachable_via_counter
@@ -1471,13 +1472,14 @@ init python:
                         return
                     final_turn = [(before_counter_x, before_counter_y, final_direction)]
                     path_from_destination = final_turn + self.map.path_from_destination(self.player_x, self.player_y, before_counter_x, before_counter_y)
+                    approaching_from_counter = True
                 else:
                     path_from_destination = self.map.path_from_destination(self.player_x, self.player_y, mapdest.x, mapdest.y)
 
             adjacent_x, adjacent_y, adjacent_direction = path_from_destination[0]
             self.map_path_destination = (mapdest.x, mapdest.y, adjacent_direction)
 
-            if hasattr(mapdest, 'reachable_via_counter') or map_event.page['through'] or (map_event.page['priorityType'] != 1 and not self.map.is_impassible(mapdest.x, mapdest.y, adjacent_direction)):
+            if approaching_from_counter or map_event.page['through'] or (map_event.page['priorityType'] != 1 and not self.map.is_impassible(mapdest.x, mapdest.y, adjacent_direction)):
                 self.map_path = path_from_destination
             else:
                 self.map_path = path_from_destination[1:-1]
