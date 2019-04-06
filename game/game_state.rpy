@@ -380,24 +380,29 @@ init python:
                     "size": None
                 }
 
-                if isinstance(picture_frames[0]['image_name'], RpgmAnimation):
+                first_frame_is_animation = isinstance(picture_frames[0]['image_name'], RpgmAnimation)
+                if first_frame_is_animation:
                     # If the base image is already an RpgmAnimation, potentially drop the additional queued frames
                     if self.check_for_redundant_frames(picture_id, picture_frames[0]['image_name'], picture_frames[1:]):
                         longest_animation = max(longest_animation, sum(picture_frames[0]['image_name'].delays))
                         continue
 
                 if len(picture_frames) == 1:
-                    picture_args['image_name'] = RpgmAnimationBuilder.image_for_picture(picture_frames[0])
+                    picture_args['image_name'] = RpgmAnimation.image_for_picture(picture_frames[0])
                 else:
                     should_loop = 'loop' in last_frame and last_frame['loop']
                     first_loop_index = next((i for i, picture_frame in enumerate(picture_frames) if 'loop' in picture_frame and picture_frame['loop']), None)
-                    picture_transitions = RpgmAnimationBuilder(picture_frames).build(loop = should_loop)
-                    picture_args['image_name'] = RpgmAnimation.create(
-                        *picture_transitions,
-                        anim_timebase = True,
-                        first_loop_index = first_loop_index,
-                        event_command_references = [frame.get('event_command_reference', None) for frame in picture_frames]
-                    )
+                    picture_transitions = RpgmAnimation.transitions_for_frames(picture_frames, loop = should_loop)
+                    if first_frame_is_animation:
+                        picture_args['image_name'] = picture_frames[0]['image_name']
+                        picture_args['image_name'].add_transitions(picture_transitions)
+                    else:
+                        picture_args['image_name'] = RpgmAnimation.create(
+                            *picture_transitions,
+                            anim_timebase = True,
+                            first_loop_index = first_loop_index,
+                            event_command_references = [frame.get('event_command_reference', None) for frame in picture_frames]
+                        )
                     longest_animation = max(longest_animation, sum(picture_args['image_name'].delays))
                 self.shown_pictures[picture_id] = picture_args
 
@@ -415,6 +420,8 @@ init python:
             # abab -> ababab
 
             new_event_command_references = [frame.get('event_command_reference', None) for frame in new_picture_frames]
+            if all(ref == None for ref in new_event_command_references):
+                return False
 
             # Check if the new frames are exactly equal to the last n frames of the existing animation
             if len(new_event_command_references) <= len(rpgm_animation.event_command_references):
@@ -764,7 +771,7 @@ init python:
                 self.ysp_video_data = YspVideoData()
             return self.ysp_video_data
 
-        def eval_fancypants_value_statement(self, script_string):
+        def eval_fancypants_value_statement(self, script_string, return_remaining = False):
             gre = Re()
             if gre.match('\$gameActors\.actor\((\d+)\)\.name\(\)', script_string):
                 return self.actors.actor_name(int(gre.last_match.groups()[0]))
@@ -812,20 +819,22 @@ init python:
 
             if re.match('"[^"]+" == "[^"]+"', script_string):
                 return eval(script_string)
-            elif gre.match('"([^"]+)"', script_string):
+            elif gre.match('^\s*"([^"]+)"\s*$', script_string):
                 return gre.last_match.groups()[0]
-            elif gre.match("'([^']+)'", script_string):
+            elif gre.match("^\s*'([^']+)'\s*$", script_string):
                 return gre.last_match.groups()[0]
             elif gre.match("Math\.floor\((.+)\);?", script_string):
                 return int(math.floor(self.eval_fancypants_value_statement(gre.last_match.groups()[0])))
 
             # eval the statement in python-land if it looks like it contains only arithmetic expressions
-            if re.match('^([\d\s.+\-*/<>=()\s]|True|False|and|or)+$', script_string):
+            if re.match('^([\d\s.+\-*/<>=()\s,]|True|False|and|or)+$', script_string):
                 # Hack statements like "3 / 4" into "3 / (4 * 1.0)" so division works like javascript
                 # remove this if ever using a version of RenPy on Python 3, I guess.
                 if "'" not in script_string and '"' not in script_string and re.search("\/\s*\d+", script_string):
                     script_string = re.sub('\/\s*(\d+)(?![.])', lambda m: "/ (%s * 1.0)" % m.group(1), script_string)
                 return eval(script_string)
+            elif return_remaining:
+                return script_string
             else:
                 renpy.say(None, "Remaining non-evaluatable fancypants value statement: '%s'" % script_string)
                 print "Remaining non-evaluatable fancypants value statement:"

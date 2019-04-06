@@ -411,6 +411,9 @@ init python:
                     if result:
                         continue
 
+                if AnimatedBusts.process_script(line):
+                    continue
+
                 if GalvScreenButtons.process_script(script_string):
                     continue
 
@@ -1990,8 +1993,7 @@ init python:
                         )
                     )
                     picture_frames.append({"size": (frame_width, frame_height), "image_name": frame_img, "wait": frame_delay})
-            picture_transitions = RpgmAnimationBuilder(picture_frames).build(loop = True)
-            picture_args["image_name"] = RpgmAnimation.create(*picture_transitions)
+            picture_args["image_name"] = RpgmAnimation.create_from_frames(picture_frames, loop = True)
             picture_args["size"] = (frame_width, frame_height)
 
         def skip_image_resize(self, image_name, scale_x, scale_y):

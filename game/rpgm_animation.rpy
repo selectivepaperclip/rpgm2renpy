@@ -13,6 +13,48 @@ init python:
         def create(cls, *args, **properties):
             return RpgmAnimation(*args, **properties)
 
+        @classmethod
+        def create_from_frames(cls, picture_frames, loop = False):
+            picture_transitions = RpgmAnimation.transitions_for_frames(picture_frames, loop = loop)
+            return RpgmAnimation.create(*picture_transitions)
+
+        @classmethod
+        def image_for_picture(cls, picture_frame):
+            return Transform(
+                child = picture_frame['image_name'],
+                xpos = picture_frame.get('x', 0),
+                ypos = picture_frame.get('y', 0),
+                size = picture_frame.get('size', None),
+            )
+
+        @classmethod
+        def transitions_for_frames(cls, picture_frames, loop = False):
+            # Creates 3n items if the animation is intended to loop, or 3n - 2 items if it is fixed length
+
+            picture_transitions = []
+            for i, picture_frame in enumerate(picture_frames):
+                picture_transitions.append(RpgmAnimation.image_for_picture(picture_frame))
+                wait_seconds = 0
+                if 'wait' in picture_frame:
+                    wait_seconds = (picture_frame['wait'] / animation_fps)
+
+                if i + 1 < len(picture_frames):
+                    next_picture_frame = picture_frames[i + 1]
+                    if 'x' in picture_frame and (next_picture_frame['x'] != picture_frame['x'] or next_picture_frame['y'] != picture_frame['y']):
+                        picture_transitions.append(0.0001)
+                        picture_transitions.append(MoveTransition(picture_frame.get('wait', 0.001) / animation_fps))
+                    else:
+                        picture_transitions.append(wait_seconds)
+                        picture_transitions.append(None)
+                    if not loop and (i + 1 == len(picture_frames) - 1): # Last Frame
+                        picture_transitions.append(RpgmAnimation.image_for_picture(next_picture_frame))
+                        break
+                else:
+                    picture_transitions.append(wait_seconds)
+                    picture_transitions.append(None)
+
+            return picture_transitions
+
         def __init__(self, *args, **properties):
             """
             There is one keyword argument, apart from the style properties:
@@ -50,15 +92,32 @@ init python:
             self.delays = delays
             self.transitions = [ transitions[-1] ] + transitions[:-1]
 
+        def add_transitions(self, transitions):
+            print "wanna add %s transitions" % (len(transitions))
+            pass
+
+        def freeze(self):
+            self.frozen = True
+            self.frozen_t = None
+
+        def unfreeze(self):
+            self.frozen = False
+            self.frozen_t = None
+
         def reset_frame_delays(self, desired_wait):
             for i in xrange(0, len(self.delays)):
                 self.delays[i] = desired_wait / animation_fps
 
         def render(self, width, height, st, at):
-            if self.anim_timebase:
+            if hasattr(self, 'frozen_t') and self.frozen_t:
+                orig_t = self.frozen_t
+            elif self.anim_timebase:
                 orig_t = at
             else:
                 orig_t = st
+
+            if hasattr(self, 'frozen') and self.frozen and self.frozen_t == None:
+                self.frozen_t = orig_t
 
             if not hasattr(self, 'first_rendered_t'):
                 self.first_rendered_t = orig_t
