@@ -261,6 +261,8 @@ init python:
                         return tuple(event_location) == tuple(target)
                     else:
                         renpy.say(None, "Args too sketch to eval at '%s'" % script_string)
+                elif GameusQuestManager.conditional_eval_script(params[1]) != None:
+                    return GameusQuestManager.conditional_eval_script(params[1])
                 else:
                     fancypants_eval = self.state.eval_fancypants_value_statement(params[1])
                     if fancypants_eval in [True, False]:

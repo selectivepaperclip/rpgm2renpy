@@ -416,6 +416,17 @@ init python:
         def valid_command(cls, plugin_command):
             return plugin_command.upper() == 'QUEST' and game_file_loader.plugin_data_exact('GameusQuestSystem')
 
+        @classmethod
+        def conditional_eval_script(cls, script_string):
+            if not game_file_loader.plugin_data_exact('GameusQuestSystem'):
+                return None
+
+            gre = Re()
+            if gre.match('\$gameParty\.hasQuest\((\d+)\);?', script_string):
+                return game_state.party.gameus_quest_manager().has_quest(int(gre.last_match.groups()[0]))
+
+            return None
+
         def __init__(self):
             self.quest_activity = {}
 
@@ -457,6 +468,9 @@ init python:
 
             status_order = ['progress', 'completed', 'failed']
             return sorted(result, key=lambda q: status_order.index(q['status']))
+
+        def has_quest(self, quest_id):
+            return quest_id in self.quest_activity
 
         def process_command(self, args):
             gre = Re()
