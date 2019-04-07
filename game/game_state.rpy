@@ -1524,15 +1524,18 @@ init python:
             x_zoom_offset = mousepos[0]
             y_zoom_offset = mousepos[1]
 
+            mapfactor = self.calculate_map_factor()
+            x_offset, y_offset = self.calculate_map_x_y_offset(mapfactor)
+
             new_full_zoom = new_map_zoom_factor * self.calculate_map_factor()
             existing_x_value = viewport_xadjustment.get_value()
-            new_range = (new_full_zoom * self.map.image_width) - config.screen_width
+            new_range = (new_full_zoom * (self.map.image_width + x_offset)) - config.screen_width
             new_value = ((existing_x_value + x_zoom_offset) * map_zoom_ratio) - x_zoom_offset
             viewport_xadjustment.set_range(new_range if new_range > 0 else 0.0)
             viewport_xadjustment.set_value(new_value if new_value > 0 else 0.0)
 
             existing_y_value = viewport_yadjustment.get_value()
-            new_range = (new_full_zoom * self.map.image_height) - config.screen_height
+            new_range = (new_full_zoom * (self.map.image_height + y_offset)) - config.screen_height
             new_value = ((existing_y_value + y_zoom_offset) * map_zoom_ratio) - y_zoom_offset
             viewport_yadjustment.set_range(new_range if new_range > 0 else 0.0)
             viewport_yadjustment.set_value(new_value if new_value > 0 else 0.0)
@@ -1570,6 +1573,20 @@ init python:
                     else:
                         # Overflowing more on map_width
                         return float(screen_width_sans_scrollbar) / map_width
+
+        def calculate_map_x_y_offset(self, mapfactor):
+            x_offset = 0
+            y_offset = 0
+
+            # if there is more screen real-estate available than map, center the map in the screen
+            # see Game_Map.prototype.setDisplayPos
+            x_tiles_in_screen = config.screen_width / (rpgm_metadata.tile_width * mapfactor)
+            if self.map.width() < x_tiles_in_screen:
+                x_offset = int(((x_tiles_in_screen - self.map.width()) / 2.0) * rpgm_metadata.tile_width)
+            y_tiles_in_screen = config.screen_height / (rpgm_metadata.tile_height * mapfactor)
+            if self.map.height() < y_tiles_in_screen:
+                y_offset = int(((y_tiles_in_screen - self.map.height()) / 2.0) * rpgm_metadata.tile_height)
+            return (x_offset, y_offset)
 
         def sprite_images_and_positions(self):
             result = []
@@ -1661,21 +1678,14 @@ init python:
                 height = self.map.height() * rpgm_metadata.tile_height
 
                 mapfactor = 0.65
+                x_offset, y_offset = self.calculate_map_x_y_offset(mapfactor)
+
                 self.reset_user_zoom()
 
                 new_x_range = (mapfactor * width) - config.screen_width
                 viewport_xadjustment.set_range(new_x_range if new_x_range > 0 else 0.0)
                 new_y_range = (mapfactor * height) - config.screen_height
                 viewport_yadjustment.set_range(new_y_range if new_y_range > 0 else 0.0)
-
-                # if there is more screen real-estate available than map, center the map in the screen
-                # see Game_Map.prototype.setDisplayPos
-                x_tiles_in_screen = config.screen_width / (rpgm_metadata.tile_width * mapfactor)
-                if self.map.width() < x_tiles_in_screen:
-                    x_offset = int(((x_tiles_in_screen - self.map.width()) / 2.0) * rpgm_metadata.tile_width)
-                y_tiles_in_screen = config.screen_height / (rpgm_metadata.tile_height * mapfactor)
-                if self.map.height() < y_tiles_in_screen:
-                    y_offset = int(((y_tiles_in_screen - self.map.height()) / 2.0) * rpgm_metadata.tile_height)
 
                 if self.player_x > 19:
                     new_x_value = int((self.player_x - 19) * rpgm_metadata.tile_width * mapfactor)
@@ -1686,6 +1696,9 @@ init python:
                 background_image = None
             else:
                 mapfactor = self.calculate_map_factor()
+                x_offset, y_offset = self.calculate_map_x_y_offset(mapfactor)
+                width = self.map.image_width + 2 * x_offset
+                height = self.map.image_height + 2 * y_offset
 
                 if map_zoom_rect and hasattr(self, 'focus_zoom_rect_on_next_map_render') and self.focus_zoom_rect_on_next_map_render:
                     zoom_rect_ul = (map_zoom_rect[0], map_zoom_rect[1])
@@ -1701,8 +1714,8 @@ init python:
                     centering_nudge_x = max(0, (config.screen_width - (rect_size[0] * rpgm_metadata.tile_width * mapfactor * user_zoom)) / 2)
                     centering_nudge_y = max(0, (config.screen_height - (rect_size[1] * rpgm_metadata.tile_height * mapfactor * user_zoom)) / 2)
 
-                    viewport_xadjustment.set_value(max(0, (zoom_rect_ul[0] * rpgm_metadata.tile_width * mapfactor * user_zoom) - centering_nudge_x))
-                    viewport_yadjustment.set_value(max(0, (zoom_rect_ul[1] * rpgm_metadata.tile_height * mapfactor * user_zoom) - centering_nudge_y))
+                    viewport_xadjustment.set_value(max(0, (x_offset + (zoom_rect_ul[0] * rpgm_metadata.tile_width)) * mapfactor * user_zoom) - centering_nudge_x)
+                    viewport_yadjustment.set_value(max(0, (y_offset + (zoom_rect_ul[1] * rpgm_metadata.tile_height)) * mapfactor * user_zoom) - centering_nudge_y)
                 self.focus_zoom_rect_on_next_map_render = False
 
             hud_pics = self.orange_hud_pictures() + self.srd_hud_pictures(in_interaction = in_interaction)
