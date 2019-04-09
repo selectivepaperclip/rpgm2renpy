@@ -1574,6 +1574,33 @@ init python:
                 elif command['code'] == 284:
                     pass
 
+                # Get Location Info
+                elif command['code'] == 285:
+                    variable_id = command['parameters'][0]
+                    operation = command['parameters'][1]
+                    x, y, value = None, None, None
+                    if command['parameters'][2] == 0:
+                        x = command['parameters'][3]
+                        y = command['parameters'][4]
+                    else:
+                        x = game_state.variables.value(command['parameters'][3])
+                        y = game_state.variables.value(command['parameters'][4])
+
+                    if operation == 0: # Terrain Tag
+                        value = self.state.map.terrain_tag(x, y)
+                    elif operation == 1: # Event ID
+                        event = self.state.map.find_event_for_location(x, y)
+                        if event:
+                            value = event.event_data['id']
+                        else:
+                            value = 0
+                    elif operation in [2,3,4,5]: # Tile ID
+                        value = self.state.map.tile_id(x, y, operation - 2)
+                    else: # Region ID
+                        value = self.state.map.tile_region(x, y)
+
+                    self.state.variables.set_value(variable_id, value)
+
                 # Battle
                 elif command['code'] == 301:
                     troop_id = None

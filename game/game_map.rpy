@@ -619,6 +619,20 @@ init python:
             except IndexError:
                 return 0
 
+        def layered_tiles(self, x, y):
+            tiles = [];
+            for i in xrange(0,4):
+                tiles.push(self.tile_id(x, y, 3 - i))
+            return tiles
+
+        def terrain_tag(self, x, y):
+            if self.is_valid(x, y):
+                for tile_id in self.layered_tiles(x, y):
+                    tag = self.flags(tile_id) >> 12
+                    if tag > 0:
+                        return tag
+            return 0
+
         def can_pass(self, x, y, direction):
             delta = GameDirection.delta_for_direction(direction)
             return (not self.is_impassible(x, y, direction)) and (not self.is_impassible(x + delta[0], y + delta[1], GameDirection.reverse_direction(direction)))
@@ -668,6 +682,9 @@ init python:
                     return True
 
             return False
+
+        def is_valid_x_y(self, x, y):
+            return x >= 0 and x < self.width() and y >= 0 and y < self.height()
 
         def is_counter(self, x, y):
             tile_ids = [self.tile_id(x, y, z) for z in xrange(3, -1, -1)]
