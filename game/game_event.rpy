@@ -1609,7 +1609,7 @@ init python:
                     elif command['parameters'][0] == 1:
                         troop_id = self.state.variables.value(command['parameters'][1])
                     else:
-                        troop_id = self.map.random_encounter_troop_id(self.state.player_x, self.state.player_y)
+                        troop_id = self.state.map.random_encounter_troop_id(self.state.player_x, self.state.player_y)
 
                     result = self.fight_troop(troop_id)
                     if result != None:
