@@ -863,6 +863,9 @@ init python:
                 result.append(('q', 'show_maic_quests'))
             elif rpgm_game_data.get('molegato_quests', None):
                 result.append(('q', 'show_molegato_quests'))
+
+            if YepMainMenuManager.plugin_active():
+                result.append(('?', 'show_main_menu'))
             return result
 
         def queue_common_and_parallel_events(self):
@@ -947,6 +950,9 @@ init python:
         def show_gameus_quests(self):
             result = renpy.call_screen('gameus_quests_screen', self.party.gameus_quest_manager().presented_quests())
             return True
+
+        def show_main_menu(self):
+            YepMainMenuManager.menu()
 
         def toggle_ask_for_random(self):
             if not hasattr(self, 'ask_for_random') or not self.ask_for_random:
