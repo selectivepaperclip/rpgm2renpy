@@ -1808,6 +1808,8 @@ init python:
                         pass
                     elif plugin_command in ['Flashlight']:
                         pass
+                    elif YepXExtMesPack1.valid_command(plugin_command):
+                        pass
                     elif plugin_command in ['MobileDirPad', 'BUST']:
                         pass
                     elif plugin_command in ['CAM']:
