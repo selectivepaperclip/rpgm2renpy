@@ -948,7 +948,7 @@ init python:
                     should_display_on_right = False
                     if len(command['parameters']) > 3:
                         position_type = command['parameters'][3]
-                        if position_type == 2 and len(game_state.srd_hud_lines()) > 0:
+                        if rpgm_game_data.get('allow_choice_positions', False) and position_type == 2 and len(game_state.srd_hud_lines()) > 0:
                             should_display_on_right = True
 
                     if not hasattr(self, 'choices_to_hide'):
