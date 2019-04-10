@@ -16,8 +16,13 @@ if ARGV.length < 1
 end
 
 game_dir = File.expand_path(ARGV[0])
-$pics_dir = File.join(game_dir, 'Graphics', 'Pictures')
-$movies_dir = File.join(game_dir, 'Graphics', 'Rpgm2RenpyMovies')
+if File.exist?(File.join(game_dir, 'Graphics'))
+    $pics_dir = File.join(game_dir, 'Graphics', 'Pictures')
+    $movies_dir = File.join(game_dir, 'Graphics', 'Rpgm2RenpyMovies')
+else
+    $pics_dir = File.join(game_dir, 'www', 'img', 'pictures')
+    $movies_dir = File.join(game_dir, 'www', 'img', 'Rpgm2RenpyMovies')
+end
 FileUtils.mkdir_p($movies_dir) if File.exist?($pics_dir)
 
 def detect_animation(commands)
