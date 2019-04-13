@@ -1641,7 +1641,6 @@ init python:
                 picture = self.queued_or_shown_picture(picture_id)
                 if not picture:
                     continue
-                print picture
 
                 size = picture.get('final_size') or picture.get('size')
                 result.append({
