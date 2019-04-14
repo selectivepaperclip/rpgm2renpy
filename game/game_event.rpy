@@ -1565,9 +1565,9 @@ init python:
 
                 # Play Movie
                 elif command['code'] == 261:
-                    renpy.show(rpgm_movie_name(command['parameters'][0]), tag = "movie")
+                    renpy.show(rpgm_movie_name(command['parameters'][0]), tag = "movie", layer = "maplayer")
                     game_state.pause()
-                    renpy.hide("movie")
+                    renpy.hide("movie", layer = "maplayer")
 
                 # Change Tileset
                 elif command['code'] == 282:

@@ -132,7 +132,7 @@ init python:
     import json
     import math
 
-    config.layers = [ 'maplayer', 'master', 'transient', 'screens', 'overlay' ]
+    config.layers = [ 'master', 'maplayer', 'transient', 'screens', 'overlay' ]
 
     def scale_image(path):
         return im.Scale(path, config.screen_width, config.screen_height, bilinear=True)
