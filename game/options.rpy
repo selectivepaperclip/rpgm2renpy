@@ -172,6 +172,14 @@ default preferences.afm_time = 15
 python early:
     config.save_directory = rpgm_game_data['short_name'] + "-1526021564"
 
+init python:
+    # In development, overwrite RenPy's normal behavior of saving to both the local (game dir)
+    # and 'user' directories. It's easier to keep track of the saves if they're only in one place.
+
+    # Unfortunately this takes effect a little bit after the local dir has been scanned,
+    # so you might see local saves on the save menu or where-ever before they blip out of existence.
+    if config.developer:
+        renpy.loadsave.location = SavelocationMultiCustom(renpy.loadsave.location.locations)
 
 ## Icon ########################################################################
 ##
