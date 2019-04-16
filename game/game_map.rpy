@@ -153,18 +153,28 @@ init python:
 
             surf = pygame.Surface((self.width, self.height), pygame.SRCALPHA, 32)
 
+            tileset_images = {}
+
             for tile in self.tiles:
                 renpy.not_infinite_loop(10)
                 if len(tile.tileset_name) > 0:
                     img_path = tile_images[tile.tileset_name.replace(".", "_")]
                     img_size = image_size_cache.for_path(img_path)
                     if tile.sx + tile.w <= img_size[0] and tile.sy + tile.h <= img_size[1]:
-                        subsurface = renpy.display.im.cache.get(Image(img_path)).subsurface((tile.sx, tile.sy, tile.w, tile.h))
+                        if tile.tileset_name not in tileset_images:
+                            if profile_map_generation:
+                                start_time = time.time()
+                            tileset_images[tile.tileset_name] = renpy.display.im.cache.get(Image(img_path))
+                            if profile_map_generation:
+                                print "[MAP %s BG]: Img get for tile (%s, %s) img %s took %s" % (self.map_id, tile.w, tile.h, tile.tileset_name, time.time() - start_time)
+                        subsurface = tileset_images[tile.tileset_name].subsurface((tile.sx, tile.sy, tile.w, tile.h))
                         surf.blit(subsurface, (tile.dx + int(tile.x * rpgm_metadata.tile_width), tile.dy + int(tile.y * rpgm_metadata.tile_height)))
                     else:
                         print ("Image source out of bounds! '%s', imgWidth: %s, imgHeight: %s, sourceX: %s, sourceY: %s, sourceWidth: %s, sourceHeight: %s" % (tile.tileset_name, img_size[0], img_size[1], tile.sx, tile.sy, tile.w, tile.h))
 
             if len(self.doodads) > 0:
+                doodad_images = {}
+
                 glob_special_characters_re = re.compile('([*?[])')
                 for doodad in sorted(self.doodads, key = lambda d: d['z']):
                     renpy.not_infinite_loop(10)
@@ -181,7 +191,9 @@ init python:
                         doodad_x_repeat = int(match.groups()[0])
                         doodad_y_repeat = int(match.groups()[1])
 
-                    doodad_surface = renpy.display.im.cache.get(Image(doodad_image_path))
+                    if doodad_image_path not in doodad_images:
+                        doodad_images[doodad_image_path] = renpy.display.im.cache.get(Image(doodad_image_path))
+                    doodad_surface = doodad_images[doodad_image_path]
                     doodad_image_size = doodad_surface.get_size()
                     if doodad_x_repeat != 1 or doodad_y_repeat != 1:
                         doodad_image_size = (doodad_image_size[0] / doodad_x_repeat, doodad_image_size[1] / doodad_y_repeat)
@@ -206,7 +218,12 @@ init python:
                     )
 
             try:
+                if profile_map_generation:
+                    print "[MAP %s BG]: Saving generated image" % self.map_id
+                    start_time = time.time()
                 pygame_sdl2.image.save(surf, self.cache_file)
+                if profile_map_generation:
+                    print "[MAP %s BG]: Finished saving generated image - took %s" % (self.map_id, time.time() - start_time)
             except pygame_sdl2.error as e:
                 if e.args[0].startswith("Couldn't open"):
                     pygame_sdl2.image.save(surf, self.safe_filename_for_pygame_sdl2_save())
@@ -319,7 +336,12 @@ init python:
         def background_image(self):
             if not hasattr(self, '_background_image') or isinstance(self._background_image, GameMapBackground):
                 if not os.path.exists(self.background_image_cache_file_absolute()):
+                    if profile_map_generation:
+                        print "[MAP %s BG]: Generating background image" % self.map_id
+                        start_time = time.time()
                     self.generate_background_image()
+                    if profile_map_generation:
+                        print "[MAP %s BG]: Finished background image - took %s" % (self.map_id, time.time() - start_time)
                 self._background_image = Image(self.background_image_cache_file())
             if not hasattr(self, 'image_width'):
                 image_sizes = [renpy.image_size(self._background_image)]
@@ -809,6 +831,8 @@ init python:
             return self.tile_id(x, y, region_z)
 
         def tiles(self):
+            if profile_map_generation:
+                start_time = time.time()
             result = []
             width = self.data()['width']
             height = self.data()['height']
@@ -840,6 +864,10 @@ init python:
                                 tile.tileset_name = tileset_names[tile.set_number]
 
                                 result.append(tile)
+
+            if profile_map_generation:
+                print "[MAP %s BG]: Enumerating tiles took %s" % (self.map_id, time.time() - start_time)
+
             return result
 
         def doodad_data(self):
