@@ -19,7 +19,8 @@ init python:
             through = False,
             solid = False,
             touch_trigger = False,
-            action_trigger = False
+            action_trigger = False,
+            parallel_trigger = False
         ):
             self.x = x
             self.y = y
@@ -35,6 +36,7 @@ init python:
             self.solid = solid
             self.touch_trigger = touch_trigger
             self.action_trigger = action_trigger
+            self.parallel_trigger = parallel_trigger
 
         def is_walk_destination(self):
             if hasattr(self, 'walk_destination') and self.walk_destination:
@@ -1189,7 +1191,11 @@ init python:
             return result
 
         def reachability_grid_for_current_position(self):
-            return self.reachability_grid(game_state.player_x, game_state.player_y, self.map_options(game_state.player_x, game_state.player_y, ignore_clicky = True))
+            return self.reachability_grid(
+                game_state.player_x,
+                game_state.player_y,
+                self.map_options(game_state.player_x, game_state.player_y, ignore_clicky = True, include_parallel = True)
+            )
 
         def reachability_grid(self, player_x, player_y, event_coords):
             player_position = (player_x, player_y)
@@ -1355,10 +1361,11 @@ init python:
                 solid = GameEvent.page_solid(e, page, page_index),
                 projectile_target = self.page_is_projectile_target(e, page),
                 touch_trigger = page['trigger'] in [1,2],
-                action_trigger = page['trigger'] in [0]
+                action_trigger = page['trigger'] in [0],
+                parallel_trigger = page['trigger'] in [4]
             )
 
-        def map_options(self, player_x, player_y, only_special = False, ignore_clicky = False):
+        def map_options(self, player_x, player_y, only_special = False, ignore_clicky = False, include_parallel = False):
             coords = []
             clicky_screen = not ignore_clicky and self.is_clicky(player_x, player_y)
 
@@ -1369,7 +1376,10 @@ init python:
                     if self.meets_conditions(e, page['conditions']):
                         # Allow trigger 3/4 (autorun/parallel) events to match so the pages under them don't get matched instead
                         # But these events shouldn't actually show up on the map, they will be triggered by the event loop
-                        if page['trigger'] >= 3:
+                        if page['trigger'] == 3:
+                            break
+
+                        if page['trigger'] == 4 and not include_parallel:
                             break
 
                         loc = self.event_location(e)
