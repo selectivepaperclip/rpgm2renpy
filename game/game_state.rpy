@@ -1412,11 +1412,17 @@ init python:
 
             if rpgm_game_data.get('has_dpad_animations', None) and not mapdest:
                 if len(self.shown_pictures) > 0 and self.map.surrounded_by_events(self.player_x, self.player_y):
-                    mapdest = MapClickable(
+                    possible_mapdest = MapClickable(
                         self.player_x + 1,
                         self.player_y
                     )
+                    map_event = self.map.find_event_for_location(possible_mapdest.x, possible_mapdest.y)
                     self.pause()
+                    if map_event.page['trigger'] == 4:
+                        game_state.unpause_parallel_events()
+                        return True
+                    else:
+                        mapdest = possible_mapdest
 
             if mapdest:
                 # convert old-style mapdests that were x, y tuples to MapClickable objects
@@ -1767,6 +1773,12 @@ init python:
             if hasattr(self, 'move_routes') and len(self.move_routes) > 0:
                 paused_events.extend([e for e in game_state.move_routes if hasattr(e, 'paused') and e.paused > 0])
             paused_events_delay = next((e.paused for e in sorted(paused_events, key=lambda e: e.paused)), None)
+
+            if rpgm_game_data.get('has_dpad_animations', None):
+                # For games with 'dpad animations', the next click is going to unpause parallel events,
+                # so don't add the UI affordance for unpausing them
+                if len(self.shown_pictures) > 0 and self.map.surrounded_by_events(self.player_x, self.player_y):
+                    paused_events = []
 
             active_timer = None
             if hasattr(self, 'timer') and self.timer.active and self.timer.frames > 0:
