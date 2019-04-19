@@ -1,6 +1,7 @@
 ﻿define debug_events = False
 define debug_sound = False
 define noisy_events = False
+define noisy_animations = False
 define debug_pickling = False
 define debug_reachability_grid = False
 define profile_timings = False
@@ -84,6 +85,7 @@ init -10 python:
             if self.is_pre_mv_version:
                 self.pictures_path = rpgm_path("Graphics/Pictures/")
                 self.movies_path = rpgm_path("Movies/")
+                self.rpgm2renpy_movies_path = rpgm_path("Graphics/Rpgm2RenpyMovies/")
                 self.background_music_path = rpgm_path("Audio/BGM/")
                 self.background_sound_path = rpgm_path("Audio/BGS/")
                 self.sound_effects_path = rpgm_path("Audio/SE/")
@@ -100,6 +102,7 @@ init -10 python:
             else:
                 self.pictures_path = rpgm_path("www/img/pictures/")
                 self.movies_path = rpgm_path("www/movies/")
+                self.rpgm2renpy_movies_path = rpgm_path("www/Rpgm2RenpyMovies/")
                 self.background_music_path = rpgm_path("www/audio/bgm/")
                 self.background_sound_path = rpgm_path("www/audio/bgs/")
                 self.sound_effects_path = rpgm_path("Audio/se/")

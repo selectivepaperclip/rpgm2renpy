@@ -396,14 +396,40 @@ init python:
                     if first_frame_is_animation:
                         picture_args['image_name'] = picture_frames[0]['image_name']
                         picture_args['image_name'].add_transitions(picture_transitions)
+                        longest_animation = max(longest_animation, sum(picture_args['image_name'].delays))
                     else:
-                        picture_args['image_name'] = RpgmAnimation.create(
-                            *picture_transitions,
-                            anim_timebase = True,
-                            first_loop_index = first_loop_index,
-                            event_command_references = [frame.get('event_command_reference', None) for frame in picture_frames]
-                        )
-                    longest_animation = max(longest_animation, sum(picture_args['image_name'].delays))
+                        frames_json = []
+                        if len(picture_frames) > 10:
+                            frames_json = [
+                                {
+                                    'image': os.path.splitext(os.path.basename(normal_images[picture_frame['image_name']]))[0],
+                                    'delay': picture_frame.get('wait', 0)
+                                } for picture_frame in picture_frames
+                            ]
+                        movie_webm_filename = RpgmAnimation.filename_for_frames_webm(frames_json)
+                        movie_json_filename = RpgmAnimation.filename_for_frames_json(frames_json)
+                        if noisy_animations and len(picture_frames) > 10:
+                            with open(os.path.join(renpy.config.basedir, rpgm_metadata.rpgm2renpy_movies_path, movie_json_filename), 'w') as f:
+                                json.dump(frames_json, f, sort_keys=True, indent=2)
+                                renpy.notify("Wrote %s" % filename)
+
+                        if len(picture_frames) > 10 and os.path.exists(os.path.join(renpy.config.basedir, rpgm_metadata.rpgm2renpy_movies_path, movie_webm_filename)):
+                            full_path = os.path.join(config.basedir, rpgm_metadata.rpgm2renpy_movies_path, movie_webm_filename).replace("\\", "/")
+                            picture_args['image_name'] = Movie(
+                                play=full_path,
+                                loop=should_loop,
+                                start_image=picture_frames[0]['image_name'],
+                                image=picture_frames[-1]['image_name']
+                            )
+                            longest_animation = max(longest_animation, sum([frame['wait'] for frame in picture_frames]))
+                        else:
+                            picture_args['image_name'] = RpgmAnimation.create(
+                                *picture_transitions,
+                                anim_timebase = True,
+                                first_loop_index = first_loop_index,
+                                event_command_references = [frame.get('event_command_reference', None) for frame in picture_frames]
+                            )
+                            longest_animation = max(longest_animation, sum(picture_args['image_name'].delays))
                 self.shown_pictures[picture_id] = picture_args
 
             self.queued_pictures = []

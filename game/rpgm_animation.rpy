@@ -28,6 +28,22 @@ init python:
             )
 
         @classmethod
+        def filename_for_frames_json(cls, frames_json):
+            if len(frames_json) < 2:
+                return None
+            return "%s.json" % RpgmAnimation.filename_for_frames_base(frames_json)
+
+        @classmethod
+        def filename_for_frames_webm(cls, frames_json):
+            if len(frames_json) < 2:
+                return None
+            return "%s.webm" % RpgmAnimation.filename_for_frames_base(frames_json)
+
+        @classmethod
+        def filename_for_frames_base(cls, frames_json):
+            return "%s-%s-%sframes" % (frames_json[0]['image'], frames_json[-1]['image'], len(frames_json))
+
+        @classmethod
         def transitions_for_frames(cls, picture_frames, loop = False):
             # Creates 3n items if the animation is intended to loop, or 3n - 2 items if it is fixed length
 
