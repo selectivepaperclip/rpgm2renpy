@@ -803,9 +803,11 @@ init python:
                 return self.actors.actor_name(int(gre.last_match.groups()[0]))
             elif gre.match('\$gameActors\.actor\((\d+)\)\.nickname\(\)', script_string):
                 return self.actors.by_index(int(gre.last_match.groups()[0])).get_property('nickname')
-            elif gre.match('\$gameVariables\.value\((\d+)\)\.replace\(\"([^"]+)\", \"([^"]+)\"\);?', script_string):
-                variable_id = int(gre.last_match.groups()[0])
-                return self.variables.value(variable_id).replace(gre.last_match.groups()[1], gre.last_match.groups()[2])
+            elif gre.match('(.*?)\.replace\((.*?)\s*,\s*(.*?)\s*\);?', script_string):
+                lhs = self.eval_fancypants_value_statement(gre.last_match.groups()[0])
+                replace1 = self.eval_fancypants_value_statement(gre.last_match.groups()[1])
+                replace2 = self.eval_fancypants_value_statement(gre.last_match.groups()[2])
+                return lhs.replace(replace1, replace2)
 
             variables_regexp = r'\$gameVariables.value\((\d+)\)'
             only_variables_regexp = r'^\s*%s;?\s*$' % variables_regexp
@@ -843,7 +845,7 @@ init python:
             script_string = re.sub(r'&&', ' and ', script_string)
             script_string = re.sub(r'\|\|', ' or ', script_string)
 
-            if re.match('"[^"]+" == "[^"]+"', script_string):
+            if re.match('"[^"]+" (==|[+]) "[^"]+"', script_string):
                 return eval(script_string)
             elif gre.match('^\s*"([^"]+)"\s*$', script_string):
                 return gre.last_match.groups()[0]
