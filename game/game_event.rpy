@@ -551,7 +551,7 @@ init python:
                 if event_page_index == None:
                     event_page_index = event.get_page_index()
 
-            for route_part in route['list'][self.move_route_index:-1]:
+            for route_part in route['list'][self.move_route_index:]:
                 if noisy_events:
                     print "MOVEMENT ROUTE: %s, event %s, page %s, command %s, target %s, rc %s (%s)" % (
                         "common" if self.common() else ("map %s" % self.get_map_id()),

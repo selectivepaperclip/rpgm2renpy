@@ -139,7 +139,7 @@ init python:
                 self.first_rendered_t = orig_t
 
             if hasattr(self, 'past_first_loop_index') and self.past_first_loop_index:
-                t = (orig_t - self.first_rendered_t - sum(self.delays[0:self.first_loop_index])) % sum(self.delays[self.first_loop_index:-1])
+                t = (orig_t - self.first_rendered_t - sum(self.delays[0:self.first_loop_index])) % sum(self.delays[self.first_loop_index:])
             else:
                 t = (orig_t - self.first_rendered_t) % sum(self.delays)
 

@@ -100,7 +100,7 @@ init python:
 
         def has_armor(self, armor_id):
             # TODO: respond to armor changes
-            for item_id in self.actor_data['equips'][1:-1]:
+            for item_id in self.actor_data['equips'][1:]:
                 if armor_id == item_id:
                     return True
             return False
