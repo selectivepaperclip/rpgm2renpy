@@ -2,6 +2,7 @@
 define debug_sound = False
 define noisy_events = False
 define noisy_animations = False
+define noisy_pauses = False
 define debug_pickling = False
 define debug_reachability_grid = False
 define profile_timings = False

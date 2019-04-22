@@ -3,8 +3,8 @@ init python:
         def eval_full_script(self, script_string):
             gre = Re()
             if re.match('\$gameScreen\.clearPictures\(\);', script_string):
-                game_state.queued_pictures = []
-                game_state.shown_pictures = {}
+                del game_state.queued_pictures[:]
+                game_state.shown_pictures.clear()
                 return True
 
             script_lines = script_string.split("\n")

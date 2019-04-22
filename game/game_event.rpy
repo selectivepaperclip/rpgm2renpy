@@ -428,7 +428,7 @@ init python:
 
                 if game_file_loader.plugin_data_exact('YEP_X_ExtMesPack1'):
                     if gre.match("\$gameSystem\.clearChoiceSettings", line):
-                        self.choices_to_hide = []
+                        del self.choices_to_hide[:]
                         continue
                     elif gre.match("\$gameSystem\.hideChoice\((\d+)", line):
                         choice_id = int(gre.last_match.groups()[0])
@@ -982,8 +982,8 @@ init python:
                     else:
                         result = renpy.display_menu(options)
                     self.branch[command['indent']] = result
-                    self.choices_to_hide = []
-                    self.choices_to_disable = []
+                    del self.choices_to_hide[:]
+                    del self.choices_to_disable[:]
 
                 # Input number
                 elif command['code'] == 103:
@@ -1623,7 +1623,10 @@ init python:
 
                 # Shop
                 elif command['code'] == 302:
-                    self.state.shop_params = {}
+                    if hasattr(self.state, 'shop_params'):
+                        self.state.shop_params.clear()
+                    else:
+                        self.state.shop_params = {}
                     self.state.shop_params['goods'] = [command['parameters']]
                     self.state.shop_params['purchase_only'] = command['parameters'][4]
                     while self.page['list'][self.list_index + 1]['code'] in [605]:

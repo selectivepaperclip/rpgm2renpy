@@ -300,8 +300,14 @@ init python:
 
         def update_for_transfer(self):
             self.tileset_id_override = None
-            self.event_location_overrides = {}
-            self.event_overrides = {}
+            if hasattr(self, 'event_location_overrides'):
+                self.event_location_overrides.clear()
+            else:
+                self.event_location_overrides = {}
+            if hasattr(self, 'event_overrides'):
+                self.event_overrides.clear()
+            else:
+                self.event_overrides = {}
             self.initialize_erased_events()
             self.hide_unpleasant_moving_obstacles()
             map_data = self.data()

@@ -80,7 +80,10 @@ init python:
             self.clear()
 
         def clear(self):
-            self.interest_in_switches = {}
+            if hasattr(self, 'interest_in_switches'):
+                self.interest_in_switches.clear()
+            else:
+                self.interest_in_switches = {}
 
         def register_interest_in_switch_id(self, parallel_event_id, switch_id):
             if switch_id not in self.interest_in_switches:
@@ -301,7 +304,13 @@ init python:
             self.migrate_shown_pictures()
             if picture_id in self.shown_pictures:
                 del self.shown_pictures[picture_id]
-            self.queued_pictures = [(queued_picture_id, args) for (queued_picture_id, args) in self.queued_pictures if queued_picture_id != picture_id]
+
+            queued_picture_indices = []
+            for index, (queued_picture_id, args) in enumerate(self.queued_pictures):
+                if queued_picture_id == picture_id:
+                    queued_picture_indices.append(index)
+            for i in sorted(queued_picture_indices, reverse=True):
+                del self.queued_pictures[i]
 
         def queued_picture(self, desired_picture_id):
             self.migrate_shown_pictures()
@@ -432,7 +441,7 @@ init python:
                             longest_animation = max(longest_animation, sum(picture_args['image_name'].delays))
                 self.shown_pictures[picture_id] = picture_args
 
-            self.queued_pictures = []
+            del self.queued_pictures[:]
 
             return longest_animation
 
@@ -932,7 +941,9 @@ init python:
                 if not any([e for e in new_parallel_events if self.map.has_conditional(e.page)]):
                     new_parallel_events = []
 
-            self.parallel_events = new_parallel_events
+            del self.parallel_events[:]
+            for event in new_parallel_events:
+                self.parallel_events.append(event)
 
         def show_inventory(self):
             interesting_items = []
@@ -1008,8 +1019,8 @@ init python:
         def show_shop_ui(self):
             self.migrate_missing_shop_data()
 
-            shop_params = self.shop_params
-            self.shop_params = None
+            shop_params = self.shop_params.copy()
+            self.shop_params.clear()
             shop_items = []
             for item_params in shop_params['goods']:
                 type, item_id, where_is_price, price_override = item_params[0:4]
@@ -1207,13 +1218,23 @@ init python:
                     self.last_said_text = spoken_text
                     renpy.say(speaker, spoken_text)
 
-        def pause(self):
+        def pause(self, show_map = True):
+            if noisy_pauses:
+                renpy.notify("Pausin at %s - event stack %s - ev %s / %s" % (
+                    time.time(),
+                    len(self.events),
+                    self.events[-1].event_data['id'] if len(self.events) > 0 else None,
+                    self.events[-1].list_index if len(self.events) > 0 else None
+                ))
             self.flush_queued_content()
-            self.show_map(True)
+            if show_map:
+                self.show_map(True)
             renpy.pause()
 
         def set_game_start_events(self):
-            self.events = [e for e in [self.map.find_auto_trigger_event()] if e]
+            auto_trigger_event = self.map.find_auto_trigger_event()
+            if auto_trigger_event:
+                self.events.append(auto_trigger_event)
             if len(self.events) == 0:
                 self.queue_parallel_events()
 
@@ -1241,8 +1262,11 @@ init python:
                 self.player_direction = transfer_event.new_direction
             # TODO: probably better handled elsewhere
             if changing_maps:
-                self.parallel_events = []
-                self.move_routes = []
+                del self.parallel_events[:]
+                if hasattr(self, 'move_routes'):
+                    del self.move_routes[:]
+                else:
+                    self.move_routes = []
                 self.queue_common_and_parallel_events()
 
         def queue_common_event(self, event_id):
@@ -1327,7 +1351,9 @@ init python:
                                     event.move_route_index = 0
                             new_move_routes.append(event)
                         break
-            self.move_routes = new_move_routes
+            del self.move_routes[:]
+            for move_route in new_move_routes:
+                self.move_routes.append(move_route)
 
         def do_next_thing(self, mapdest, keyed_common_event):
             self.ensure_initialized_attributes()
@@ -1364,7 +1390,10 @@ init python:
                     return True
 
             if len(self.events) > 0:
-                self.previous_parallel_event_pages = []
+                if hasattr(self, 'previous_parallel_event_pages'):
+                    del self.previous_parallel_event_pages[:]
+                else:
+                    self.previous_parallel_event_pages = []
 
                 this_event = self.events[-1]
                 new_event = this_event.do_next_thing()
@@ -1404,7 +1433,9 @@ init python:
             if self.requeue_parallel_events_if_changed():
                 return True
 
-            self.events = [e for e in [self.map.find_auto_trigger_event()] if e]
+            auto_trigger_event = self.map.find_auto_trigger_event()
+            if auto_trigger_event:
+                self.events.append(auto_trigger_event)
             if len(self.events) > 0:
                 self.cancel_map_path_walk()
                 return True
@@ -1445,12 +1476,12 @@ init python:
                         self.player_y
                     )
                     map_event = self.map.find_event_for_location(possible_mapdest.x, possible_mapdest.y)
-                    self.pause()
                     if map_event.page['trigger'] == 4:
                         game_state.unpause_parallel_events()
-                        return True
                     else:
-                        mapdest = possible_mapdest
+                        self.events.append(map_event)
+                    self.pause(show_map = False)
+                    return True
 
             if mapdest:
                 # convert old-style mapdests that were x, y tuples to MapClickable objects
