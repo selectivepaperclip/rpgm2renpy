@@ -26,8 +26,8 @@ module DEGICA
       convert_items
       convert_weapons
       convert_armors
-      #convert_enemies
-      #convert_troops
+      convert_enemies
+      convert_troops
       #convert_states
       #convert_animations
       convert_tilesets

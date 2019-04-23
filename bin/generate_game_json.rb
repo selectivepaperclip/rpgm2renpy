@@ -24,6 +24,8 @@ end
 
 $data_actors = YAML.load_file(yaml_file('Actors.yaml'))
 $data_classes = YAML.load_file(yaml_file('Classes.yaml'))
+$data_troops = YAML.load_file(yaml_file('Troops.yaml'))
+$data_enemies = YAML.load_file(yaml_file('Enemies.yaml'))
 $data_skills = YAML.load_file(yaml_file('Skills.yaml'))
 $data_items = YAML.load_file(yaml_file('Items.yaml'))
 $data_weapons = YAML.load_file(yaml_file('Weapons.yaml'))

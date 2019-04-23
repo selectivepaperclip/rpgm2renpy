@@ -23,6 +23,13 @@ module RPG
   class Armor < RpgmYamlObject; end
   class Tileset < RpgmYamlObject; end
   class CommonEvent < RpgmYamlObject; end
+  class Troop < RpgmYamlObject; end
+  class Troop::Member < RpgmYamlObject; end
+  class Troop::Page < RpgmYamlObject; end
+  class Troop::Page::Condition < RpgmYamlObject; end
+  class Enemy < RpgmYamlObject; end
+  class Enemy::Action < RpgmYamlObject; end
+  class Enemy::DropItem < RpgmYamlObject; end
   class EventCommand < RpgmYamlObject
     def code
       @c
