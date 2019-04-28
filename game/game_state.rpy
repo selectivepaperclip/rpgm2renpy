@@ -127,6 +127,7 @@ init python:
             self.timer = GameTimer()
             self.shown_pictures = {}
             self.queued_pictures = []
+            self.additional_queued_picture_groups = []
             self.everything_reachable = False
             self.focus_zoom_rect_on_next_map_render = True
 
@@ -361,6 +362,12 @@ init python:
                     picture_args['image_name'] = RpgmAnimation.image_for_picture(frame)
                 else:
                     should_loop = 'loop' in last_frame and last_frame['loop']
+                    if not should_loop and rpgm_game_data.get('split_last_animation_frame', None):
+                        if re.sub('\d', '', picture_frames[-1]['picture_name']) != re.sub('\d', '', picture_frames[-2]['picture_name']):
+                            self.additional_queued_picture_groups.append([(picture_id, last_frame)])
+                            del picture_frames[-1]
+                            last_frame = picture_frames[-1]
+
                     first_loop_index = next((i for i, picture_frame in enumerate(picture_frames) if 'loop' in picture_frame and picture_frame['loop']), None)
                     if first_frame_is_animation:
                         picture_transitions = RpgmAnimation.transitions_for_frames(picture_frames, loop = should_loop)
@@ -1371,6 +1378,15 @@ init python:
         def _do_next_thing(self, mapdest, keyed_common_event):
             self.ensure_initialized_attributes()
             self.skip_bad_events()
+
+            if len(self.additional_queued_picture_groups) > 0:
+                next_group = self.additional_queued_picture_groups[0]
+                del self.additional_queued_picture_groups[0]
+                for pic in next_group:
+                    self.queued_pictures.append(pic)
+                self.flush_queued_pictures()
+                self.pause(show_map = False)
+                return True
 
             if hasattr(self, 'parallel_events') and len(self.parallel_events) > 0:
                 first_never_paused_event = next((e for e in self.parallel_events if not hasattr(e, 'has_ever_paused') or not e.has_ever_paused), None)
