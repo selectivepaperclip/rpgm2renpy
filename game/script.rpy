@@ -6,6 +6,7 @@ define noisy_pauses = False
 define debug_pickling = False
 define debug_reachability_grid = False
 define profile_timings = False
+define profile_events = False
 define profile_map_generation = False
 define tile_images = {}
 define normal_images = {}

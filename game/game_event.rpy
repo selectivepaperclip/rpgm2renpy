@@ -1452,10 +1452,13 @@ init python:
                             game_state.hide_picture(picture_id)
                             self.list_index += 1
                             return
-                        picture_args = {'image_name': rpgm_picture_name(picture_name)}
+                        picture_args = {
+                            'image_name': rpgm_picture_name(picture_name),
+                            'picture_name': picture_name
+                        }
                     else:
                         duration, wait = command['parameters'][10:12]
-                        existing_picture_args = game_state.queued_or_shown_picture(picture_id)
+                        existing_picture_args = game_state.queued_or_shown_picture_frame(picture_id)
                         if existing_picture_args:
                             picture_args = existing_picture_args.copy()
                         else:
@@ -1466,11 +1469,10 @@ init python:
                         picture_args['opacity'] = opacity
                         picture_args['blend_mode'] = blend_mode
                         if command['code'] == 231 and not game_state.occluded():
-                            image_size = image_size_cache.for_picture_name(rpgm_picture_name(picture_name))
-                        
                             iavra_gif_details = self.iavra_gif_details(picture_name)
                             olivia_animated_picture_details = self.olivia_animated_picture_details(picture_name)
                             if iavra_gif_details:
+                                image_size = image_size_cache.for_picture_name(rpgm_picture_name(picture_name))
                                 frame_count, frame_delay = iavra_gif_details
                                 self.bake_filmstrip_image(
                                   picture_args,
@@ -1481,6 +1483,7 @@ init python:
                                   frame_delay = frame_delay
                                 )
                             elif olivia_animated_picture_details:
+                                image_size = image_size_cache.for_picture_name(rpgm_picture_name(picture_name))
                                 horiz_cells, vert_cells = olivia_animated_picture_details
                                 self.bake_filmstrip_image(
                                   picture_args,
@@ -1491,18 +1494,15 @@ init python:
                                   frame_delay = 4
                                 )
                             else:
-                                if (scale_x != 100 or scale_y != 100) and not self.skip_image_resize(picture_name, scale_x, scale_y):
-                                    image_size = (int(image_size[0] * scale_x / 100.0), int(image_size[1] * scale_y / 100.0))
-                                if image_size[0] > config.screen_width and image_size[1] > config.screen_height:
-                                    image_size = (config.screen_width, config.screen_height)
-                                picture_args['size'] = image_size
+                                picture_args['scale_x'] = scale_x
+                                picture_args['scale_y'] = scale_y
                         if origin == 0: # origin of 0 means x,y is topleft
                             picture_args['x'] = x
                             picture_args['y'] = y
-                        else: # origin of 1 means it's screen center
-                            size = picture_args.get('final_size', None) or picture_args.get('size')
-                            picture_args['x'] = x - size[0] / 2
-                            picture_args['y'] = y - size[1] / 2
+                        else: # origin of 1 means x,y is image center
+                            game_state.add_image_size_to_frame(picture_args)
+                            picture_args['x'] = x - picture_args['size'][0] / 2
+                            picture_args['y'] = y - picture_args['size'][1] / 2
 
                         if self.parallel():
                             picture_args['loop'] = True
@@ -1998,11 +1998,6 @@ init python:
                     picture_frames.append({"size": (frame_width, frame_height), "image_name": frame_img, "wait": frame_delay})
             picture_args["image_name"] = RpgmAnimation.create_from_frames(picture_frames, loop = True)
             picture_args["size"] = (frame_width, frame_height)
-
-        def skip_image_resize(self, image_name, scale_x, scale_y):
-            if scale_x == 85 and scale_y == 85 and GameIdentifier().is_living_with_mia():
-                return True
-            return False
 
         def done(self):
             return self.list_index == len(self.page['list'])

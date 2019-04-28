@@ -146,27 +146,6 @@ init python:
                 if hasattr(self.map, 'y'):
                     self.player_y = self.map.y
 
-        def migrate_shown_pictures(self):
-            if not hasattr(self, 'shown_pictures'):
-                self.shown_pictures = {}
-                for tag in renpy.get_showing_tags():
-                    picture_id = int(re.search("(\d+)$", tag).groups()[0])
-                    displayable = renpy.display.core.displayable_by_tag('master', tag)
-                    if len(displayable.children) == 1:
-                        image_name = ' '.join(displayable.children[0].name)
-                        child_size = displayable.child_size
-                        game_state.show_picture(picture_id, {
-                            'image_name': rpgm_picture_name(image_name),
-                            'size': (int(child_size[0]), int(child_size[1])),
-                        })
-                    renpy.hide(tag)
-            elif not hasattr(self, 'migrated_image_prefixes'):
-                for picture_args in self.shown_pictures.itervalues():
-                    picture_args['image_name'] = rpgm_picture_name(picture_args['image_name'])
-                self.migrated_image_prefixes = True
-            if not hasattr(self, 'queued_pictures'):
-                self.queued_pictures = []
-
         def everything_is_reachable(self):
             if hasattr(self, 'everything_reachable'):
                 return self.everything_reachable
@@ -275,33 +254,22 @@ init python:
                 self.print_picture(picture_data['image_name'])
 
         def show_picture(self, picture_id, args):
-            self.migrate_shown_pictures()
             args['faded_out'] = (hasattr(self, 'faded_out') and self.faded_out) or game_state.occluded()
             self.queued_pictures.append((picture_id, args))
 
         def move_picture(self, picture_id, args, wait, duration):
-            self.migrate_shown_pictures()
             queued_picture = self.queued_picture(picture_id)
             if not queued_picture and picture_id in self.shown_pictures:
                 shown_picture = self.shown_pictures[picture_id]
-                reconstructed_picture_args = {
-                    'image_name': shown_picture['image_name'],
-                    'opacity': shown_picture['opacity']
-                }
+                last_frame = shown_picture['picture_frames'][-1]
                 if duration and duration != 0:
-                    reconstructed_picture_args['wait'] = duration
-                reconstructed_picture_args.update({
-                    'x': shown_picture.get('final_x') or shown_picture.get('x'),
-                    'y': shown_picture.get('final_y') or shown_picture.get('y'),
-                    'size': shown_picture.get('final_size') or shown_picture.get('size')
-                })
-                self.queued_pictures.append((picture_id, reconstructed_picture_args))
+                    last_frame['wait'] = duration
+                self.queued_pictures.append((picture_id, last_frame))
             elif queued_picture and duration and duration != 0:
                 queued_picture['wait'] = duration
             self.queued_pictures.append((picture_id, args))
 
         def hide_picture(self, picture_id):
-            self.migrate_shown_pictures()
             if picture_id in self.shown_pictures:
                 del self.shown_pictures[picture_id]
 
@@ -313,7 +281,6 @@ init python:
                 del self.queued_pictures[i]
 
         def queued_picture(self, desired_picture_id):
-            self.migrate_shown_pictures()
             for picture_id, picture_args in reversed(self.queued_pictures):
                 if picture_id == desired_picture_id:
                     return picture_args
@@ -325,16 +292,14 @@ init python:
             if desired_picture_id in self.shown_pictures:
                 return self.shown_pictures[desired_picture_id]
 
-        def queued_or_shown_picture(self, desired_picture_id):
-            self.migrate_shown_pictures()
-            for picture_id, picture_args in reversed(self.queued_pictures):
-                if picture_id == desired_picture_id:
-                    return picture_args
+        def queued_or_shown_picture_frame(self, desired_picture_id):
+            queued_picture = self.queued_picture(desired_picture_id)
+            if queued_picture:
+                return queued_picture
             if desired_picture_id in self.shown_pictures:
-                return self.shown_pictures[desired_picture_id]
+                return self.shown_pictures[desired_picture_id]['picture_frames'][-1]
 
         def wait(self, frames):
-            self.migrate_shown_pictures()
             if len(self.queued_pictures) > 0:
                 # TODO: it might be more appropriate to set the wait for every image added since the last wait
                 last_picture_id, last_picture_args = self.queued_pictures[-1]
@@ -356,22 +321,19 @@ init python:
             return self.parallel_event_metadata_instance
 
         def flush_queued_pictures(self):
-            self.migrate_shown_pictures()
+            start_time = time.time()
+            result = self._flush_queued_pictures()
+            if profile_events:
+                print "Flushing queued pictures took %s" % (time.time() - start_time)
+            return result
+
+        def _flush_queued_pictures(self):
             if len(self.queued_pictures) == 0:
                 return 0
 
             longest_animation = 0
 
-            frame_data = {}
-            for picture_id, picture_args in self.queued_pictures:
-                if picture_id in frame_data:
-                    existing_frame = frame_data[picture_id][-1]
-                    if 'wait' in existing_frame and existing_frame['wait'] > 0 and not picture_args.get('faded_out', False):
-                        frame_data[picture_id].append(picture_args)
-                    else:
-                        frame_data[picture_id][-1] = picture_args
-                else:
-                    frame_data[picture_id] = [picture_args]
+            frame_data = self.group_queued_pictures_by_picture_id()
 
             for picture_id, picture_frames in frame_data.iteritems():
                 last_frame = picture_frames[-1]
@@ -382,11 +344,8 @@ init python:
                     # other blend modes are not supported for now
                     last_frame['opacity'] = 0
                 picture_args = {
-                    "final_x": last_frame.get('x', 0),
-                    "final_y": last_frame.get('y', 0),
-                    "final_size": last_frame.get('final_size', None) or last_frame.get('size', None),
-                    "opacity": last_frame.get('opacity', 255),
-                    "size": None
+                    "picture_frames": picture_frames,
+                    "opacity": last_frame.get('opacity', 255)
                 }
 
                 first_frame_is_animation = isinstance(picture_frames[0]['image_name'], RpgmAnimation)
@@ -397,12 +356,14 @@ init python:
                         continue
 
                 if len(picture_frames) == 1:
-                    picture_args['image_name'] = RpgmAnimation.image_for_picture(picture_frames[0])
+                    frame = picture_frames[0]
+                    self.add_image_size_to_frame(frame)
+                    picture_args['image_name'] = RpgmAnimation.image_for_picture(frame)
                 else:
                     should_loop = 'loop' in last_frame and last_frame['loop']
                     first_loop_index = next((i for i, picture_frame in enumerate(picture_frames) if 'loop' in picture_frame and picture_frame['loop']), None)
-                    picture_transitions = RpgmAnimation.transitions_for_frames(picture_frames, loop = should_loop)
                     if first_frame_is_animation:
+                        picture_transitions = RpgmAnimation.transitions_for_frames(picture_frames, loop = should_loop)
                         picture_args['image_name'] = picture_frames[0]['image_name']
                         picture_args['image_name'].add_transitions(picture_transitions)
                         longest_animation = max(longest_animation, sum(picture_args['image_name'].delays))
@@ -424,14 +385,23 @@ init python:
 
                         if len(picture_frames) > 10 and os.path.exists(os.path.join(renpy.config.basedir, rpgm_metadata.rpgm2renpy_movies_path, movie_webm_filename)):
                             full_path = os.path.join(config.basedir, rpgm_metadata.rpgm2renpy_movies_path, movie_webm_filename).replace("\\", "/")
-                            picture_args['image_name'] = Movie(
+                            if picture_id in self.shown_pictures:
+                                if hasattr(self.shown_pictures[picture_id]['image_name'], 'movie_path'):
+                                    if self.shown_pictures[picture_id]['image_name'].movie_path == full_path:
+                                        continue
+                            movie_animation = Movie(
                                 play=full_path,
                                 loop=should_loop,
                                 start_image=picture_frames[0]['image_name'],
                                 image=picture_frames[-1]['image_name']
                             )
+                            movie_animation.movie_path = full_path
+                            picture_args['image_name'] = movie_animation
                             longest_animation = max(longest_animation, sum([frame['wait'] for frame in picture_frames]))
                         else:
+                            for frame in picture_frames:
+                                self.add_image_size_to_frame(frame)
+                            picture_transitions = RpgmAnimation.transitions_for_frames(picture_frames, loop = should_loop)
                             picture_args['image_name'] = RpgmAnimation.create(
                                 *picture_transitions,
                                 anim_timebase = True,
@@ -444,6 +414,39 @@ init python:
             del self.queued_pictures[:]
 
             return longest_animation
+
+        def add_image_size_to_frame(self, frame):
+            if 'size' in frame and frame['size'] != None:
+                return
+
+            picture_name = frame['picture_name']
+            image_size = image_size_cache.for_picture_name(rpgm_picture_name(picture_name))
+
+            if (frame['scale_x'] != 100 or frame['scale_y'] != 100) and not self.skip_image_resize(picture_name, frame['scale_x'], frame['scale_y']):
+                image_size = (int(image_size[0] * frame['scale_x'] / 100.0), int(image_size[1] * frame['scale_y'] / 100.0))
+
+            if image_size[0] > config.screen_width and image_size[1] > config.screen_height:
+                image_size = (config.screen_width, config.screen_height)
+
+            frame['size'] = image_size
+
+        def group_queued_pictures_by_picture_id(self):
+            frame_data = {}
+            for picture_id, picture_args in self.queued_pictures:
+                if picture_id in frame_data:
+                    existing_frame = frame_data[picture_id][-1]
+                    if 'wait' in existing_frame and existing_frame['wait'] > 0 and not picture_args.get('faded_out', False):
+                        frame_data[picture_id].append(picture_args)
+                    else:
+                        frame_data[picture_id][-1] = picture_args
+                else:
+                    frame_data[picture_id] = [picture_args]
+            return frame_data
+
+        def skip_image_resize(self, image_name, scale_x, scale_y):
+            if scale_x == 85 and scale_y == 85 and GameIdentifier().is_living_with_mia():
+                return True
+            return False
 
         def check_for_redundant_frames(self, picture_id, rpgm_animation, new_picture_frames):
             if not hasattr(rpgm_animation, 'event_command_references'):
@@ -473,8 +476,6 @@ init python:
             return False
 
         def pictures(self):
-            self.migrate_shown_pictures()
-
             if GameIdentifier().is_ics1():
                 # ICS1 keeps showing pictures on top of each other, making the game slower and slower what with the compositing
                 # we need to hide all but the topmost one
@@ -1356,6 +1357,18 @@ init python:
                 self.move_routes.append(move_route)
 
         def do_next_thing(self, mapdest, keyed_common_event):
+            start_time = time.time()
+
+            result = self._do_next_thing(mapdest, keyed_common_event)
+
+            if profile_events:
+                took_time = time.time() - start_time
+                if took_time > 0.01:
+                    print "Last step took %s - at %s" % (took_time, time.time())
+
+            return result
+
+        def _do_next_thing(self, mapdest, keyed_common_event):
             self.ensure_initialized_attributes()
             self.skip_bad_events()
 
@@ -1703,16 +1716,15 @@ init python:
                     renpy.say(None, "Don't know how to deal with picture common event with action %s" % desc_parts[2])
                     continue
 
-                picture = self.queued_or_shown_picture(picture_id)
-                if not picture:
-                    continue
+                frame = self.queued_or_shown_picture_frame(picture_id)
+                if not frame:
+                    return
 
-                size = picture.get('final_size') or picture.get('size')
                 result.append({
-                    'x': picture.get('final_x') or picture.get('x'),
-                    'y': picture.get('final_y') or picture.get('y'),
-                    'xsize': size[0],
-                    'ysize': size[1],
+                    'x': picture['x'],
+                    'y': picture['y'],
+                    'xsize': picture['size'][0],
+                    'ysize': picture['size'][1],
                     'common_event_id': int(common_event_id)
                 })
             return result
