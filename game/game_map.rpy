@@ -1319,8 +1319,9 @@ init python:
 
         def event_sprite_data(self, event_data, page, page_index):
             overrides = self.overrides_for_event_page(event_data['id'], page_index)
+            pageless_overrides = self.overrides_for_event_page(event_data['id'], None)
             return {
-                'direction': overrides.get('direction', page['image']['direction']),
+                'direction': pageless_overrides.get('direction', page['image']['direction']),
                 'characterName': overrides.get('characterName', page['image']['characterName']),
                 'characterIndex': overrides.get('characterIndex', page['image']['characterIndex']),
                 'transparent': overrides.get('transparent', False),
