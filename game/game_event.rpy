@@ -754,7 +754,7 @@ init python:
                 if new_direction:
                     self.move_route_set_direction(new_direction, player_moving = player_moving, event = event)
 
-                if new_transparent:
+                if new_transparent != None:
                     if player_moving:
                         # TODO: player transparency
                         pass
