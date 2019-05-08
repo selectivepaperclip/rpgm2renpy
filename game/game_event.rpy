@@ -1,5 +1,23 @@
 init python:
     class GameEvent:
+        PROPERTY_CHARACTER_INDEX = 'characterIndex'
+        PROPERTY_CHARACTER_NAME = 'characterName'
+        PROPERTY_DIRECTION = 'direction'
+        PROPERTY_DIRECTION_FIX = 'directionFix'
+        PROPERTY_MOVE_FREQUENCY = 'moveFrequency'
+        PROPERTY_MOVE_SPEED = 'moveSpeed'
+        PROPERTY_PATTERN = 'pattern'
+        PROPERTY_STEP_ANIME = 'stepAnime'
+        PROPERTY_THROUGH = 'through'
+        PROPERTY_TRANSPARENT = 'transparent'
+
+        IMAGE_STORED_PROPERTIES = (
+            PROPERTY_CHARACTER_INDEX,
+            PROPERTY_CHARACTER_NAME,
+            PROPERTY_DIRECTION,
+            PROPERTY_PATTERN
+        )
+
         def __init__(self, state, map_id, event_data, page, page_index = None):
             self.state = state
             self.map_id = map_id
@@ -15,7 +33,7 @@ init python:
 
         @classmethod
         def page_solid(cls, event_data, page, page_index):
-            return (page['priorityType'] == 1) and not game_state.map.event_through(event_data, page, page_index)
+            return (page['priorityType'] == 1) and not game_state.map.event_page_property(event_data, page, page_index, GameEvent.PROPERTY_THROUGH)
 
         def common(self):
             return self.event_data.has_key('switchId')
@@ -37,6 +55,12 @@ init python:
                 if page == self.page:
                     self.page_index = index
                     return self.page_index
+
+        def page_property(self, map, property):
+            return map.event_page_property(self.event_data, self.page, self.page_index, property)
+
+        def override_page(self, map, property, value):
+            return map.override_event_page(self.event_data, self.page, self.page_index, property, value)
 
         def get_random_int(self, lower, upper):
             if hasattr(game_state, 'ask_for_random') and game_state.ask_for_random:
@@ -614,7 +638,7 @@ init python:
                     else:
                         x, y = self.state.map.event_location(event.event_data)
                     map_event = self.state.map.find_event_for_location(x, y)
-                    if self.state.map.event_through(map_event.event_data, map_event.page, map_event.page_index) or self.state.map.can_pass(x, y, random_direction):
+                    if map_event.page_property(self.state.map, GameEvent.PROPERTY_THROUGH) or self.state.map.can_pass(x, y, random_direction):
                         new_direction = random_direction
                         direction_delta = GameDirection.delta_for_direction(random_direction)
                 elif route_part['code'] in [10, 11]: # Move Toward / Away
@@ -704,8 +728,8 @@ init python:
                         actor.set_property('characterName', new_character_name)
                         actor.set_property('characterIndex', new_character_index)
                     else:
-                        self.state.map.override_event(event_id, event_page_index, 'characterName', new_character_name)
-                        self.state.map.override_event(event_id, event_page_index, 'characterIndex', new_character_index)
+                        event.override_page(self.state.map, GameEvent.PROPERTY_CHARACTER_NAME, new_character_name)
+                        event.override_page(self.state.map, GameEvent.PROPERTY_CHARACTER_INDEX, new_character_index)
                 elif route_part['code'] == 45: # Route Script
                     route_script = route_part['parameters'][0]
                     gre = Re()
@@ -749,7 +773,7 @@ init python:
                     if player_moving:
                         self.state.player_direction_fix = new_direction_fix
                     else:
-                        self.state.map.override_event(event_id, event_page_index, 'directionFix', new_direction_fix)
+                        event.override_page(self.state.map, GameEvent.PROPERTY_DIRECTION_FIX, new_direction_fix)
 
                 if new_direction:
                     self.move_route_set_direction(new_direction, player_moving = player_moving, event = event)
@@ -759,13 +783,13 @@ init python:
                         # TODO: player transparency
                         pass
                     else:
-                        self.state.map.override_event(event_id, event_page_index, 'transparent', new_transparent)
+                        event.override_page(self.state.map, GameEvent.PROPERTY_TRANSPARENT, new_transparent)
 
                 if new_through != None:
                     if player_moving:
                         game_state.everything_reachable = new_through
                     else:
-                        self.state.map.override_event(event_id, event_page_index, 'through', new_through)
+                        event.override_page(self.state.map, GameEvent.PROPERTY_THROUGH, new_through)
 
                 delta_x, delta_y = direction_delta
                 if delta_x != 0 or delta_y != 0:
@@ -781,8 +805,8 @@ init python:
         def move_route_set_direction(self, new_direction, player_moving = False, event = None):
             if player_moving:
                 game_state.set_player_direction(new_direction)
-            elif not self.state.map.event_direction_fix(event.event_data, event.page, event.page_index):
-                self.state.map.override_event(event.event_data['id'], None, 'direction', new_direction)
+            elif not event.page_property(self.state.map, GameEvent.PROPERTY_DIRECTION_FIX):
+                event.override_page(self.state.map, GameEvent.PROPERTY_DIRECTION, new_direction)
 
         def move_route_move_object(self, delta_x, delta_y, player_moving = False, event = None, skippable = False):
             if player_moving:
@@ -797,12 +821,12 @@ init python:
             if new_x < 0 or new_y < 0 or new_x > self.state.map.width() - 1 or new_y > self.state.map.height() - 1:
                 return
 
-            moving_object_does_not_collide = (player_moving and game_state.everything_is_reachable()) or (event and self.state.map.event_through(event.event_data, event.page, event.page_index))
+            moving_object_does_not_collide = (player_moving and game_state.everything_is_reachable()) or (event and event.page_property(self.state.map, GameEvent.PROPERTY_THROUGH))
             if not moving_object_does_not_collide:
                 map_event = self.state.map.find_event_for_location(new_x, new_y)
-                if not map_event or (not self.state.map.event_through(map_event.event_data, map_event.page, map_event.page_index)):
+                if not map_event or (not map_event.page_property(self.state.map, GameEvent.PROPERTY_THROUGH)):
                     old_map_event = self.state.map.find_event_for_location(current_x, current_y)
-                    if not old_map_event or (not self.state.map.event_through(old_map_event.event_data, old_map_event.page, old_map_event.page_index)):
+                    if not old_map_event or (not old_map_event.page_property(self.state.map, GameEvent.PROPERTY_THROUGH)):
                         move_distance = abs(delta_x) + abs(delta_y)
                         if (map_event and GameEvent.page_solid(map_event.event_data, map_event.page, map_event.page_index)) or (move_distance == 1 and not self.state.map.can_move_vector(current_x, current_y, delta_x, delta_y)):
                               if noisy_events:
@@ -1360,7 +1384,8 @@ init python:
                     else: # Exchange with another event
                         renpy.say(None, "Command 203 exchange with another event not implemented, plz implement!")
                     if direction > 0:
-                        self.state.map.override_event(event_id, None, 'direction', direction)
+                        event = self.state.map.find_event_at_index(event_data['id'])
+                        event.override_page(self.state.map, GameEvent.PROPERTY_DIRECTION, direction)
 
                 # Scroll map
                 elif command['code'] == 204:

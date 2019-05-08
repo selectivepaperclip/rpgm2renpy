@@ -290,6 +290,8 @@ init python:
         def __init__(self, state, map_id):
             self.state = state
             self.map_id = map_id
+            self.event_location_overrides = {}
+            self.event_page_overrides = {}
 
         def initialize_erased_events(self):
             self.erased_events = {}
@@ -300,14 +302,8 @@ init python:
 
         def update_for_transfer(self):
             self.tileset_id_override = None
-            if hasattr(self, 'event_location_overrides'):
-                self.event_location_overrides.clear()
-            else:
-                self.event_location_overrides = {}
-            if hasattr(self, 'event_overrides'):
-                self.event_overrides.clear()
-            else:
-                self.event_overrides = {}
+            self.event_location_overrides.clear()
+            self.event_page_overrides.clear()
             self.initialize_erased_events()
             self.hide_unpleasant_moving_obstacles()
             map_data = self.data()
@@ -1283,8 +1279,6 @@ init python:
                             break
 
         def event_location(self, event_data):
-            if not hasattr(self, 'event_location_overrides'):
-                self.event_location_overrides = {}
             if event_data['id'] in self.event_location_overrides:
                 return self.event_location_overrides[event_data['id']]
             else:
@@ -1302,47 +1296,72 @@ init python:
             self.event_location_overrides[event_data['id']] = loc
 
         def overrides_for_event_page(self, event_id, page_index):
-            if not hasattr(self, 'event_overrides'):
-                self.event_overrides = {}
-            if hasattr(self, 'event_overrides') and event_id in self.event_overrides and self.event_overrides[event_id].get('pageIndex', -1) == page_index:
-                return self.event_overrides[event_id]
+            if event_id not in self.event_page_overrides:
+                self.event_page_overrides[event_id] = {}
+            existing_page_index = self.event_page_overrides[event_id].get('pageIndex', None)
+            if existing_page_index != page_index:
+                carryover_direction = None
+                if existing_page_index:
+                    event_data = self.data()['events'][event_id]
+                    carryover_direction = self.carryover_direction(event_data, existing_page_index, page_index)
+
+                self.event_page_overrides[event_id].clear()
+
+                if carryover_direction:
+                    self.event_page_overrides[event_id]['pageIndex'] = page_index
+                    self.event_page_overrides[event_id][GameEvent.PROPERTY_DIRECTION] = carryover_direction
+            return self.event_page_overrides[event_id]
+
+        def override_event_page(self, event_data, page, page_index, key, value):
+            event_id = event_data['id']
+            if event_id not in self.event_page_overrides:
+                self.event_page_overrides[event_id] = {}
+
+            existing_page_index = self.event_page_overrides[event_id].get('pageIndex', None)
+            if existing_page_index != page_index:
+                carryover_direction = self.carryover_direction(event_data, existing_page_index, page_index)
+
+                self.event_page_overrides[event_id].clear()
+                self.event_page_overrides[event_id]['pageIndex'] = page_index
+
+                if carryover_direction:
+                    self.event_page_overrides[event_id][GameEvent.PROPERTY_DIRECTION] = carryover_direction
+
+            self.event_page_overrides[event_id][key] = value
+
+        def carryover_direction(self, event_data, old_page_index, new_page_index):
+            # Replicates some very convoluted logic in the `setupPageSettings` JS function:
+            # direction is only reset when swapping pages if the direction of the new page
+            # differs from the 'original' (non-overridden) direction of the original page
+            if not old_page_index:
+                return None
+
+            old_page = event_data['pages'][old_page_index]
+            new_page = event_data['pages'][new_page_index]
+            if old_page['image']['direction'] == new_page['image']['direction']:
+                return self.event_page_overrides[event_data['id']].get(GameEvent.PROPERTY_DIRECTION, None)
+            return None
+
+        def event_page_property(self, event_data, page, page_index, property):
+            overrides = self.overrides_for_event_page(event_data['id'], page_index)
+            if property in overrides:
+                return overrides[property]
+            elif property in GameEvent.IMAGE_STORED_PROPERTIES:
+                return page['image'][property]
             else:
-                return {}
-
-        def event_through(self, event_data, page, page_index):
-            overrides = self.overrides_for_event_page(event_data['id'], page_index)
-            return overrides.get('through', page['through'])
-
-        def event_direction_fix(self, event_data, page, page_index):
-            overrides = self.overrides_for_event_page(event_data['id'], page_index)
-            return overrides.get('directionFix', page['directionFix'])
+                return page[property]
 
         def event_sprite_data(self, event_data, page, page_index):
             overrides = self.overrides_for_event_page(event_data['id'], page_index)
-            pageless_overrides = self.overrides_for_event_page(event_data['id'], None)
             return {
-                'direction': pageless_overrides.get('direction', page['image']['direction']),
-                'characterName': overrides.get('characterName', page['image']['characterName']),
-                'characterIndex': overrides.get('characterIndex', page['image']['characterIndex']),
-                'transparent': overrides.get('transparent', False),
+                'direction': overrides.get(GameEvent.PROPERTY_DIRECTION, page['image']['direction']),
+                'characterName': overrides.get(GameEvent.PROPERTY_CHARACTER_NAME, page['image']['characterName']),
+                'characterIndex': overrides.get(GameEvent.PROPERTY_CHARACTER_INDEX, page['image']['characterIndex']),
+                'transparent': overrides.get(GameEvent.PROPERTY_TRANSPARENT, False),
                 'stepAnime': page['stepAnime'],
                 'moveSpeed': page['moveSpeed'],
                 'pattern': page['image']['pattern']
             }
-
-        def override_event(self, event_id, page_index, key, value):
-            if not hasattr(self, 'event_overrides'):
-                self.event_overrides = {}
-            existing_event_overrides = self.event_overrides.get(event_id, None)
-            if (not existing_event_overrides) or ((page_index != None) and (existing_event_overrides.get('pageIndex', None) != None) and existing_event_overrides.get('pageIndex', -1) != page_index):
-                self.event_overrides[event_id] = {'pageIndex': page_index}
-            if existing_event_overrides and (existing_event_overrides.get('pageIndex', None) == None) and (page_index != None):
-                self.event_overrides[event_id]['pageIndex'] = page_index
-            if existing_event_overrides and existing_event_overrides.get('direction', None):
-                # 'direction' applies to all pages, unlike properties like 'characterName' which get clobbered on page change
-                self.event_overrides[event_id]['direction'] = existing_event_overrides['direction']
-
-            self.event_overrides[event_id][key] = value
 
         def make_surrounding_tiles_walkable(self, e, page, page_index):
             if GameIdentifier().is_my_summer() and (self.map_id in [9, 10]) and (page['image']['characterName'] == 'Box' or page['image']['characterName'] == 'Box2'):
@@ -1364,7 +1383,7 @@ init python:
                 special = self.event_is_special(e),
                 clicky = self.clicky_event(e, page),
                 has_commands = self.has_commands(page),
-                through = self.event_through(e, page, page_index),
+                through = self.event_page_property(e, page, page_index, GameEvent.PROPERTY_THROUGH),
                 solid = GameEvent.page_solid(e, page, page_index),
                 projectile_target = self.page_is_projectile_target(e, page),
                 touch_trigger = page['trigger'] in [1,2],

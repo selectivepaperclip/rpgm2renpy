@@ -295,3 +295,7 @@ label after_load:
 
         # Ensure the map's background has been (re-)generated before any cached displayables get shown
         game_state.map.background_image()
+
+        for map_id, map in game_state.map_registry.maps.iteritems():
+            map.event_location_overrides = {}
+            map.event_page_overrides = {}
