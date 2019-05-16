@@ -1132,7 +1132,6 @@ init python:
                 return GameDirection.UP
 
         def skip_bad_events(self):
-            switch_triggers = rpgm_game_data.get('switch_triggers', None)
             if GameIdentifier().is_milfs_villa():
                 if self.map.map_id == 64 and not self.self_switches.value((64, 1, "B")):
                     self.self_switches.set_value((64, 1, "A"), True)
@@ -1145,28 +1144,8 @@ init python:
                 # The engine is almost capable of doing this, but why bother.
                 if self.map.map_id == 4 and self.switches.value(132) == True and not self.switches.value(133) == True:
                     self.switches.set_value(133, True)
-            elif switch_triggers:
-                triggers_for_map = switch_triggers.get(str(self.map.map_id))
-                if not triggers_for_map:
-                    return
-
-                for trigger in triggers_for_map:
-                    if 'activation_switch' in trigger:
-                        activation_switches = [trigger['activation_switch']]
-                    else:
-                        activation_switches = trigger.get('activation_switches', [])
-
-                    if any(self.switches.value(id) == True for id in activation_switches) or any(self.self_switches.value(tuple(id)) for id in trigger.get('activation_self_switches', [])):
-                        for switch_id in trigger.get('switches_off', []):
-                            self.switches.set_value(switch_id, False)
-                        for self_switch_id in trigger.get('self_switches_off', []):
-                            self.self_switches.set_value(tuple(self_switch_id), False)
-                        for switch_id in trigger.get('switches_on', []):
-                            self.switches.set_value(switch_id, True)
-                        for self_switch_id in trigger.get('self_switches_on', []):
-                            self.self_switches.set_value(tuple(self_switch_id), True)
-                        for variable_id, value in trigger.get('variables', []):
-                            self.variables.set_value(variable_id, value)
+            else:
+                SkippableManager().skip_auto_skippable_events()
 
         def set_side_image(self, face_name, face_index):
             game_state.rpgm_bust_image = None
@@ -1752,6 +1731,12 @@ init python:
                     'common_event_id': int(common_event_id)
                 })
             return result
+
+        def skippable_events(self):
+            return SkippableManager().skippables()
+
+        def skip_event(self):
+            SkippableManager().skip_next_skippable_event()
 
         def show_map(self, in_interaction = False, fade_map = False):
             coordinates = []

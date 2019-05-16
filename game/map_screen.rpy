@@ -263,6 +263,14 @@ screen mapscreen(
             background "#000"
             action Function(game_state.unpause_parallel_events), Jump("game")
 
+    if not in_interaction:
+        if len(skippable_events) > 0:
+            textbutton "Skip event":
+                xpos 5
+                yalign 0.9
+                background "#000"
+                action Function(game_state.skip_event), Jump("game")
+
     if len(key_paused_events) > 0 or active_timer or len(event_timers) > 0:
         vbox:
             xalign 0.9
