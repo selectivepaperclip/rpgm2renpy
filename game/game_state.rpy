@@ -385,12 +385,13 @@ init python:
                             ]
                         movie_webm_filename = RpgmAnimation.filename_for_frames_webm(frames_json)
                         movie_json_filename = RpgmAnimation.filename_for_frames_json(frames_json)
-                        if noisy_animations and len(picture_frames) > 10:
+                        enough_frames_for_movie = self.enough_frames_for_movie(picture_frames)
+                        if noisy_animations and enough_frames_for_movie:
                             with open(os.path.join(renpy.config.basedir, rpgm_metadata.rpgm2renpy_movies_path, movie_json_filename), 'w') as f:
                                 json.dump(frames_json, f, sort_keys=True, indent=2)
-                                renpy.notify("Wrote %s" % filename)
+                                renpy.notify("Wrote %s" % movie_json_filename)
 
-                        if len(picture_frames) > 10 and os.path.exists(os.path.join(renpy.config.basedir, rpgm_metadata.rpgm2renpy_movies_path, movie_webm_filename)):
+                        if enough_frames_for_movie and os.path.exists(os.path.join(renpy.config.basedir, rpgm_metadata.rpgm2renpy_movies_path, movie_webm_filename)):
                             full_path = os.path.join(config.basedir, rpgm_metadata.rpgm2renpy_movies_path, movie_webm_filename).replace("\\", "/")
                             if picture_id in self.shown_pictures:
                                 if hasattr(self.shown_pictures[picture_id]['image_name'], 'movie_path'):
@@ -421,6 +422,13 @@ init python:
             del self.queued_pictures[:]
 
             return longest_animation
+
+        def enough_frames_for_movie(self, picture_frames):
+            if len(picture_frames) <= 10:
+                return False
+
+            unique_frames = Set([f['image_name'] for f in picture_frames])
+            return len(unique_frames) > 10
 
         def add_image_size_to_frame(self, frame):
             if 'size' in frame and frame['size'] != None:
