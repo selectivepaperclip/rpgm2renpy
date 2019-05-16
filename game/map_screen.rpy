@@ -29,6 +29,8 @@ screen mapscreen(
     picture_common_events = [],
     galv_screen_buttons = {},
     has_paused_events = False,
+    has_realtime_events = False,
+    skippable_events = [],
     paused_events_delay = 0,
     key_paused_events = [],
     active_timer = None,
@@ -46,6 +48,11 @@ screen mapscreen(
 
     if not sprite_images_and_positions:
         $ sprite_images_and_positions = game_state.sprite_images_and_positions()
+
+    if has_realtime_events:
+        timer paused_events_delay / 60.0:
+            action Function(game_state.unpause_parallel_events), Jump("game")
+            repeat True
 
     if not in_interaction:
         key "K_LEFT" action [

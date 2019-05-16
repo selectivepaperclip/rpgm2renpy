@@ -1881,6 +1881,13 @@ init python:
                     "text": "Finish %ss timer" % self.timer.seconds()
                 }
 
+            has_paused_events = False
+            has_realtime_events = False
+            if self.map.map_id in rpgm_game_data.get('realtime_maps', []):
+                has_realtime_events = len(paused_events) > 0
+            else:
+                has_paused_events = len(paused_events) > 0
+
             renpy.show_screen(
                 "mapscreen",
                 _layer="maplayer",
@@ -1914,7 +1921,9 @@ init python:
                 common_event_queuers=common_event_queuers,
                 picture_common_events=self.picture_common_events(),
                 galv_screen_buttons=galv_screen_buttons,
-                has_paused_events=len(paused_events) > 0,
+                has_paused_events=has_paused_events,
+                has_realtime_events=has_realtime_events,
+                skippable_events=self.skippable_events(),
                 paused_events_delay=paused_events_delay,
                 key_paused_events=key_paused_events,
                 active_timer=active_timer,

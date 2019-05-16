@@ -46,6 +46,15 @@ init python:
                 return self.map_id
             return self.state.map.map_id
 
+        def slowmo_map(self):
+            return self.get_map_id() in rpgm_game_data.get('slowmo_maps', ())
+
+        def realtime_map(self):
+            return self.get_map_id() in rpgm_game_data.get('realtime_maps', ())
+
+        def slowmo_or_realtime_map(self):
+            return self.slowmo_map() or self.realtime_map()
+
         def get_page_index(self):
             if hasattr(self, 'page_index') and self.page_index != None:
                 return self.page_index
@@ -795,9 +804,18 @@ init python:
                 if delta_x != 0 or delta_y != 0:
                     self.move_route_move_object(delta_x, delta_y, player_moving = player_moving, event = event, skippable = route['skippable'])
 
-                    if self.parallel() and self.get_map_id() in rpgm_game_data.get('slowmo_maps', []):
+                    if self.parallel() and self.slowmo_or_realtime_map():
                         self.move_route_index += 1
-                        self.paused = 3
+
+                        move_speed = event.page_property(self.state.map, GameEvent.PROPERTY_MOVE_SPEED)
+                        move_frequency = event.page_property(self.state.map, GameEvent.PROPERTY_MOVE_FREQUENCY)
+
+                        distance_per_frame = (2 ** move_speed) / 256.0
+
+                        move_frames = int(1.0 / distance_per_frame)
+                        stop_frames = 30 * (5 - move_frequency)
+
+                        self.paused = move_frames + stop_frames
                         return
 
                 self.move_route_index += 1
@@ -1413,9 +1431,19 @@ init python:
                 elif command['code'] == 212:
                     pass
 
-                # "Show baloon icon"
+                # "Show balloon icon"
                 elif command['code'] == 213:
-                    pass
+                    if self.parallel() and self.slowmo_or_realtime_map():
+                        # Balloon wait time _duration is Sprite_Balloon.prototype.setup:
+                        # (8 * Sprite_Balloon.prototype.speed) + Sprite_Balloon.prototype.waitTime
+                        # == (8 * 8) + 12
+                        # == 76
+                        if noisy_events:
+                            print "WAIT FOR BALLOON EVENT!! %s" % 76
+                        self.list_index += 1
+                        self.has_ever_paused = True
+                        self.paused = 76
+                        return
 
                 # Change Player Followers
                 elif command['code'] == 216:
@@ -1445,7 +1473,7 @@ init python:
                 elif command['code'] == 230:
                     wait_time = command['parameters'][0]
                     if self.parallel():
-                        if allow_pause and wait_time >= rpgm_game_data.get('pause_wait_time', 45):
+                        if allow_pause and (wait_time >= rpgm_game_data.get('pause_wait_time', 45) or self.slowmo_or_realtime_map() and not (rpgm_game_data.get('has_dpad_animations', None) and self.state.map.surrounded_by_events(self.state.player_x, self.state.player_y))):
                             if noisy_events:
                                 print "WAIT DURING PARALLEL EVENT!! %s" % wait_time
                             self.list_index += 1
