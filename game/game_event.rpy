@@ -553,7 +553,8 @@ init python:
                 if noisy_events:
                     print "EVENT ACTIVATED BY SWITCH: %s" % newly_activated_event['id']
                 e = GameEvent(self.state, None, newly_activated_event, newly_activated_event)
-                self.state.parallel_events.append(e)
+                # TODO: probably is better to append to parallel_events, but this seems to not work for the purposes of showing animations
+                self.state.events.append(e)
 
         def direction_to_face_player(self, event_location):
             return GameDirection.direction_for_a_to_face_b(event_location, (game_state.player_x, game_state.player_y))
