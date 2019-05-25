@@ -1484,7 +1484,7 @@ init python:
                         else:
                             self.state.requeue_parallel_events_if_changed()
 
-                    game_state.wait(wait_time)
+                    game_state.wait(wait_time, source_event = self)
 
                 # Show picture / Move picture
                 elif command['code'] == 231 or command['code'] == 232:

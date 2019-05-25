@@ -300,15 +300,15 @@ init python:
             if desired_picture_id in self.shown_pictures:
                 return self.shown_pictures[desired_picture_id]['picture_frames'][-1]
 
-        def wait(self, frames):
+        def wait(self, frames, source_event = None):
             if len(self.queued_pictures) > 0:
                 # TODO: it might be more appropriate to set the wait for every image added since the last wait
                 last_picture_id, last_picture_args = self.queued_pictures[-1]
 #
                 # if the image being added to is a loopy one (sourced from a parallel event)
                 # only add wait frames if the event causing this wait is the same event the queued picture came from)
-                if 'loop' in last_picture_args and last_picture_args['loop'] and len(self.events) > 0:
-                    if last_picture_args['event_command_reference'][0:3] != self.events[-1].event_command_reference()[0:3]:
+                if 'loop' in last_picture_args and last_picture_args['loop'] and source_event:
+                    if last_picture_args['event_command_reference'][0:3] != source_event.event_command_reference()[0:3]:
                         return
 
                 if 'wait' in last_picture_args:
