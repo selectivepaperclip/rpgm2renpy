@@ -405,7 +405,7 @@ init python:
                             )
                             movie_animation.movie_path = full_path
                             picture_args['image_name'] = movie_animation
-                            longest_animation = max(longest_animation, sum([frame['wait'] for frame in picture_frames]))
+                            longest_animation = max(longest_animation, sum([frame.get('wait', 0) for frame in picture_frames]))
                         else:
                             for frame in picture_frames:
                                 self.add_image_size_to_frame(frame)
