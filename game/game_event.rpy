@@ -1739,6 +1739,16 @@ init python:
                         elif command['code'] == 316:
                             actor.add_level(value)
 
+                # Change Parameter
+                elif command['code'] == 317:
+                    operation, operand_type, operand = command['parameters'][3:6]
+                    value = self.state.variables.operate_value(operation, operand_type, operand)
+
+                    actor_indices = self.actor_indices_for_ex_iteration(command['parameters'][0], command['parameters'][1])
+                    for actor_index in actor_indices:
+                        actor = self.state.actors.by_index(actor_index)
+                        actor.add_param(command['parameters'][2], value)
+
                 # Change skills
                 elif command['code'] == 318:
                     actor_indices = self.actor_indices_for_ex_iteration(command['parameters'][0], command['parameters'][1])

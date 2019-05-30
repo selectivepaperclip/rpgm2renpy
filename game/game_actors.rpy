@@ -148,6 +148,10 @@ init python:
         def param(self, param_id):
             return self.param_base(param_id) + self.param_plus(param_id)
 
+        def add_param(self, param_id, value):
+            self.populate_param_plus()
+            self.overrides['param_plus'][param_id] += value
+
         def current_class(self):
             return game_file_loader.json_file(rpgm_data_path("Classes.json"))[self.get_property('classId')]
 
