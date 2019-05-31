@@ -102,7 +102,17 @@ init python:
             for item_id, quantity in self.items.iteritems():
                 item = game_state.items.by_id(item_id)
                 print str(item_id) + ': ' + item['name'] + ' ' + str(quantity)
-            
+
+        def print_weapons(self):
+            for weapon_id, quantity in self.weapons.iteritems():
+                weapon = game_state.weapons.by_id(weapon_id)
+                print str(weapon_id) + ': ' + weapon['name'] + ' ' + str(quantity)
+
+        def print_armors(self):
+            for armor_id, quantity in self.armors.iteritems():
+                armor = game_state.armors.by_id(armor_id)
+                print str(armor_id) + ': ' + armor['name'] + ' ' + str(quantity)
+
     class MaicQuestManager(SelectivelyPickle):
         def __init__(self):
             self.quest_activity = {}
