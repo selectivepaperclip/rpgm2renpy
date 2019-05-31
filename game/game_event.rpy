@@ -207,13 +207,16 @@ init python:
                 return self.state.party.has_item(self.state.armors.by_id(params[1]))
             # Button
             elif operation == 11:
-                if hasattr(self, 'press_count') and self.press_count > 0:
-                    self.press_count -= 1
-                    return True
+                if self.parallel():
+                    if hasattr(self, 'press_count') and self.press_count > 0:
+                        self.press_count -= 1
+                        return True
+                    else:
+                        self.has_ever_paused = True
+                        self.paused_for_key = params[1]
+                        return -1
                 else:
-                    self.has_ever_paused = True
-                    self.paused_for_key = params[1]
-                    return -1
+                    return renpy.display_menu([("Press '%s'?" % params[1], None), ("Yes", True), ("No", False)])
             # Script
             elif operation == 12:
                 gre = Re()
@@ -297,7 +300,7 @@ init python:
                 elif GameusQuestManager.conditional_eval_script(params[1]) != None:
                     return GameusQuestManager.conditional_eval_script(params[1])
                 else:
-                    fancypants_eval = self.state.eval_fancypants_value_statement(params[1])
+                    fancypants_eval = self.state.eval_fancypants_value_statement(params[1], event = self)
                     if fancypants_eval in [True, False]:
                         return fancypants_eval
 
@@ -495,6 +498,14 @@ init python:
                         game_state.hide_picture(1000 + id)
                         continue
 
+                handler_matched = False
+                for handler in game_file_loader.game_specific_handlers():
+                    if handler.eval_script(line, script_string):
+                        handler_matched = True
+                        break
+                if handler_matched:
+                    continue
+
                 if 'ImageManager' in line:
                     pass
                 elif line == 'Cache.clear':
@@ -508,12 +519,12 @@ init python:
                 elif gre.match("\$gameVariables\.setValue\((\d+),\s*(.+)\);?", line):
                     groups = gre.last_match.groups()
                     variable_id = int(groups[0])
-                    value = self.state.eval_fancypants_value_statement(groups[1])
+                    value = self.state.eval_fancypants_value_statement(groups[1], event = self)
                     self.state.variables.set_value(variable_id, value)
                 elif gre.match("hide_choice\((\d+),\s*\"([^\"]+)\"\s*\)", line):
                     groups = gre.last_match.groups()
                     choice_id, expression = (int(groups[0]), groups[1])
-                    if self.state.eval_fancypants_value_statement(expression):
+                    if self.state.eval_fancypants_value_statement(expression, event = self):
                         self.hide_choice(choice_id)
                 elif mv_self_switch_set_command or ace_self_switch_set_command:
                     matching_command = mv_self_switch_set_command or ace_self_switch_set_command
@@ -1295,7 +1306,7 @@ init python:
                             value = 0
                     elif operand == 4:
                         script_string = command['parameters'][4]
-                        value = self.state.eval_fancypants_value_statement(script_string)
+                        value = self.state.eval_fancypants_value_statement(script_string, event = self)
 
                     changed_any_variable = False
                     for i in xrange(start, end + 1):

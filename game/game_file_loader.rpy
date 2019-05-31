@@ -57,6 +57,12 @@ init -99 python:
             self.loose_plugin_cache[plugin_name] = next((plugin_data for plugin_data in self.plugins_json() if plugin_data['name'].startswith(plugin_name)), None)
             return self.loose_plugin_cache[plugin_name]
 
+        def game_specific_handlers(self):
+            if not hasattr(self, '_game_specific_handlers'):
+                self._game_specific_handlers = [globals()[class_name]() for class_name in rpgm_game_data.get('handler_classes', [])]
+
+            return self._game_specific_handlers
+
         def full_path_for_picture(self, path):
             if not path in self.full_paths_for_pictures:
                 if os.path.exists(path):

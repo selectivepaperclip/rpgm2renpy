@@ -822,7 +822,7 @@ init python:
                 self.ysp_video_data = YspVideoData()
             return self.ysp_video_data
 
-        def eval_fancypants_value_statement(self, script_string, return_remaining = False):
+        def eval_fancypants_value_statement(self, script_string, return_remaining = False, event = None):
             gre = Re()
             if gre.match('\$gameActors\.actor\((\d+)\)\.name\(\)', script_string):
                 return self.actors.actor_name(int(gre.last_match.groups()[0]))
@@ -833,6 +833,11 @@ init python:
                 replace1 = self.eval_fancypants_value_statement(gre.last_match.groups()[1])
                 replace2 = self.eval_fancypants_value_statement(gre.last_match.groups()[2])
                 return lhs.replace(replace1, replace2)
+            elif gre.match("Proxy\.inprox_?d?\?\(@event_id,\s*(\d+),?.*\)", script_string):
+                desired_distance = int(gre.last_match.groups()[0])
+                event_x, event_y = self.map.event_location(event.event_data)
+                distance = abs(self.player_x - event_x) + abs(self.player_y - event_y)
+                return distance <= desired_distance
 
             variables_regexp = r'\$gameVariables.value\((\d+)\)'
             only_variables_regexp = r'^\s*%s;?\s*$' % variables_regexp
@@ -864,6 +869,19 @@ init python:
                 else:
                     break
 
+            while True:
+                still_has_ace_switches = re.search('\$game_switches\[(\d+)\]', script_string)
+                if still_has_ace_switches:
+                    script_string = re.sub(r'\$game_switches\[(\d+)\]', lambda m: str(self.switches.value(int(m.group(1)))), script_string)
+                else:
+                    break
+
+            handler_matched = False
+            for handler in game_file_loader.game_specific_handlers():
+                result = handler.eval_fancypants_value_statement(script_string)
+                if result != None:
+                    return result
+
             script_string = re.sub(r'\btrue\b', 'True', script_string)
             script_string = re.sub(r'\bfalse\b', 'False', script_string)
             script_string = re.sub(r'===', '==', script_string)
@@ -889,9 +907,9 @@ init python:
             elif return_remaining:
                 return script_string
             else:
-                renpy.say(None, "Remaining non-evaluatable fancypants value statement: '%s'" % script_string)
                 print "Remaining non-evaluatable fancypants value statement:"
                 print "'%s'" % script_string
+                renpy.say(None, "Remaining non-evaluatable fancypants value statement: '%s'" % script_string)
                 return 0
 
         def common_events_keymap(self):
