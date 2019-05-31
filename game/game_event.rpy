@@ -762,7 +762,7 @@ init python:
                         switch_id = int(groups[0])
                         switch_value = groups[1] == 'true'
                         self.state.self_switches.set_value(switch_id, switch_value)
-                    elif gre.match("\$game_self_switches\[\[(\d+)\s*,\s*(\d+)\s*,\s*'(.*?)'\]\] = (\w+)", route_script):
+                    elif gre.match("\$game_self_switches\[\[(\d+)\s*,\s*(\d+)\s*,\s*'(.*?)'\]\] = (\w+)", route_script) or gre.match("\$gameSelfSwitches\.setValue\(\[(\d+),(\d+),'(.*?)'\], (\w+)\);?", route_script):
                         groups = gre.last_match.groups()
                         map_id, event_id, self_switch_name, self_switch_value = (int(groups[0]), int(groups[1]), groups[2], groups[3] == 'true')
                         self.state.self_switches.set_value((map_id, event_id, self_switch_name), self_switch_value)
