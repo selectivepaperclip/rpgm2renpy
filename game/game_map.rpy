@@ -885,6 +885,9 @@ init python:
             if not self.doodad_data():
                 return []
             doodad_json = game_file_loader.json_file(rpgm_data_path("Doodads.json"))
+            if not doodad_json or len(doodad_json) < self.map_id + 1:
+                return []
+
             map_doodads = doodad_json[self.map_id]
             if not map_doodads:
                 return []
