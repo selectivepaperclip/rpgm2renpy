@@ -1820,6 +1820,9 @@ init python:
 
                 # Return to title
                 elif command['code'] == 354:
+                    if rpgm_game_data.get('ignore_return_to_title', False):
+                        self.list_index += 1
+                        return
                     renpy.pause()
                     renpy.full_restart()
 
