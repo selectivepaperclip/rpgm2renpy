@@ -991,11 +991,9 @@ init python:
             return bool(re.search('weightSwitch', e['note']))
 
         def page_is_projectile_target(self, e, page):
-            galv_projectile_plugin = game_file_loader.plugin_data_exact('GALV_MapProjectiles')
-            if galv_projectile_plugin:
-                for command in page['list']:
-                    if command['code'] == 108 and command['parameters'][0] == '<projEffect>':
-                        return True
+            if GalvMapProjectiles.plugin_active():
+                return GalvMapProjectiles.is_projectile_page(page)
+
             return False
 
         def find_event_data_at_index(self, event_index):
@@ -1405,7 +1403,7 @@ init python:
                         if page['trigger'] == 3:
                             break
 
-                        if page['trigger'] == 4 and not include_parallel:
+                        if page['trigger'] == 4 and not (include_parallel or GalvMapProjectiles.is_projectile_page(page)):
                             break
 
                         loc = self.event_location(e)

@@ -456,6 +456,9 @@ init python:
                 if GalvEventSpawnTimers.process_script(self, script_string):
                     continue
 
+                if GalvMapProjectiles.process_script(self, script_string):
+                    continue
+
                 if game_file_loader.plugin_data_exact('YEP_X_MessageSpeedOpt'):
                     if gre.search("ConfigManager\.messageSpeed", line):
                         continue
