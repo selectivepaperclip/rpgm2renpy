@@ -675,7 +675,10 @@ init python:
                         direction_delta = GameDirection.delta_for_direction(GameDirection.reverse_direction(new_direction))
 
                     delta_x, delta_y = direction_delta
-                    self.move_route_move_object(delta_x, delta_y, player_moving = False, event = self, skippable = route['skippable'])
+                    keep_moving = self.move_route_move_object(delta_x, delta_y, player_moving = False, event = self, skippable = route['skippable'])
+                    if not keep_moving:
+                        self.move_route_index = len(route)
+                        return
                     self.move_route_index += 1
                     continue
                 elif route_part['code'] in [12, 13]: # Move Forward / Backward
@@ -817,7 +820,10 @@ init python:
 
                 delta_x, delta_y = direction_delta
                 if delta_x != 0 or delta_y != 0:
-                    self.move_route_move_object(delta_x, delta_y, player_moving = player_moving, event = event, skippable = route['skippable'])
+                    keep_moving = self.move_route_move_object(delta_x, delta_y, player_moving = player_moving, event = event, skippable = route['skippable'])
+                    if not keep_moving:
+                        self.move_route_index = len(route)
+                        return
 
                     if self.parallel() and self.slowmo_or_realtime_map():
                         self.move_route_index += 1
@@ -864,13 +870,16 @@ init python:
                         if (map_event and GameEvent.page_solid(map_event.event_data, map_event.page, map_event.page_index)) or (move_distance == 1 and not self.state.map.can_move_vector(current_x, current_y, delta_x, delta_y)):
                               if noisy_events:
                                   print "MOVEMENT COLLIDED AT %s, %s!!!" % (new_x, new_y)
-                              if not skippable:
-                                  return
+                              if skippable:
+                                  return True
+                              else:
+                                  return False
 
             if player_moving: # Player Character
                 game_state.player_x, game_state.player_y = new_x, new_y
             else:
                 self.state.map.override_event_location(event.event_data, (new_x, new_y))
+            return True
 
         def migrate_global_branch_data(self):
             if not hasattr(self, 'branch') and hasattr(game_state, 'branch'):
