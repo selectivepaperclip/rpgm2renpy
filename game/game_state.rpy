@@ -838,6 +838,8 @@ init python:
                 event_x, event_y = self.map.event_location(event.event_data)
                 distance = abs(self.player_x - event_x) + abs(self.player_y - event_y)
                 return distance <= desired_distance
+            elif gre.match("\$gameParty.gold\(\)", script_string):
+                return self.party.gold
 
             variables_regexp = r'\$gameVariables.value\((\d+)\)'
             only_variables_regexp = r'^\s*%s;?\s*$' % variables_regexp
