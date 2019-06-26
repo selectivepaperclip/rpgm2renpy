@@ -207,16 +207,15 @@ init python:
                 return self.state.party.has_item(self.state.armors.by_id(params[1]))
             # Button
             elif operation == 11:
-                if self.parallel():
-                    if hasattr(self, 'press_count') and self.press_count > 0:
-                        self.press_count -= 1
-                        return True
-                    else:
-                        self.has_ever_paused = True
-                        self.paused_for_key = params[1]
-                        return -1
-                else:
+                if hasattr(self, 'press_count') and self.press_count > 0:
+                    self.press_count -= 1
+                    return True
+                elif str(self.map_id) in rpgm_game_data.get('ask_for_key_events', []) and self.event_data['id'] in rpgm_game_data.get('ask_for_key_events', [])[str(self.map_id)]:
                     return renpy.display_menu([("Press '%s'?" % params[1], None), ("Yes", True), ("No", False)])
+                else:
+                    self.has_ever_paused = True
+                    self.paused_for_key = params[1]
+                    return -1
             # Script
             elif operation == 12:
                 gre = Re()
