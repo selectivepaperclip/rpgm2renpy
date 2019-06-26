@@ -109,6 +109,7 @@ init python:
             self.common_events_index = None
             self.events = []
             self.parallel_events = []
+            self.triggered_common_events = []
             self.starting_map_id = self.system_data()['startMapId']
             self.map_registry = GameMapRegistry(self)
             self.map = self.map_registry.get_map(self.starting_map_id)
@@ -1395,12 +1396,33 @@ init python:
                 self.pause(show_map = False)
                 return True
 
+            if len(self.triggered_common_events) > 0:
+                this_event = self.triggered_common_events[-1]
+                new_event = this_event.do_next_thing()
+                if new_event:
+                    if len(self.triggered_common_events) >= 50:
+                        raise RuntimeError("Event stack too big!")
+                    self.triggered_common_events.append(new_event)
+                    return True
+                if hasattr(self, 'shop_params') and self.shop_params:
+                    self.show_shop_ui()
+                    return True
+                if this_event.new_map_id:
+                    self.transfer_player(this_event)
+                    this_event.new_map_id = None
+                if this_event.done():
+                    self.triggered_common_events.pop()
+                if this_event.common() and hasattr(this_event, 'paused_for_key') and this_event.paused_for_key:
+                    # Ignore common events that are waiting on keypress, for now.
+                    self.triggered_common_events.pop()
+                return True
+
             if hasattr(self, 'parallel_events') and len(self.parallel_events) > 0:
                 first_never_paused_event = next((e for e in self.parallel_events if not hasattr(e, 'has_ever_paused') or not e.has_ever_paused), None)
                 if first_never_paused_event:
                     new_event = first_never_paused_event.do_next_thing(allow_pause = True)
                     if new_event:
-                        self.events.append(new_event)
+                        self.add_triggered_common_event(new_event)
                         return True
                     if first_never_paused_event.done():
                         if first_never_paused_event.new_map_id:
@@ -1413,7 +1435,7 @@ init python:
                 if first_has_paused_event:
                     new_event = first_has_paused_event.do_next_thing(allow_pause = True)
                     if new_event:
-                        self.events.append(new_event)
+                        self.add_triggered_common_event(new_event)
                         return True
                     if first_has_paused_event.done():
                         if first_has_paused_event.new_map_id:
@@ -1434,9 +1456,7 @@ init python:
                 this_event = self.events[-1]
                 new_event = this_event.do_next_thing()
                 if new_event:
-                    if len(self.events) >= 50:
-                        raise RuntimeError("Event stack too big!")
-                    self.events.append(new_event)
+                    self.add_triggered_common_event(new_event)
                     return True
                 if hasattr(self, 'shop_params') and self.shop_params:
                     self.show_shop_ui()
@@ -1566,6 +1586,11 @@ init python:
             self.parallel_event_metadata().clear()
 
             return False
+
+        def add_triggered_common_event(self, new_event):
+            if len(self.triggered_common_events) >= 50:
+                raise RuntimeError("Event stack too big!")
+            self.triggered_common_events.append(new_event)
 
         def assign_map_path(self, mapdest, map_event):
             reachability_grid = self.map.reachability_grid_for_current_position()

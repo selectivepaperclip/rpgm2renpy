@@ -295,6 +295,10 @@ label after_load:
 
         # Ensure the map's background has been (re-)generated before any cached displayables get shown
         game_state.map.background_image()
+        if not hasattr(game_state, 'triggered_common_events'):
+            game_state.triggered_common_events = []
+        if not hasattr(game_state, 'additional_queued_picture_groups'):
+            game_state.additional_queued_picture_groups = []
 
         for map_id, map in game_state.map_registry.maps.iteritems():
             map.event_location_overrides = {}
