@@ -1426,7 +1426,8 @@ init python:
                         renpy.say(None, "Command 203 exchange with another event not implemented, plz implement!")
                     if direction > 0:
                         event = self.state.map.find_event_at_index(event_data['id'])
-                        event.override_page(self.state.map, GameEvent.PROPERTY_DIRECTION, direction)
+                        if event: # intro to the artifact 1
+                            event.override_page(self.state.map, GameEvent.PROPERTY_DIRECTION, direction)
 
                 # Scroll map
                 elif command['code'] == 204:
