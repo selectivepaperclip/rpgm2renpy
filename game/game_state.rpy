@@ -1756,23 +1756,32 @@ init python:
                     if k.startswith('Picture') and v != "0":
                         self._real_picture_common_events.append((k, v))
 
-            result = []
+            events_for_picture_id = {}
             for desc, common_event_id in self._real_picture_common_events:
                 desc_parts = desc.split(' ')
                 picture_id = int(desc_parts[1])
-                if desc_parts[2] != 'Click':
+
+                if desc_parts[2] == 'Hold':
+                    # In case both 'click' and 'hold' exist, keep only 'click'
+                    if picture_id not in events_for_picture_id:
+                        events_for_picture_id[picture_id] = common_event_id
+                elif desc_parts[2] == 'Click':
+                    events_for_picture_id[picture_id] = common_event_id
+                else:
                     renpy.say(None, "Don't know how to deal with picture common event with action %s" % desc_parts[2])
                     continue
 
+            result = []
+            for picture_id, common_event_id in events_for_picture_id.iteritems():
                 frame = self.queued_or_shown_picture_frame(picture_id)
                 if not frame:
-                    return
+                    continue
 
                 result.append({
-                    'x': picture['x'],
-                    'y': picture['y'],
-                    'xsize': picture['size'][0],
-                    'ysize': picture['size'][1],
+                    'x': frame['x'],
+                    'y': frame['y'],
+                    'xsize': frame['size'][0],
+                    'ysize': frame['size'][1],
                     'common_event_id': int(common_event_id)
                 })
             return result
