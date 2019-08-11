@@ -1468,13 +1468,17 @@ init python:
                         self.paused = 76
                         return
 
+                # Erase Event
+                elif command['code'] == 214:
+                    self.state.map.erased_events[self.event_data['id']] = True
+
                 # Change Player Followers
                 elif command['code'] == 216:
                     pass
 
-                # Erase Event
-                elif command['code'] == 214:
-                    self.state.map.erased_events[self.event_data['id']] = True
+                # Gather followers
+                elif command['code'] == 217:
+                    pass
 
                 # Fade In / Out
                 elif command['code'] == 221:
