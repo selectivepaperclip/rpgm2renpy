@@ -94,13 +94,11 @@ init python:
             return skill_id in learned_skills
 
         def has_weapon(self, weapon_id):
-            # TODO: respond to weapon changes
             # TODO: respond to dual wield / alternate item slot setups. if merited.
-            return self.actor_data['equips'][0] == weapon_id
+            return self.get_property('equips')[0] == weapon_id
 
         def has_armor(self, armor_id):
-            # TODO: respond to armor changes
-            for item_id in self.actor_data['equips'][1:]:
+            for item_id in self.get_property('equips')[1:]:
                 if armor_id == item_id:
                     return True
             return False
@@ -134,8 +132,22 @@ init python:
 
         def param_plus(self, param_id):
             self.populate_param_plus()
-            # TODO: equipment
-            return self.overrides['param_plus'][param_id]
+
+            equipment_offset = 0
+
+            weapon_id = self.get_property('equips')[0]
+            if weapon_id and weapon_id > 0:
+                weapon = game_state.weapons.by_id(weapon_id)
+                if weapon:
+                    equipment_offset += weapon['params'][param_id]
+
+            for armor_id in self.get_property('equips')[1:]:
+                if armor_id > 0:
+                    armor = game_state.armors.by_id(armor_id)
+                    if armor:
+                        equipment_offset += armor['params'][param_id]
+
+            return self.overrides['param_plus'][param_id] + equipment_offset
 
         def hp(self):
             self.populate_hp_mp()
