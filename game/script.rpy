@@ -19,6 +19,7 @@ define keyed_function_call = None
 define draw_impassible_tiles = False
 define hide_unreachable_events = False
 define show_noop_events = False
+define random_encounter_next_round = False
 define viewport_xadjustment = ui.adjustment()
 define viewport_yadjustment = ui.adjustment()
 define animation_fps = 60.0
@@ -270,6 +271,10 @@ label game:
     $ end_game = False
 
     while end_game == False:
+        if random_encounter_next_round:
+            $ game_state.random_encounter()
+            $ random_encounter_next_round = False
+
         $ in_interaction = game_state.do_next_thing(mapdest, keyed_common_event)
         if not in_interaction:
           $ game_state.show_map(in_interaction)

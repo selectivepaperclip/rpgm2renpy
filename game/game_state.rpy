@@ -1792,6 +1792,64 @@ init python:
         def skip_event(self):
             SkippableManager().skip_next_skippable_event()
 
+        def timer_running(self):
+            return hasattr(self, 'timer') and self.timer.active and self.timer.frames > 0
+
+        def has_random_encounter(self):
+            return len(self.map.data()['encounterList']) > 0
+
+        def random_encounter(self):
+            troop_id = self.map.random_encounter_troop_id(self.player_x, self.player_y)
+
+            result = self.fight_troop(troop_id)
+            if result != None:
+                if result == 0: # Winning
+                    self.gain_fight_rewards(troop_id)
+
+        def fight_troop(self, troop_id):
+            troop_json = game_file_loader.json_file(rpgm_data_path("Troops.json"))
+            if troop_id > 0 and troop_id < len(troop_json):
+                troop_data = troop_json[troop_id]
+
+                return renpy.display_menu([
+                    ("A battle with '%s'!" % game_state.escape_text_for_renpy(troop_data['name']), None),
+                    ("You Win!", 0),
+                    ("You Escape!", 1),
+                    ("You Lose!", 2)
+                ])
+
+        def gain_fight_rewards(self, troop_id):
+            troop_json = game_file_loader.json_file(rpgm_data_path("Troops.json"))
+            enemies_json = game_file_loader.json_file(rpgm_data_path("Enemies.json"))
+            troop_members = troop_json[troop_id]['members']
+            troop_enemies = [enemies_json[enemy['enemyId']] for enemy in troop_members]
+
+            gained_gold = sum([enemy['gold'] for enemy in troop_enemies])
+            gained_exp = sum([enemy['exp'] for enemy in troop_enemies])
+            gained_items = []
+            for enemy in troop_enemies:
+                for drop_item in enemy['dropItems']:
+                    if drop_item['kind'] == 1:
+                        gained_items.append(self.items.by_id(drop_item['dataId']))
+                    elif drop_item['kind'] == 2:
+                        gained_items.append(self.weapons.by_id(drop_item['dataId']))
+                    elif drop_item['kind'] == 3:
+                        gained_items.append(self.armors.by_id(drop_item['dataId']))
+
+            gain_message = []
+            if gained_gold > 0:
+                gain_message.append("Gained Gold: %s" % gained_gold)
+                self.party.gain_gold(gained_gold)
+            if gained_exp > 0:
+                gain_message.append("Gained Exp: %s" % gained_exp)
+                self.party.gain_exp(gained_exp)
+            if len(gained_items) > 0:
+                gain_message.append("Gained Items: %s" % ', '.join([item['name'] for item in gained_items]))
+                for item in gained_items:
+                    self.party.gain_item(item, 1)
+            if len(gain_message) > 0:
+                self.say_text(None, "\n".join(gain_message))
+
         def show_map(self, in_interaction = False, fade_map = False):
             coordinates = []
             curated_clickables = []
@@ -1962,6 +2020,7 @@ init python:
                 galv_screen_buttons=galv_screen_buttons,
                 has_paused_events=has_paused_events,
                 has_realtime_events=has_realtime_events,
+                has_random_encounter=self.has_random_encounter(),
                 skippable_events=self.skippable_events(),
                 paused_events_delay=paused_events_delay,
                 key_paused_events=key_paused_events,

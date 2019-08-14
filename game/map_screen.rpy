@@ -30,6 +30,7 @@ screen mapscreen(
     galv_screen_buttons = {},
     has_paused_events = False,
     has_realtime_events = False,
+    has_random_encounter = False,
     skippable_events = [],
     paused_events_delay = 0,
     key_paused_events = [],
@@ -270,6 +271,12 @@ screen mapscreen(
                 yalign 0.9
                 background "#000"
                 action Function(game_state.skip_event), Jump("game")
+        if has_random_encounter:
+            textbutton "Random encounter":
+                xpos 5
+                yalign 0.9
+                background "#000"
+                action SetVariable("random_encounter_next_round", function_call), Jump("game")
 
     if len(key_paused_events) > 0 or active_timer or len(event_timers) > 0:
         vbox:
