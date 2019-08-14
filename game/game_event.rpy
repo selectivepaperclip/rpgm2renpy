@@ -568,11 +568,14 @@ init python:
 
         def show_parallel_event_animations(self, switch_id):
             for newly_activated_event in self.state.parallel_event_metadata().events_activated_by_switch(switch_id):
-                if noisy_events:
-                    print "EVENT ACTIVATED BY SWITCH: %s" % newly_activated_event['id']
-                e = GameEvent(self.state, None, newly_activated_event, newly_activated_event)
-                # TODO: probably is better to append to parallel_events, but this seems to not work for the purposes of showing animations
-                self.state.events.append(e)
+                # TODO: only want to show parallel event animations if the event is a 'pure' animation, e.g. no text showing or menus etc
+                # so there's probably more conditions that can go here other than 'code' == 101
+                if not any(command['code'] == 101 for command in newly_activated_event['list']):
+                    if noisy_events:
+                        print "EVENT ACTIVATED BY SWITCH: %s" % newly_activated_event['id']
+                    e = GameEvent(self.state, None, newly_activated_event, newly_activated_event)
+                    # TODO: probably is better to append to parallel_events, but this seems to not work for the purposes of showing animations
+                    self.state.events.append(e)
 
         def direction_to_face_player(self, event_location):
             return GameDirection.direction_for_a_to_face_b(event_location, (game_state.player_x, game_state.player_y))
