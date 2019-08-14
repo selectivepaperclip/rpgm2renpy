@@ -1704,10 +1704,10 @@ init python:
                     else:
                         troop_id = self.state.map.random_encounter_troop_id(self.state.player_x, self.state.player_y)
 
-                    result = self.fight_troop(troop_id)
+                    result = self.state.fight_troop(troop_id)
                     if result != None:
                         if result == 0: # Winning
-                            self.gain_fight_rewards(troop_id)
+                            self.state.gain_fight_rewards(troop_id)
 
                         self.branch[command['indent']] = result
 
@@ -2021,50 +2021,6 @@ init python:
                     return [param2]
             else:
                 return [self.state.variables.value(param2)]
-
-        def fight_troop(self, troop_id):
-            troop_json = game_file_loader.json_file(rpgm_data_path("Troops.json"))
-            if troop_id > 0 and troop_id < len(troop_json):
-                troop_data = troop_json[troop_id]
-
-                return renpy.display_menu([
-                    ("A battle with '%s'!" % game_state.escape_text_for_renpy(troop_data['name']), None),
-                    ("You Win!", 0),
-                    ("You Escape!", 1),
-                    ("You Lose!", 2)
-                ])
-
-        def gain_fight_rewards(self, troop_id):
-            troop_json = game_file_loader.json_file(rpgm_data_path("Troops.json"))
-            enemies_json = game_file_loader.json_file(rpgm_data_path("Enemies.json"))
-            troop_members = troop_json[troop_id]['members']
-            troop_enemies = [enemies_json[enemy['enemyId']] for enemy in troop_members]
-
-            gained_gold = sum([enemy['gold'] for enemy in troop_enemies])
-            gained_exp = sum([enemy['exp'] for enemy in troop_enemies])
-            gained_items = []
-            for enemy in troop_enemies:
-                for drop_item in enemy['dropItems']:
-                    if drop_item['kind'] == 1:
-                        gained_items.append(self.state.items.by_id(drop_item['dataId']))
-                    elif drop_item['kind'] == 2:
-                        gained_items.append(self.state.weapons.by_id(drop_item['dataId']))
-                    elif drop_item['kind'] == 3:
-                        gained_items.append(self.state.armors.by_id(drop_item['dataId']))
-
-            gain_message = []
-            if gained_gold > 0:
-                gain_message.append("Gained Gold: %s" % gained_gold)
-                self.state.party.gain_gold(gained_gold)
-            if gained_exp > 0:
-                gain_message.append("Gained Exp: %s" % gained_exp)
-                self.state.party.gain_exp(gained_exp)
-            if len(gained_items) > 0:
-                gain_message.append("Gained Items: %s" % ', '.join([item['name'] for item in gained_items]))
-                for item in gained_items:
-                    self.state.party.gain_item(item, 1)
-            if len(gain_message) > 0:
-                game_state.say_text(None, "\n".join(gain_message))
 
         def iavra_gif_details(self, image_name):
             iavra_gif_plugin = game_file_loader.plugin_data_exact('iavra_gif')
