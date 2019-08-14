@@ -280,8 +280,11 @@ init python:
                             target = args
                             event_id = self.event_data['id']
 
-                        event = self.state.map.find_event_at_index(event_id)
-                        event_location = self.state.map.event_location(event.event_data)
+                        if event_id > 0:
+                            event = self.state.map.find_event_at_index(event_id)
+                            event_location = self.state.map.event_location(event.event_data)
+                        else:
+                            event_location = (self.state.player_x, self.state.player_y)
 
                         if not isinstance(target, list):
                             if target == 0:
