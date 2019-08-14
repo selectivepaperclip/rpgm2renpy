@@ -431,6 +431,8 @@ init python:
                 return
             elif GameIdentifier().is_milfs_control() and GameSpecificCodeMilfsControl().eval_full_script(script_string):
                 return
+            elif AnimatedBusts.process_script(script_string):
+                return
 
             for line in script_string.split("\n"):
                 mv_self_switch_set_command = re.match("\$gameSelfSwitches\.setValue\(\[(\d+),(\d+),'(.*?)'\], (\w+)\);?", line)

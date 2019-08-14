@@ -10,7 +10,7 @@ init python:
 
             gre = Re()
             # $game_state.picture(30).setAnim([$gameVariables.value(20)+"0"],2)
-            if gre.match('\$gameScreen\.picture\((\d+)\)\.setAnim\(\s*\[(.*?)\]\s*,\s*(\d+)\s*\)', script_string):
+            if gre.match(re.compile('\$gameScreen\.picture\((\d+)\)\.setAnim\(\s*\[(.*?)\]\s*,\s*(\d+)\s*\)', re.DOTALL), script_string):
                 picture_id = int(gre.last_match.groups()[0])
                 frame_images = eval(game_state.eval_fancypants_value_statement(gre.last_match.groups()[1], return_remaining = True))
                 interval = int(gre.last_match.groups()[2])
