@@ -307,19 +307,25 @@ init python:
 
                 annotated_objectives = []
                 for objective_index, objective_state in self.quest_activity[quest_id]['objectives'].iteritems():
-                    annotated_objectives.append({
-                        'text': game_state.replace_names(objective_data[objective_index - 1]),
-                        'completed': objective_state['status'] == 'completed',
-                        'failed': objective_state['status'] == 'failed',
-                    })
+                    if 'visible' not in objective_state:
+                        objective_state['visible'] = 'To make' not in objective_data[objective_index - 1]
+                    if objective_state['visible']:
+                        annotated_objectives.append({
+                            'text': game_state.replace_names(objective_data[objective_index - 1]),
+                            'completed': objective_state.get('status', None) == 'completed',
+                            'failed': objective_state.get('status', None) == 'failed',
+                        })
 
                 annotated_rewards = []
                 for reward_index, reward_state in self.quest_activity[quest_id]['rewards'].iteritems():
-                    annotated_rewards.append({
-                        'text': game_state.replace_names(reward_data[reward_index - 1]),
-                        'claimed': reward_state['status'] == 'claimed',
-                        'denied': reward_state['status'] == 'denied',
-                    })
+                    if 'visible' not in reward_state:
+                        reward_state['visible'] = 'To make' not in reward_data[reward_index - 1]
+                    if reward_state['visible']:
+                        annotated_rewards.append({
+                            'text': game_state.replace_names(reward_data[reward_index - 1]),
+                            'claimed': reward_state.get('status', None) == 'claimed',
+                            'denied': reward_state.get('status', None) == 'denied',
+                        })
 
                 presented_quest = {
                     'title': game_state.replace_names(quest_data['Title']),
@@ -379,11 +385,11 @@ init python:
                     return
                 elif upcase_args[1:3] == ['SHOW', 'OBJECTIVE']:
                     objective_id = int(upcase_args[3])
-                    self.set_objective_status(quest_id, objective_id, 'visible')
+                    self.set_objective_visibility(quest_id, objective_id, True)
                     return
                 elif upcase_args[1:3] == ['SHOW', 'REWARD']:
                     reward_id = int(upcase_args[3])
-                    self.set_reward_status(quest_id, reward_id, 'visible')
+                    self.set_reward_visibility(quest_id, reward_id, 'visible')
                     return
 
             renpy.say(None, "Don't know how to process YEP_QuestJournal command: %s" % ' '.join(args))
@@ -398,11 +404,23 @@ init python:
                 objective_data[objective_id] = {}
             objective_data[objective_id]['status'] = status
 
+        def set_objective_visibility(self, quest_id, objective_id, visible):
+            objective_data = self.quest_activity[quest_id]['objectives']
+            if objective_id not in objective_data:
+                objective_data[objective_id] = {}
+            objective_data[objective_id]['visible'] = visible
+
         def set_reward_status(self, quest_id, reward_id, status):
             reward_data = self.quest_activity[quest_id]['rewards']
             if reward_id not in reward_data:
                 reward_data[reward_id] = {}
             reward_data[reward_id]['status'] = status
+
+        def set_reward_visibility(self, quest_id, reward_id, visible):
+            reward_data = self.quest_activity[quest_id]['rewards']
+            if reward_id not in reward_data:
+                reward_data[reward_id] = {}
+            reward_data[reward_id]['visible'] = visible
 
         def __create_quest(self, quest_id):
             quest_string = ("Quest %s" % quest_id)
@@ -417,9 +435,9 @@ init python:
                     'rewards': {}
                 }
                 for objective_id in quest_data['Visible Objectives']:
-                    self.set_objective_status(quest_id, objective_id, 'visible')
+                    self.set_objective_visibility(quest_id, objective_id, 'visible')
                 for reward_id in quest_data['Visible Rewards']:
-                    self.set_reward_status(quest_id, reward_id, 'visible')
+                    self.set_reward_visibility(quest_id, reward_id, 'visible')
 
     class GameusQuestManager(SelectivelyPickle):
         @classmethod
