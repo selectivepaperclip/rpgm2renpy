@@ -366,15 +366,21 @@ init python:
                     reward_id = int(upcase_args[3])
                     self.set_reward_status(quest_id, reward_id, 'claimed')
                     return
-                elif upcase_args[1:4] == ['CLAIM', 'ALL', 'REWARDS']:
+                elif upcase_args[2:4] == ['ALL', 'REWARDS'] and upcase_args[1] in ['SHOW', 'CLAIM']:
                     total_rewards = len(game_file_loader.yep_quest_data()["Quest %s" % quest_id]['Rewards List'])
                     for reward_id in xrange(1, total_rewards + 1):
-                        self.set_reward_status(quest_id, reward_id, 'claimed')
+                        if upcase_args[1] == 'SHOW':
+                            self.set_reward_visibility(quest_id, reward_id, 'visible')
+                        else:
+                            self.set_reward_status(quest_id, reward_id, 'claimed')
                     return
-                elif upcase_args[1:4] == ['COMPLETE', 'ALL', 'OBJECTIVES']:
+                elif upcase_args[2:4] == ['ALL', 'OBJECTIVES'] and upcase_args[1] in ['SHOW', 'COMPLETE']:
                     total_objectives = len(game_file_loader.yep_quest_data()["Quest %s" % quest_id]['Objectives List'])
                     for objective_id in xrange(1, total_objectives + 1):
-                        self.set_objective_status(quest_id, objective_id, 'completed')
+                        if upcase_args[1] == 'SHOW':
+                            self.set_objective_visibility(quest_id, objective_id, True)
+                        else:
+                            self.set_objective_status(quest_id, objective_id, 'completed')
                     return
                 elif upcase_args[1:3] == ['COMPLETE', 'OBJECTIVE']:
                     objective_id = int(upcase_args[3])
