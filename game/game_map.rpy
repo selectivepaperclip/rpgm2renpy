@@ -461,15 +461,20 @@ init python:
             if self.forced_clicky():
                 return True
 
+            has_events = False
             some_event_is_clicky = False
             all_events_are_clicky = True
             for e in self.active_events():
                 for page in reversed(e['pages']):
                     if self.meets_conditions(e, page['conditions']):
+                        has_events = True
                         if self.clicky_event(e, page) and not self.ignored_clicky_page(page):
                             some_event_is_clicky = True
                         else:
                             all_events_are_clicky = False
+
+            if not has_events:
+                return False
 
             return all_events_are_clicky or (some_event_is_clicky and not self.can_move(player_x, player_y))
 
