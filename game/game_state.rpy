@@ -793,28 +793,41 @@ init python:
                     hud_image_folder = rpgm_game_data.get('hud_image_folder', 'img/SumRndmDde/hud')
                     picture_path = game_file_loader.full_path_for_picture(rpgm_path('www/%s/%s/%s' % (hud_image_folder, image_type_folder, image_name)))
                     size = image_size_cache.for_path(picture_path)
+                    scaled_size = size
+                    if hud_item['Scale X'] not in ['1', '-1'] or hud_item['Scale Y'] not in ['1', '-1']:
+                        scaled_size = (int(float(hud_item['Scale X']) * size[0]), int(float(hud_item['Scale Y']) * size[1]))
+
+                    picture_datas = []
                     if hud_item['type'] == 'Image Numbers':
                         size = (size[0] // 10, size[1])
+                        scaled_size = (scaled_size[0] // 10, scaled_size[1])
                         value = self.eval_fancypants_value_statement(hud_item['Value'])
-                        image = im.Crop(picture_path, (size[0] * value, 0, size[0], size[1]))
+                        digit_count = len(str(value))
+                        x_pos = hud_item['x'] - ((scaled_size[0] * digit_count) // 2)
+                        y_pos = hud_item['y'] - scaled_size[1] // 2
+                        for digit in str(value):
+                            picture_datas.append({
+                              'X': x_pos,
+                              'Y': y_pos,
+                              'image': im.Crop(picture_path, (size[0] * int(digit), 0, size[0], size[1])),
+                              'size': scaled_size
+                            })
+                            x_pos += scaled_size[0]
                     else:
-                        image = picture_path
+                        picture_datas.append({
+                          'X': hud_item['x'] - size[0] // 2,
+                          'Y': hud_item['y'] - size[1] // 2,
+                          'image': picture_path,
+                          'size': scaled_size
+                        })
 
-                    if hud_item['Scale X'] != '1' or hud_item['Scale Y'] != '1':
-                        size = (int(float(hud_item['Scale X']) * size[0]), int(float(hud_item['Scale Y']) * size[1]))
+                    for picture_data in picture_datas:
+                        picture_data['layer'] = hud_item['Layer']
 
-                    picture_data = {
-                        'layer': hud_item['Layer'],
-                        'X': hud_item['x'] - size[0] // 2,
-                        'Y': hud_item['y'] - size[1] // 2,
-                        'image': image,
-                        'size': size
-                    }
+                        if hud_item['Scale X'] == '-1':
+                            picture_data['image'] = im.Flip(picture_data['image'], horizontal = True)
 
-                    if hud_item['Scale X'] == '-1':
-                        picture_data['image'] = im.Flip(picture_data['image'], horizontal = True)
-
-                    pictures.append(picture_data)
+                        pictures.append(picture_data)
 
             return sorted(pictures, key=lambda p: int(p['layer']))
 
