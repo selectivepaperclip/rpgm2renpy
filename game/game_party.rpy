@@ -329,7 +329,7 @@ init python:
                         objective_state['visible'] = 'To make' not in objective_data[objective_index - 1]
                     if objective_state['visible']:
                         annotated_objectives.append({
-                            'text': game_state.replace_names(objective_data[objective_index - 1]),
+                            'text': self.clean_text(objective_data[objective_index - 1]),
                             'completed': objective_state.get('status', None) == 'completed',
                             'failed': objective_state.get('status', None) == 'failed',
                         })
@@ -340,18 +340,18 @@ init python:
                         reward_state['visible'] = 'To make' not in reward_data[reward_index - 1]
                     if reward_state['visible']:
                         annotated_rewards.append({
-                            'text': game_state.replace_names(reward_data[reward_index - 1]),
+                            'text': self.clean_text(reward_data[reward_index - 1]),
                             'claimed': reward_state.get('status', None) == 'claimed',
                             'denied': reward_state.get('status', None) == 'denied',
                         })
 
                 presented_quest = {
-                    'title': game_state.replace_names(quest_data['Title']),
-                    'location': game_state.replace_names(quest_data['Location']),
-                    'from': game_state.replace_names(quest_data['From']),
+                    'title': self.clean_text(quest_data['Title']),
+                    'location': self.clean_text(quest_data['Location']),
+                    'from': self.clean_text(quest_data['From']),
                     'status': self.quest_activity[quest_id]['status'],
-                    'description': game_state.replace_names(quest_data['Description'][self.quest_activity[quest_id]['description_index'] - 1]).replace("\n", " "),
-                    'subtext': game_state.replace_names(quest_data['Subtext'][self.quest_activity[quest_id]['subtext_index'] - 1]).replace("\n", " "),
+                    'description': self.clean_text(quest_data['Description'][self.quest_activity[quest_id]['description_index'] - 1]).replace("\n", " "),
+                    'subtext': self.clean_text(quest_data['Subtext'][self.quest_activity[quest_id]['subtext_index'] - 1]).replace("\n", " "),
                     'objectives': annotated_objectives,
                     'rewards': annotated_rewards
                 }
@@ -360,6 +360,9 @@ init python:
 
             status_order = ['known', 'completed', 'failed']
             return sorted(result, key=lambda q: status_order.index(q['status']))
+
+        def clean_text(self, text):
+            return game_state.escape_text_for_renpy(game_state.replace_names(text))
 
         def process_command(self, args):
             gre = Re()
