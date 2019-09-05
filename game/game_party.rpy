@@ -98,20 +98,38 @@ init python:
                 self.gameus_quest_manager_instance = GameusQuestManager()
             return self.gameus_quest_manager_instance
 
-        def print_items(self):
-            for item_id, quantity in self.items.iteritems():
-                item = game_state.items.by_id(item_id)
-                print str(item_id) + ': ' + item['name'] + ' ' + str(quantity)
+        def debug_items(self):
+            result = []
+            for item in game_state.items.data():
+                if not item:
+                    continue
+                quantity = 0
+                if item['id'] in self.items:
+                    quantity = self.items[item['id']]
+                result.append(str(item['id']) + ': ' + item['name'] + ' ' + str(quantity))
+            return result
 
-        def print_weapons(self):
-            for weapon_id, quantity in self.weapons.iteritems():
-                weapon = game_state.weapons.by_id(weapon_id)
-                print str(weapon_id) + ': ' + weapon['name'] + ' ' + str(quantity)
+        def debug_weapons(self):
+            result = []
+            for weapon in game_state.weapons.data():
+                if not weapon:
+                    continue
+                quantity = 0
+                if weapon['id'] in self.weapons:
+                    quantity = self.weapons[weapon['id']]
+                result.append(str(weapon['id']) + ': ' + weapon['name'] + ' ' + str(quantity))
+            return result
 
-        def print_armors(self):
-            for armor_id, quantity in self.armors.iteritems():
-                armor = game_state.armors.by_id(armor_id)
-                print str(armor_id) + ': ' + armor['name'] + ' ' + str(quantity)
+        def debug_armors(self):
+            result = []
+            for armor in game_state.armors.data():
+                if not armor:
+                    continue
+                quantity = 0
+                if armor['id'] in self.armors:
+                    quantity = self.armors[armor['id']]
+                result.append(str(armor['id']) + ': ' + armor['name'] + ' ' + str(quantity))
+            return result
 
     class MaicQuestManager(SelectivelyPickle):
         def __init__(self):

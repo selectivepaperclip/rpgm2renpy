@@ -962,7 +962,44 @@ init python:
 
             if YepMainMenuManager.plugin_active():
                 result.append(('?', 'show_main_menu'))
+
+            result.append(('`', 'show_debug_menus'))
+
             return result
+
+        def show_debug_menus(self):
+            result = renpy.display_menu([
+                ("Select a debug screen", None),
+                ("Show Items", 'items'),
+                ("Show Weapons", 'weapons'),
+                ("Show Armors", 'armors'),
+                ("Show Self Switches", 'self_switches'),
+                ("Show Switches", 'switches'),
+                ("Show Variables", 'variables')
+            ])
+            if result == 'items':
+                renpy.call_screen("scrolling_textbox_screen", self.escape_text_for_renpy("\n".join(self.party.debug_items())))
+            elif result == 'weapons':
+                renpy.call_screen("scrolling_textbox_screen", self.escape_text_for_renpy("\n".join(self.party.debug_weapons())))
+            elif result == 'armors':
+                renpy.call_screen("scrolling_textbox_screen", self.escape_text_for_renpy("\n".join(self.party.debug_armors())))
+            elif result == 'switches':
+                self.show_switches()
+            elif result == 'self_switches':
+                self.show_self_switches()
+            elif result == 'variables':
+                self.show_variables()
+
+            return True
+
+        def show_switches(self):
+            renpy.call_screen("scrolling_textbox_screen", self.escape_text_for_renpy("\n".join(self.switches.debug_values())))
+
+        def show_self_switches(self):
+            renpy.call_screen("scrolling_textbox_screen", self.escape_text_for_renpy("\n".join(self.self_switches.debug_values())))
+
+        def show_variables(self):
+            renpy.call_screen("scrolling_textbox_screen", self.escape_text_for_renpy("\n".join(self.variables.debug_values())))
 
         def queue_common_and_parallel_events(self):
             if len(self.common_events_data()) > 0:
