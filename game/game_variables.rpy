@@ -41,8 +41,15 @@ init python:
             else:
                 return -1 * value
 
-        def print_values(self):
+        def debug_values(self):
+            result = []
+
             longest_string = len(max(self.variable_names, key=len))
 
             for i in xrange(0, len(self.variable_names)):
-                print (("%3s: '%" + str(longest_string) + "s' = %s") % (i, self.variable_names[i], self.variable_values[i]))
+                result.append(("%3s: '%" + str(longest_string) + "s' = %s") % (i, self.variable_names[i], self.variable_values[i]))
+
+            return result
+
+        def print_values(self):
+            print "\n".join(self.debug_values())

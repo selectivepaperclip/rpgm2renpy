@@ -16,6 +16,13 @@ init python:
                 del self.switch_values[key]
             return changed
 
-        def print_values(self):
+        def debug_values(self):
+            result = []
+
             for key, value in sorted(self.switch_values.iteritems()):
-                print "%s: %s" % (key ,value)
+                result.append("%s: %s" % (key ,value))
+
+            return result
+
+        def print_values(self):
+            print "\n".join(self.debug_values())

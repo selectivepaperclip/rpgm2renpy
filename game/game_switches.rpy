@@ -23,16 +23,16 @@ init python:
             self.ensure_switch_names_loaded(switch_id)
             self.switch_values[switch_id] = value
 
-        def print_values(self):
+        def debug_values(self):
+            result = []
+
             self.reload_switch_names()
             longest_string = len(max(self._switch_names, key=len))
 
-            print "ACTIVE SWITCHES:"
             for i in xrange(0, len(self._switch_names)):
-                if self.switch_values[i]:
-                    print ("%3s: - '%s'") % (i, self._switch_names[i])
+                result.append(("%3s: - '%s' - %s") % (i, self._switch_names[i], self.switch_values[i]))
 
-            print "INACTIVE SWITCHES:"
-            for i in xrange(0, len(self._switch_names)):
-                if not self.switch_values[i]:
-                    print ("%3s: - '%s'") % (i, self._switch_names[i])
+            return result
+
+        def print_values(self):
+            print "\n".join(self.debug_values())
