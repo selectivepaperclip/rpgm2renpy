@@ -539,6 +539,26 @@ init python:
             return escaped_text
 
         def replace_names(self, text):
+            # From YEP_MessageCore.js:
+            # *   \V[n]       Replaced by the value of the nth variable.
+            # *   \N[n]       Replaced by the name of the nth actor.
+            # *   \P[n]       Replaced by the name of the nth party member.
+            # *   \G          Replaced by the currency unit.
+            # *   \C[n]       Draw the subsequent text in the nth color.
+            # *   \I[n]       Draw the nth icon.
+            # *   \{          Increases the text size by one step.
+            # *   \}          Decreases the text size by one step.
+            # *   \\          Replaced with the backslash character.
+            # *   \$          Opens the gold window.
+            # *   \.          Waits 1/4th seconds.
+            # *   \|          Waits 1 second.
+            # *   \!          Waits for button input.
+            # *   \>          Display remaining text on same line all at once.
+            # *   \<          Cancel the effect that displays text all at once.
+            # *   \^          Do not wait for input after displaying text.
+
+            # TODO: many of these might be better inside an 'if YEP_MessageCore' block. though possibly all MV games use that plugin
+
             # Replace statements from actor numbers, e.g. \N[2] with their actor name
             text = re.sub(r'\\N\[(\d+)\]', lambda m: (self.actors.actor_name(int(m.group(1)))), text, flags=re.IGNORECASE)
             # Replace statements from variable ids, e.g. \V[2] with their value
@@ -546,10 +566,8 @@ init python:
             # Remove statements with image replacements, e.g. \I[314]
             text = re.sub(r'\\I\[(\d+)\]', '', text, flags=re.IGNORECASE)
 
-            # Remove font size increase/decrease statements, e.g. \{ \}
-            # Remove "wait for button" e.g. \!
-            # Remove other "wait" commands e.g. \. \|
-            text = re.sub(r'\\[{}!.|]', '', text)
+            # Scrub most non-displayable YEP_MessageCore commands:
+            text = re.sub(r'\\[{}!.|^]', '', text)
 
             # Remove position changing things
             text = re.sub(r'\\p[xy]\[.*?\]\s*', '', text)
