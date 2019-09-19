@@ -224,12 +224,13 @@ screen mapscreen(
                 background "#000"
                 action Function(game_state.queue_common_event, common_event_queuer['event_id']), Jump("game")
 
-        for galv_screen_button_id, galv_screen_button in galv_screen_buttons.iteritems():
-            button:
-                background galv_screen_button['image']
-                xpos galv_screen_button['x']
-                ypos galv_screen_button['y']
-                action Function(game_state.queue_common_event, galv_screen_button['event_id']), Jump("game")
+        if not in_interaction:
+            for galv_screen_button_id, galv_screen_button in galv_screen_buttons.iteritems():
+                button:
+                    background galv_screen_button['image']
+                    xpos galv_screen_button['x']
+                    ypos galv_screen_button['y']
+                    action Function(game_state.queue_common_event, galv_screen_button['event_id']), Jump("game")
 
         for picture_common_event_button in picture_common_events:
             button:
