@@ -958,6 +958,7 @@ init python:
                 self.migrate_global_branch_data()
                 command = self.page['list'][self.list_index]
 
+                recent_queued_picture_count = len(game_state.queued_pictures)
                 recently_rendered_animation_duration = 0
 
                 interaction_codes = [101, 102, 103, 104, 301, 302, 303, 354]
@@ -1009,7 +1010,8 @@ init python:
                         except:
                             print "Text that failed to show:\n%s" % text_to_show
                             raise
-                    else:
+                    elif recent_queued_picture_count > 0:
+                        # Ensure the game still pauses to show pictures that were *just* displayed, even if the text being shown is nil
                         game_state.pause()
 
                 # Show choices
