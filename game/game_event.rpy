@@ -570,12 +570,17 @@ init python:
             for newly_activated_event in self.state.parallel_event_metadata().events_activated_by_switch(switch_id):
                 # TODO: only want to show parallel event animations if the event is a 'pure' animation, e.g. no text showing or menus etc
                 # so there's probably more conditions that can go here other than 'code' == 101
-                if not any(command['code'] == 101 for command in newly_activated_event['list']):
-                    if noisy_events:
-                        print "EVENT ACTIVATED BY SWITCH: %s" % newly_activated_event['id']
-                    e = GameEvent(self.state, None, newly_activated_event, newly_activated_event)
-                    # TODO: probably is better to append to parallel_events, but this seems to not work for the purposes of showing animations
-                    self.state.events.append(e)
+
+                # TODO: fix for college life common event 9
+                #if not any(command['code'] == 101 for command in newly_activated_event['list']):
+                if noisy_events:
+                    print "EVENT ACTIVATED BY SWITCH: '%s' - %s" % (game_state.last_said_text, newly_activated_event['id'])
+
+                # TODO: in lust epidemic, sometimes two of these fire in rapid succession and build up one big event
+                # that should really be represented as an original event that segues into another looped event
+                # not sure if this should be fixed here or at flush-time, a lot of weird bookkeeping might be needed
+                e = GameEvent(self.state, None, newly_activated_event, newly_activated_event)
+                self.state.add_triggered_common_event(e)
 
         def direction_to_face_player(self, event_location):
             return GameDirection.direction_for_a_to_face_b(event_location, (game_state.player_x, game_state.player_y))
@@ -1090,7 +1095,7 @@ init python:
                         screen_args = {}
                         if GameIdentifier().is_my_summer() or GameIdentifier().is_lust_epidemic():
                             # only show the cancel button the status screen for NLT games, could be a little fragile
-                            current_event = self.state.events[-1]
+                            current_event = self.state.triggered_common_events[-1]
                             if current_event.common() and current_event.event_data['id'] == 1:
                                 screen_args["background"] = False
                                 screen_args["allow_cancel"] = True
@@ -1506,7 +1511,8 @@ init python:
                 elif command['code'] in [223, 225]:
                     pass
 
-                elif command['code'] == 224: # Flash screen
+                # Flash screen
+                elif command['code'] == 224:
                     game_state.pause()
 
                 # Pause
