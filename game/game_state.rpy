@@ -1468,9 +1468,7 @@ init python:
                 this_event = self.triggered_common_events[-1]
                 new_event = this_event.do_next_thing()
                 if new_event:
-                    if len(self.triggered_common_events) >= 50:
-                        raise RuntimeError("Event stack too big!")
-                    self.triggered_common_events.append(new_event)
+                    self.add_triggered_common_event(new_event)
                     return True
                 if hasattr(self, 'shop_params') and self.shop_params:
                     self.show_shop_ui()
