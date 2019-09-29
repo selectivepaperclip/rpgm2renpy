@@ -221,7 +221,7 @@ init python:
                 gre = Re()
                 if GameIdentifier().is_milfs_control():
                     return GameSpecificCodeMilfsControl().conditional_eval_script(params[1])
-                elif gre.match("Input\.isTriggered\('(\w+)'\)", params[1]):
+                elif gre.match("Input\.isTriggered\(['\"](\w+)['\"]\)", params[1]):
                     if hasattr(self, 'press_count') and self.press_count > 0:
                         self.press_count -= 1
                         return True
