@@ -4,7 +4,7 @@ init python:
             self.switch_values = {}
 
         def value(self, key):
-            return self.switch_values.get(key, None)
+            return self.switch_values.get(key, False)
 
         def set_value(self, key, value):
             changed = False
