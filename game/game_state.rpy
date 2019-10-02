@@ -872,6 +872,9 @@ init python:
                 return distance <= desired_distance
             elif gre.match("\$gameParty.gold\(\)", script_string):
                 return self.party.gold
+            elif gre.match("\$gamePlayer\.isDashing", script_string):
+                # Farmer's Dreams
+                return False
 
             variables_regexp = r'\$gameVariables.value\((\d+)\)'
             only_variables_regexp = r'^\s*%s;?\s*$' % variables_regexp
