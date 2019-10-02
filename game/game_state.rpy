@@ -1503,6 +1503,7 @@ init python:
                     if first_never_paused_event.done():
                         if first_never_paused_event.new_map_id:
                             self.transfer_player(first_never_paused_event)
+                            first_never_paused_event.new_map_id = None
                         if first_never_paused_event in self.parallel_events:
                             self.parallel_events.remove(first_never_paused_event)
                     return True
@@ -1516,6 +1517,7 @@ init python:
                     if first_has_paused_event.done():
                         if first_has_paused_event.new_map_id:
                             self.transfer_player(first_has_paused_event)
+                            first_has_paused_event.new_map_id = None
                         else:
                             first_has_paused_event.list_index = 0
                             if not (hasattr(first_has_paused_event, 'press_count') and first_has_paused_event.press_count > 0):
