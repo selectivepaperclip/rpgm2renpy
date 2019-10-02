@@ -907,6 +907,13 @@ init python:
                     break
 
             while True:
+                still_has_self_switches = re.search('\$gameSelfSwitches.value\((\[\d+, \d+, \'\w\'\])\)', script_string)
+                if still_has_self_switches:
+                    script_string = re.sub(r'\$gameSelfSwitches.value\((\[\d+, \d+, \'\w\'\])\)', lambda m: str(self.self_switches.value(tuple(eval(m.group(1))))), script_string)
+                else:
+                    break
+
+            while True:
                 still_has_ace_switches = re.search('\$game_switches\[(\d+)\]', script_string)
                 if still_has_ace_switches:
                     script_string = re.sub(r'\$game_switches\[(\d+)\]', lambda m: str(self.switches.value(int(m.group(1)))), script_string)
