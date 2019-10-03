@@ -1043,7 +1043,23 @@ init python:
             return next((event for event in reversed(sorted(candidates, key=lambda candidate_event: (candidate_event.page['trigger'] in [1,2], self.has_commands(candidate_event.page))))), None)
 
         def boring_auto_trigger_page(self, page):
-            return [command['code'] for command in page['list']] == [0]
+            # NOTE: the real RPGM event loop runs every auto trigger event, it just happens to be
+            # that if an event doesn't trigger a 'wait' (see 'updateWaitMode' in rpgm code) the interpreter
+            # continues on to run the rest of the auto trigger events before re-starting from the first auto trigger
+            # event.
+            #
+            # Since rpgm2renpy doesn't have awareness of this waitMode stuff, in practice, this means an
+            # auto trigger event that only does non-visual things like toggle switches can cause an infinite
+            # loop as it continually re-tries itself. Usually game authors write their auto trigger events
+            # such that they toggle a switch that prevents them from being re-run, but some games rely on this
+            # only-rerun-when-waitMode-triggered behavior.
+
+            # The hack for now is to ignore blank auto trigger events or those that contain only comments,
+            # but this is sketchy because it doesn't cover all the cases that can do an infinite loop, and
+            # isn't technically correct in the case where a plugin hacks in some user-facing behavior for comments.
+            # The alternative would be for rpgm2renpy to have a better awareness of what commands trigger
+            # a 'waitMode', but that's more work.
+            return Set([command['code'] for command in page['list']]).issubset(Set([0, 108, 408]))
 
         def find_auto_trigger_event(self):
             for e in self.active_events():
