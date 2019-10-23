@@ -342,12 +342,10 @@ init python:
                 if last_frame['opacity'] <= 10:
                     # more hacks
                     last_frame['opacity'] = 0
-                if last_frame['blend_mode'] != 0:
-                    # other blend modes are not supported for now
-                    last_frame['opacity'] = 0
                 picture_args = {
                     "picture_frames": picture_frames,
-                    "opacity": last_frame.get('opacity', 255)
+                    "opacity": last_frame.get('opacity', 255),
+                    "blend_mode": last_frame.get('blend_mode', 0)
                 }
 
                 first_frame_is_animation = isinstance(picture_frames[0]['image_name'], RpgmAnimation)

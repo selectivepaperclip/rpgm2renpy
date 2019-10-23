@@ -146,7 +146,9 @@ screen mapscreen(
 
     for (id, args) in game_state.pictures():
         if ('opacity' not in args) or (args['opacity'] != 0):
-            add args['image_name']
+            add args['image_name']:
+                additive args.get('blend_mode') == 3
+                alpha args.get('opacity', 255) / 255.0
 
     if not faded_out:
         for curated_clickable in curated_clickables:
