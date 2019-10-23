@@ -108,6 +108,7 @@ init python:
     class GameState(SelectivelyPickle):
         def __init__(self):
             self.common_events_index = None
+            self.scenes = []
             self.events = []
             self.parallel_events = []
             self.triggered_common_events = []
@@ -1619,6 +1620,12 @@ init python:
         def _do_next_thing(self, mapdest, keyed_common_event):
             self.ensure_initialized_attributes()
             self.skip_bad_events()
+
+            if len(self.scenes) > 0:
+                done = self.scenes[-1].do_next_thing()
+                if done:
+                    self.scenes.pop()
+                return True
 
             if len(self.additional_queued_picture_groups) > 0:
                 next_group = self.additional_queued_picture_groups[0]

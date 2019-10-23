@@ -304,6 +304,8 @@ label after_load:
             game_state.triggered_common_events = []
         if not hasattr(game_state, 'additional_queued_picture_groups'):
             game_state.additional_queued_picture_groups = []
+        if not hasattr(game_state, 'scenes'):
+            game_state.scenes = []
 
         for map_id, map in game_state.map_registry.maps.iteritems():
             map.event_location_overrides = {}
