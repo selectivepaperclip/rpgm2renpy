@@ -1,5 +1,6 @@
 init python:
     import sys
+    import subprocess
 
     PY3 = sys.version_info[0] == 3
 
@@ -961,9 +962,136 @@ init python:
                 return eval(script_string)
             elif return_remaining:
                 return script_string
+            elif rpgm_game_data.get('eval_javascript', False):
+                return self.eval_javascript(script_string)
             else:
                 print "Remaining non-evaluatable fancypants value statement:"
                 print "'%s'" % script_string
+                self.say_debug("Remaining non-evaluatable fancypants value statement: '%s'" % script_string)
+                return 0
+
+        def eval_javascript(self, script_string):
+            full_string = """
+                $gameActors = {
+                    actor: function (index) {
+                        return {
+                            _nickname: ''
+                        }
+                    }
+                };
+                $gameScreen = {
+                    picture: function (id) {
+                        return {
+                            setAnim: function (sprArray,interval) {
+                                console.log(
+                                    "SETANIM",
+                                    JSON.stringify({
+                                        id: id,
+                                        sprArray: sprArray,
+                                        interval: interval
+                                    })
+                                )
+                            }
+                        }
+                    }
+                };
+                $gameVariables = {
+                    _variables: %s,
+                    value: function (id) {
+                        return this._variables[id];
+                    },
+                    setValue: function (id, new_value) {
+                        this._variables[id] = new_value;
+                        console.log("SETVARIABLE", id, ":", JSON.stringify(new_value));
+                    }
+                };
+                $gameSelfSwitches = {
+                    init: function () {
+                        this._values = {};
+                        %s
+                    },
+                    value: function (key) {
+                        return this._values[key] || false;
+                    },
+                    setValue: function (key, value) {
+                        this._values[key] = value;
+                        console.log("SETSELFSWITCH", JSON.stringify(key), ":", value ? "True" : "False");
+                    }
+                }
+                $gameSelfSwitches.init();
+
+                $dataItems = [];
+                for (var i = 0; i < %s; i++) {
+                    $dataItems.push(i);
+                }
+                $gameParty = {
+                    _numItems: %s,
+                    gainItem: function (itemId, amount) {
+                        console.log("GAINITEM", itemId, ":", amount);
+                    },
+                    numItems: function (itemId) {
+                        return this._numItems[itemId] || 0;
+                    }
+                };
+                $gamePlayer = {
+                    setWalkAnime: function (bool) {
+                    },
+                    setDirectionFix: function (bool) {
+                        console.log("SETPLAYERDIRECTIONFIX", bool);
+                    }
+                }
+
+                %s
+            """ % (
+                json.dumps(game_state.variables.variable_values),
+                "\n".join(["this._values[%s] = %s;" % (json.dumps(key), 'true' if value else 'false') for key, value in game_state.self_switches.switch_values.iteritems()]),
+                len(game_state.items.data()),
+                json.dumps(game_state.party.items),
+                script_string
+            )
+
+            try:
+                CREATE_NO_WINDOW = 0x08000000
+                print full_string
+                print "PROCESSING: %s" % script_string
+                output = subprocess.check_output(
+                    ['node', '-p', full_string],
+                    creationflags = CREATE_NO_WINDOW,
+                    stderr=subprocess.STDOUT
+                )
+                print "OUTPUT IS '%s'" % output
+                for line in output.splitlines():
+                    gre = Re()
+                    if gre.match("SETVARIABLE (.*)", line):
+                        id_string, value_string = gre.last_match.groups()[0].split(' : ')
+                        game_state.variables.set_value(eval(id_string), eval(value_string))
+                    elif gre.match("SETSELFSWITCH (.*)", line):
+                        key_string, value_string = gre.last_match.groups()[0].split(' : ')
+                        game_state.self_switches.set_value(tuple(eval(key_string)), eval(value_string))
+                    elif gre.match("SETPLAYERDIRECTIONFIX (.*)", line):
+                        value = gre.last_match.groups()[0].split(' ')[-1] == 'true'
+                        game_state.player_direction_fix = value
+                    elif gre.match("SETANIM (.*)", line):
+                        anim_details = json.loads(gre.last_match.groups()[0])
+                        # TODO: anims
+                        print "AN ANIM OCCUR!!"
+                        print anim_details
+                    elif gre.match("GAINITEM (.*)", line):
+                        item_id, amount = gre.last_match.groups()[0].split(' : ')
+                        self.party.gain_item(self.items.by_id(int(item_id)), int(amount))
+                last_line = output.splitlines()[-1]
+                if last_line == 'undefined':
+                    return
+                if last_line == 'false':
+                    return False
+                if last_line == 'true':
+                    return True
+                return eval(last_line)
+            except subprocess.CalledProcessError as e:
+                print "Unable to eval fancypants value statement:"
+                print "'%s'" % full_string
+                print "Error:"
+                print e.output
                 self.say_debug("Remaining non-evaluatable fancypants value statement: '%s'" % script_string)
                 return 0
 

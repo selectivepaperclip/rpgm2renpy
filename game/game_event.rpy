@@ -447,7 +447,7 @@ init python:
             elif AnimatedBusts.process_script(script_string):
                 return
 
-            for line in script_string.split("\n"):
+            for line_index, line in enumerate(script_string.split("\n")):
                 mv_self_switch_set_command = re.match("\$gameSelfSwitches\.setValue\(\[(\d+),(\d+),'(.*?)'\], (\w+)\);?", line)
                 ace_self_switch_set_command = re.match("\$game_self_switches\[\[(\d+)\s*,\s*(\d+)\s*,\s*'(.*?)'\]\] = (\w+)", line)
 
@@ -572,6 +572,8 @@ init python:
                     pass
                 elif gre.search("\$game_map\..*?start_anim_loop", line):
                     pass
+                elif rpgm_game_data.get('eval_javascript', False) and line_index == 0:
+                    return game_state.eval_javascript(script_string)
                 else:
                     print "Script that could not be evaluated:\n"
                     print script_string
