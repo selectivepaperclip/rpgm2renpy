@@ -99,7 +99,7 @@ init -10 python:
                 self.window_png_path = rpgm_path("Graphics/System/Window.png")
                 self.tile_width = 32
                 self.tile_height = 32
-                possible_choice_plugin_filenames = ['Choces_More.rb', 'LargeChoices.rb', 'More_Choices.rb', 'Extended_Choices.rb']
+                possible_choice_plugin_filenames = ['Choces_More.rb', 'LargeChoices.rb', 'Large_Choices.rb', 'More_Choices.rb', 'Extended_Choices.rb']
                 if any(os.path.exists(os.path.join(config.basedir, rpgm_path('Scripts/%s' % filename))) for filename in possible_choice_plugin_filenames):
                     self.has_large_choices_plugin = True
             else:
