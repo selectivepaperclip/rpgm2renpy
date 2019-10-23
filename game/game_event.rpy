@@ -1234,46 +1234,58 @@ init python:
 
                 # Control Variables
                 elif command['code'] == 122:
-                    if noisy_events:
-                        print "%scontrol vars: %s" % (
-                            ' ' * command['indent'],
-                            command['parameters']
-                        )
-
                     was_random = False
                     start, end, operation_type, operand = command['parameters'][0:4]
                     value = 0
+                    operation_description = []
+                    if noisy_events:
+                        operation_description.append("set variables %s-%s" % (start, end))
+
                     if operand == 0:
                         value = command['parameters'][4]
+                        operation_description.append("to direct value")
                     elif operand == 1:
                         value = self.state.variables.value(command['parameters'][4])
+                        operation_description.append("to value of variable %s" % command['parameters'][4])
                     elif operand == 2:
                         was_random = True
-                        value = self.get_random_int(command['parameters'][4], command['parameters'][5])
+                        int_min = command['parameters'][4]
+                        int_max = command['parameters'][5]
+                        value = self.get_random_int(int_min, int_max)
+                        operation_description.append("to random int between %s-%s" % (int_min, int_max))
                     elif operand == 3:
                         game_data_operand_type = command['parameters'][4]
                         game_data_operand_param1 = command['parameters'][5]
                         game_data_operand_param2 = command['parameters'][6]
                         if game_data_operand_type == 0: # Item
                             value = self.state.party.num_items(self.state.items.by_id(game_data_operand_param1))
+                            operation_description.append("to number of item %s" % game_data_operand_param1)
                         elif game_data_operand_type == 1: # Weapon
                             value = self.state.party.num_items(self.state.weapons.by_id(game_data_operand_param1))
+                            operation_description.append("to number of weapon %s" % game_data_operand_param1)
                         elif game_data_operand_type == 2: # Armor
                             value = self.state.party.num_items(self.state.armors.by_id(game_data_operand_param1))
+                            operation_description.append("to number of armor %s" % game_data_operand_param1)
                         elif game_data_operand_type == 3: # Actor
                             actor_index = game_data_operand_param1
                             actor = self.state.actors.by_index(actor_index)
                             if game_data_operand_param2 == 0: # Level
                                 value = actor.get_property('level')
+                                operation_description.append("to actor %s level" % actor_index)
                             elif game_data_operand_param2 == 1: # EXP
                                 value = actor.current_exp()
+                                operation_description.append("to actor %s exp" % actor_index)
                             elif game_data_operand_param2 == 2: # HP
                                 value = actor.hp()
+                                operation_description.append("to actor %s hp" % actor_index)
                             elif game_data_operand_param2 == 3: # MP
                                 value = actor.mp()
+                                operation_description.append("to actor %s mp" % actor_index)
                             else: # Parameter
                                 if game_data_operand_param2 >= 4 and game_data_operand_param2 <= 11:
-                                    value = actor.param(game_data_operand_param2 - 4)
+                                    param_number = game_data_operand_param2 - 4
+                                    value = actor.param(param_number)
+                                    operation_description.append("to actor %s param %s" % (actor_index, param_number))
                         elif game_data_operand_type == 4: # Enemy
                             #    var enemy = $gameTroop.members()[param1];
                             #    if (enemy) {
@@ -1354,6 +1366,14 @@ init python:
                     elif operand == 4:
                         script_string = command['parameters'][4]
                         value = self.state.eval_fancypants_value_statement(script_string, event = self)
+
+                    if noisy_events:
+                        operation_description.append("(%s)" % value)
+                        print "%scontrol vars: %s (%s)" % (
+                            ' ' * command['indent'],
+                            command['parameters'],
+                            ' '.join(operation_description)
+                        )
 
                     changed_any_variable = False
                     for i in xrange(start, end + 1):
