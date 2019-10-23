@@ -31,6 +31,19 @@ init python:
             self.choices_to_disable = []
             self.branch = {}
 
+            # SOME REFERENCE:
+            # For map events, trigger values are:
+            # 0 - Action Button
+            # 1 - Player Touch
+            # 2 - Event Touch
+            # 3 - Autorun
+            # 4 - Parallel
+
+            # For common events, trigger values are:
+            # 0 - None
+            # 1 - Autorun
+            # 2 - Parallel
+
         @classmethod
         def page_solid(cls, event_data, page, page_index):
             return (page['priorityType'] == 1) and not game_state.map.event_page_property(event_data, page, page_index, GameEvent.PROPERTY_THROUGH)
