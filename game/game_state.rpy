@@ -953,7 +953,7 @@ init python:
             else:
                 print "Remaining non-evaluatable fancypants value statement:"
                 print "'%s'" % script_string
-                renpy.say(None, "Remaining non-evaluatable fancypants value statement: '%s'" % script_string)
+                self.say_debug("Remaining non-evaluatable fancypants value statement: '%s'" % script_string)
                 return 0
 
         def common_events_keymap(self):
@@ -1311,6 +1311,10 @@ init python:
                 else:
                     self.last_said_text = spoken_text
                     renpy.say(speaker, spoken_text)
+
+        def say_debug(self, text):
+            escaped_text = game_state.escape_text_for_renpy(text)
+            renpy.say(None, escaped_text)
 
         def pause(self, show_map = True):
             if noisy_pauses:
