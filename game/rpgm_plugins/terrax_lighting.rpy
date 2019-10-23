@@ -8,7 +8,11 @@ init python:
         ]
 
         @classmethod
+        def plugin_active(cls):
+            return game_file_loader.has_active_plugin('TerraxLighting')
+
+        @classmethod
         def is_lighting_command(cls, plugin_command):
-            if plugin_command in TerraxLighting.COMMANDS and game_file_loader.plugin_data_exact('TerraxLighting'):
+            if cls.plugin_active() and plugin_command in TerraxLighting.COMMANDS:
                 return True
             return False

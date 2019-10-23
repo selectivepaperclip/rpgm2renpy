@@ -1,11 +1,12 @@
 init python:
     class AnimatedBusts:
         @classmethod
+        def plugin_active(cls):
+            return game_file_loader.has_active_plugin('animatedbusts')
+
+        @classmethod
         def process_script(cls, script_string):
-            plugin = game_file_loader.plugin_data_exact('animatedbusts')
-            if not plugin:
-                return False
-            if not plugin['status']:
+            if not cls.plugin_active():
                 return False
 
             gre = Re()

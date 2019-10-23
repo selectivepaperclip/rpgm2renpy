@@ -2,10 +2,7 @@ init python:
     class YepXExtMesPack1:
         @classmethod
         def plugin_active(cls):
-            plugin = game_file_loader.plugin_data_exact('YEP_MainMenuManager')
-            if not plugin:
-                return False
-            return plugin['status']
+            return game_file_loader.has_active_plugin('YEP_MainMenuManager')
 
         @classmethod
         def valid_command(cls, plugin_command):
