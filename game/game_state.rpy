@@ -857,8 +857,14 @@ init python:
             return self.ysp_video_data
 
         def eval_fancypants_value_statement(self, script_string, return_remaining = False, event = None):
+            if script_string == '[]':
+                return []
+
             gre = Re()
-            if gre.match('\$gameActors\.actor\((\d+)\)\.name\(\)', script_string):
+
+            if gre.match('!(.*)', script_string):
+                return not self.eval_fancypants_value_statement(gre.last_match.groups()[0], return_remaining, event)
+            elif gre.match('\$gameActors\.actor\((\d+)\)\.name\(\)', script_string):
                 return self.actors.actor_name(int(gre.last_match.groups()[0]))
             elif gre.match('\$gameActors\.actor\((\d+)\)\.nickname\(\)', script_string):
                 return self.actors.by_index(int(gre.last_match.groups()[0])).get_property('nickname')
@@ -874,11 +880,13 @@ init python:
                 return distance <= desired_distance
             elif gre.match("\$gameParty.gold\(\)", script_string):
                 return self.party.gold
-            elif gre.match("\$gamePlayer\.isDashing", script_string):
+            elif gre.match("\$gamePlayer\.is(Moving|Dashing)", script_string):
                 # Farmer's Dreams
                 return False
 
             variables_regexp = r'\$gameVariables.value\((\d+)\)'
+            if rpgm_metadata.is_pre_mv_version:
+                variables_regexp = r'\$game_variables\[(\d+)\]'
             only_variables_regexp = r'^\s*%s;?\s*$' % variables_regexp
             def var_replace(m):
                 variable_value = self.variables.value(int(m.group(1)))
@@ -915,12 +923,13 @@ init python:
                 else:
                     break
 
-            while True:
-                still_has_ace_switches = re.search('\$game_switches\[(\d+)\]', script_string)
-                if still_has_ace_switches:
-                    script_string = re.sub(r'\$game_switches\[(\d+)\]', lambda m: str(self.switches.value(int(m.group(1)))), script_string)
-                else:
-                    break
+            if rpgm_metadata.is_pre_mv_version:
+                while True:
+                    still_has_ace_switches = re.search('\$game_switches\[(\d+)\]', script_string)
+                    if still_has_ace_switches:
+                        script_string = re.sub(r'\$game_switches\[(\d+)\]', lambda m: str(self.switches.value(int(m.group(1)))), script_string)
+                    else:
+                        break
 
             handler_matched = False
             for handler in game_file_loader.game_specific_handlers():
@@ -944,7 +953,7 @@ init python:
                 return int(math.floor(self.eval_fancypants_value_statement(gre.last_match.groups()[0])))
 
             # eval the statement in python-land if it looks like it contains only arithmetic expressions
-            if re.match('^([\d\s.+\-*/<>=()\s,]|True|False|and|or)+$', script_string):
+            if re.match('^([\d\s.+\-*/<>=()\s,]|!=|True|False|and|or)+$', script_string):
                 # Hack statements like "3 / 4" into "3 / (4 * 1.0)" so division works like javascript
                 # remove this if ever using a version of RenPy on Python 3, I guess.
                 if "'" not in script_string and '"' not in script_string and re.search("\/\s*\d+", script_string):
