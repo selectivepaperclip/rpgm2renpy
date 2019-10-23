@@ -1060,7 +1060,11 @@ init python:
 
                     self.state.show_map(in_interaction = True, fade_map = should_display_on_right)
 
-                    options = [(game_state.escape_text_for_renpy(game_state.replace_names(text)), index) for index, text in enumerate(choice_texts) if index + 1 not in self.choices_to_hide and len(text) > 0]
+                    options = [
+                        (game_state.escape_text_for_renpy(game_state.replace_names(text)), index)
+                        for index, text in enumerate(choice_texts)
+                        if index + 1 not in self.choices_to_hide and len(text) > 0
+                    ]
                     if len(options) > 10 or should_display_on_right:
                         choice_options = []
                         for option_text, option_index in options:
@@ -1075,6 +1079,8 @@ init python:
                         elif should_display_on_right:
                             result = renpy.call_screen("right_aligned_show_choices_screen", choice_options)
                     else:
+                        for choice_to_disable in self.choices_to_disable:
+                            options[choice_to_disable - 1] = (options[choice_to_disable - 1][0], None)
                         result = renpy.display_menu(options)
                     self.branch[command['indent']] = result
                     del self.choices_to_hide[:]
