@@ -1096,19 +1096,25 @@ init python:
                 return 0
 
         def common_events_keymap(self):
-            yepp_common_events = game_file_loader.plugin_data_exact('YEP_ButtonCommonEvents')
-            if not yepp_common_events:
-                return []
-
             result = []
-            for key_desc, event_str in yepp_common_events['parameters'].iteritems():
-                if event_str != "" and event_str != "0":
-                    match = re.match("Key (\w)", key_desc)
-                    if match:
-                        activation_key = match.groups()[0]
-                        result.append((activation_key.lower(), event_str))
-                        if activation_key.upper() != activation_key.lower():
-                            result.append((activation_key.upper(), event_str))
+            yepp_common_events = game_file_loader.plugin_data_exact('YEP_ButtonCommonEvents')
+            if yepp_common_events:
+                for key_desc, event_str in yepp_common_events['parameters'].iteritems():
+                    if event_str != "" and event_str != "0":
+                        match = re.match("Key (\w)", key_desc)
+                        if match:
+                            activation_key = match.groups()[0]
+                            result.append((activation_key.lower(), event_str))
+                            if activation_key.upper() != activation_key.lower():
+                                result.append((activation_key.upper(), event_str))
+
+            config_common_events = rpgm_game_data.get('common_events_keymap', {})
+            if config_common_events:
+                for key, event_id in config_common_events.iteritems():
+                    result.append((key.lower(), event_id))
+                    if key.lower() != key.upper():
+                        result.append((key.upper(), event_id))
+
             return result
 
         def function_calls_keymap(self):
