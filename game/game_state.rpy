@@ -1432,6 +1432,12 @@ init python:
         def say_text(self, speaker, spoken_text, face_name = None, face_index = None):
             self.show_map(True)
             gre = Re()
+            for handler in game_file_loader.game_specific_handlers():
+                if hasattr(handler, 'say_text'):
+                    result = handler.say_text(speaker, spoken_text, face_name, face_index)
+                    if result:
+                        return
+
             if game_file_loader.plugin_data_exact('GALV_MessageBusts'):
                 all_busty_text = []
                 busty_text = spoken_text
