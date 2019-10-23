@@ -1,11 +1,12 @@
 init python:
     class GalvScreenButtons:
         @classmethod
+        def plugin_active(cls):
+            return game_file_loader.has_active_plugin('Galv_ScreenButtons')
+
+        @classmethod
         def process_script(cls, script_string):
-            plugin = game_file_loader.plugin_data_exact('Galv_ScreenButtons')
-            if not plugin:
-                return False
-            if not plugin['status']:
+            if not cls.plugin_active():
                 return False
 
             gre = Re()

@@ -10,7 +10,11 @@ init -99 python:
                 self._json_files = {}
             if not filename in self._json_files:
                 with renpy.file(filename) as f:
-                    self._json_files[filename] = json.load(f)
+                    json_content = json.load(f)
+                    if DsiExternalText.plugin_active():
+                        DsiExternalText.process_content(json_content, filename)
+
+                    self._json_files[filename] = json_content
 
             return self._json_files[filename]
 

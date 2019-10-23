@@ -2,10 +2,7 @@ init python:
     class GalvMapProjectiles:
         @classmethod
         def plugin_active(cls):
-            plugin = game_file_loader.plugin_data_exact('GALV_MapProjectiles')
-            if not plugin:
-                return False
-            return plugin['status']
+            return game_file_loader.has_active_plugin('GALV_MapProjectiles')
 
         @classmethod
         def process_script(cls, event, script_string):

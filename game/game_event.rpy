@@ -31,6 +31,19 @@ init python:
             self.choices_to_disable = []
             self.branch = {}
 
+            # SOME REFERENCE:
+            # For map events, trigger values are:
+            # 0 - Action Button
+            # 1 - Player Touch
+            # 2 - Event Touch
+            # 3 - Autorun
+            # 4 - Parallel
+
+            # For common events, trigger values are:
+            # 0 - None
+            # 1 - Autorun
+            # 2 - Parallel
+
         @classmethod
         def page_solid(cls, event_data, page, page_index):
             return (page['priorityType'] == 1) and not game_state.map.event_page_property(event_data, page, page_index, GameEvent.PROPERTY_THROUGH)
@@ -413,6 +426,10 @@ init python:
         def eval_script(self, script_string):
             xhr_compare_command = re.match(re.compile("var xhr = new XMLHttpRequest\(\);.*if\(.*?\) {\n(.*?)}", re.DOTALL), script_string)
 
+            if script_string == 'CensorshipCheck();':
+                # Peasant's Quest
+                return 'Off'
+
             gre = Re()
             if xhr_compare_command:
                 success_clause = xhr_compare_command.groups()[0]
@@ -434,7 +451,7 @@ init python:
             elif AnimatedBusts.process_script(script_string):
                 return
 
-            for line in script_string.split("\n"):
+            for line_index, line in enumerate(script_string.split("\n")):
                 mv_self_switch_set_command = re.match("\$gameSelfSwitches\.setValue\(\[(\d+),(\d+),'(.*?)'\], (\w+)\);?", line)
                 ace_self_switch_set_command = re.match("\$game_self_switches\[\[(\d+)\s*,\s*(\d+)\s*,\s*'(.*?)'\]\] = (\w+)", line)
 
@@ -457,10 +474,16 @@ init python:
                 if GalvScreenButtons.process_script(script_string):
                     continue
 
+                if GalvScreenZoom.process_script(script_string):
+                    continue
+
                 if GalvEventSpawnTimers.process_script(self, script_string):
                     continue
 
                 if GalvMapProjectiles.process_script(self, script_string):
+                    continue
+
+                if OrangeTimeSystem.process_script(self, script_string):
                     continue
 
                 if game_file_loader.plugin_data_exact('YEP_X_MessageSpeedOpt'):
@@ -559,6 +582,8 @@ init python:
                     pass
                 elif gre.search("\$game_map\..*?start_anim_loop", line):
                     pass
+                elif rpgm_game_data.get('eval_javascript', False) and line_index == 0:
+                    return game_state.eval_javascript(script_string)
                 else:
                     print "Script that could not be evaluated:\n"
                     print script_string
@@ -956,6 +981,8 @@ init python:
                 return not self.paused
             if hasattr(self, 'paused_for_key'):
                 return not self.paused_for_key
+            if hasattr(self, 'paused_for_timer'):
+                return not self.paused_for_timer
             return True
 
         def do_next_thing(self, allow_pause = False):
@@ -1046,7 +1073,11 @@ init python:
 
                     self.state.show_map(in_interaction = True, fade_map = should_display_on_right)
 
-                    options = [(game_state.escape_text_for_renpy(game_state.replace_names(text)), index) for index, text in enumerate(choice_texts) if index + 1 not in self.choices_to_hide and len(text) > 0]
+                    options = [
+                        (game_state.escape_text_for_renpy(game_state.replace_names(text)), index)
+                        for index, text in enumerate(choice_texts)
+                        if index + 1 not in self.choices_to_hide and len(text) > 0
+                    ]
                     if len(options) > 10 or should_display_on_right:
                         choice_options = []
                         for option_text, option_index in options:
@@ -1061,6 +1092,8 @@ init python:
                         elif should_display_on_right:
                             result = renpy.call_screen("right_aligned_show_choices_screen", choice_options)
                     else:
+                        for choice_to_disable in self.choices_to_disable:
+                            options[choice_to_disable - 1] = (options[choice_to_disable - 1][0], None)
                         result = renpy.display_menu(options)
                     self.branch[command['indent']] = result
                     del self.choices_to_hide[:]
@@ -1164,6 +1197,15 @@ init python:
                 # Repeat Above
                 elif command['code'] == 413:
                     if self.parallel():
+                        self.has_ever_paused = True
+                        self.paused_for_timer = True
+                        while self.list_index > 0:
+                            self.list_index -= 1
+                            if self.page['list'][self.list_index]['indent'] == command['indent']:
+                                break
+                        return
+
+                    if self.parallel():
                         # This might be an endlessly looping animation in a parallel
                         # event. Bail out of the event.
                         self.finish_event()
@@ -1214,46 +1256,58 @@ init python:
 
                 # Control Variables
                 elif command['code'] == 122:
-                    if noisy_events:
-                        print "%scontrol vars: %s" % (
-                            ' ' * command['indent'],
-                            command['parameters']
-                        )
-
                     was_random = False
                     start, end, operation_type, operand = command['parameters'][0:4]
                     value = 0
+                    operation_description = []
+                    if noisy_events:
+                        operation_description.append("set variables %s-%s" % (start, end))
+
                     if operand == 0:
                         value = command['parameters'][4]
+                        operation_description.append("to direct value")
                     elif operand == 1:
                         value = self.state.variables.value(command['parameters'][4])
+                        operation_description.append("to value of variable %s" % command['parameters'][4])
                     elif operand == 2:
                         was_random = True
-                        value = self.get_random_int(command['parameters'][4], command['parameters'][5])
+                        int_min = command['parameters'][4]
+                        int_max = command['parameters'][5]
+                        value = self.get_random_int(int_min, int_max)
+                        operation_description.append("to random int between %s-%s" % (int_min, int_max))
                     elif operand == 3:
                         game_data_operand_type = command['parameters'][4]
                         game_data_operand_param1 = command['parameters'][5]
                         game_data_operand_param2 = command['parameters'][6]
                         if game_data_operand_type == 0: # Item
                             value = self.state.party.num_items(self.state.items.by_id(game_data_operand_param1))
+                            operation_description.append("to number of item %s" % game_data_operand_param1)
                         elif game_data_operand_type == 1: # Weapon
                             value = self.state.party.num_items(self.state.weapons.by_id(game_data_operand_param1))
+                            operation_description.append("to number of weapon %s" % game_data_operand_param1)
                         elif game_data_operand_type == 2: # Armor
                             value = self.state.party.num_items(self.state.armors.by_id(game_data_operand_param1))
+                            operation_description.append("to number of armor %s" % game_data_operand_param1)
                         elif game_data_operand_type == 3: # Actor
                             actor_index = game_data_operand_param1
                             actor = self.state.actors.by_index(actor_index)
                             if game_data_operand_param2 == 0: # Level
                                 value = actor.get_property('level')
+                                operation_description.append("to actor %s level" % actor_index)
                             elif game_data_operand_param2 == 1: # EXP
                                 value = actor.current_exp()
+                                operation_description.append("to actor %s exp" % actor_index)
                             elif game_data_operand_param2 == 2: # HP
                                 value = actor.hp()
+                                operation_description.append("to actor %s hp" % actor_index)
                             elif game_data_operand_param2 == 3: # MP
                                 value = actor.mp()
+                                operation_description.append("to actor %s mp" % actor_index)
                             else: # Parameter
                                 if game_data_operand_param2 >= 4 and game_data_operand_param2 <= 11:
-                                    value = actor.param(game_data_operand_param2 - 4)
+                                    param_number = game_data_operand_param2 - 4
+                                    value = actor.param(param_number)
+                                    operation_description.append("to actor %s param %s" % (actor_index, param_number))
                         elif game_data_operand_type == 4: # Enemy
                             #    var enemy = $gameTroop.members()[param1];
                             #    if (enemy) {
@@ -1334,6 +1388,14 @@ init python:
                     elif operand == 4:
                         script_string = command['parameters'][4]
                         value = self.state.eval_fancypants_value_statement(script_string, event = self)
+
+                    if noisy_events:
+                        operation_description.append("(%s)" % value)
+                        print "%scontrol vars: %s (%s)" % (
+                            ' ' * command['indent'],
+                            command['parameters'],
+                            ' '.join(operation_description)
+                        )
 
                     changed_any_variable = False
                     for i in xrange(start, end + 1):
@@ -1917,6 +1979,8 @@ init python:
                         pass
                     elif plugin_command.upper() in ['HIDE_CHOICE', 'HIDECHOICE']:
                         self.hide_choice(int(plugin_command_args[0]))
+                    elif MogWeatherEx.is_weather_command(plugin_command):
+                        pass
                     elif TerraxLighting.is_lighting_command(plugin_command):
                         pass
                     elif plugin_command in ['SmartPath']:
@@ -1945,6 +2009,12 @@ init python:
                         self.state.party.yep_quest_manager().process_command(plugin_command_args)
                     elif GameusQuestManager.valid_command(plugin_command):
                         self.state.party.gameus_quest_manager().process_command(plugin_command_args)
+                    elif MogChronoEngine.process_command(plugin_command, plugin_command_args):
+                        pass
+                    elif QAudio.process_command(plugin_command, plugin_command_args):
+                        pass
+                    elif KhasAdvancedLighting.process_command(plugin_command, plugin_command_args):
+                        pass
                     elif plugin_command in ['AutoSave', 'LAYER', 'LAYER_S']:
                         pass
                     elif plugin_command in ['question'] and game_file_loader.plugin_data_exact('RedHatAugust - Q&A'):
@@ -1971,6 +2041,9 @@ init python:
                     elif plugin_command.startswith('textInput'):
                         actor_index = int(plugin_command_args[0])
                         self.request_actor_name(actor_index)
+                    elif plugin_command in ['Light']:
+                        # college life ... ?
+                        pass
                     else:
                         renpy.say(None, "Plugin command not implemented: '%s'" % plugin_command)
 

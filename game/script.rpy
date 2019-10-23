@@ -99,7 +99,7 @@ init -10 python:
                 self.window_png_path = rpgm_path("Graphics/System/Window.png")
                 self.tile_width = 32
                 self.tile_height = 32
-                possible_choice_plugin_filenames = ['Choces_More.rb', 'LargeChoices.rb', 'More_Choices.rb', 'Extended_Choices.rb']
+                possible_choice_plugin_filenames = ['Choces_More.rb', 'LargeChoices.rb', 'Large_Choices.rb', 'More_Choices.rb', 'Extended_Choices.rb']
                 if any(os.path.exists(os.path.join(config.basedir, rpgm_path('Scripts/%s' % filename))) for filename in possible_choice_plugin_filenames):
                     self.has_large_choices_plugin = True
             else:
@@ -187,6 +187,13 @@ init python:
     if game_file_loader.plugin_data_exact('GALV_MapProjectiles'):
         renpy.image('crosshair-small-red', im.MatrixColor('custom_gui/crosshair-small.png', im.matrix.colorize("#f00", "#000")))
         renpy.image('crosshair-small-blue', im.MatrixColor('custom_gui/crosshair-small.png', im.matrix.colorize("#00f", "#000")))
+
+    if rpgm_metadata.is_pre_mv_version:
+        renpy.image('square-small-red', im.MatrixColor('custom_gui/square-32.png', im.matrix.colorize("#f00", "#000")))
+        renpy.image('square-small-blue', im.MatrixColor('custom_gui/square-32.png', im.matrix.colorize("#00f", "#000")))
+    else:
+        renpy.image('square-small-red', im.MatrixColor('custom_gui/square-48.png', im.matrix.colorize("#f00", "#000")))
+        renpy.image('square-small-blue', im.MatrixColor('custom_gui/square-48.png', im.matrix.colorize("#00f", "#000")))
 
     system_data = game_file_loader.json_file(rpgm_data_path("System.json"))
     title_screen_file_path = rpgm_metadata.title_screen_file(system_data['title1Name'])
@@ -304,6 +311,8 @@ label after_load:
             game_state.triggered_common_events = []
         if not hasattr(game_state, 'additional_queued_picture_groups'):
             game_state.additional_queued_picture_groups = []
+        if not hasattr(game_state, 'scenes'):
+            game_state.scenes = []
 
         for map_id, map in game_state.map_registry.maps.iteritems():
             map.event_location_overrides = {}

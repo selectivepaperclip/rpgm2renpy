@@ -1,5 +1,6 @@
 init python:
     import sys
+    import subprocess
 
     PY3 = sys.version_info[0] == 3
 
@@ -110,9 +111,9 @@ init python:
             self.events = []
             self.parallel_events = []
             self.triggered_common_events = []
-            self.starting_map_id = self.system_data()['startMapId']
+            self.scenes = []
             self.map_registry = GameMapRegistry(self)
-            self.map = self.map_registry.get_map(self.starting_map_id)
+            self.map = self.map_registry.get_map(self.starting_map_id())
             self.player_x = self.system_data()['startX']
             self.player_y = self.system_data()['startY']
             self.player_direction_fix = False
@@ -131,6 +132,11 @@ init python:
             self.additional_queued_picture_groups = []
             self.everything_reachable = False
             self.focus_zoom_rect_on_next_map_render = True
+
+        def starting_map_id(self):
+            if HIME_PreTitleEvents.plugin_active():
+                return HIME_PreTitleEvents.pre_title_map_id()
+            return self.system_data()['startMapId']
 
         def ensure_initialized_attributes(self):
             if not hasattr(self, 'events'):
@@ -342,12 +348,10 @@ init python:
                 if last_frame['opacity'] <= 10:
                     # more hacks
                     last_frame['opacity'] = 0
-                if last_frame['blend_mode'] != 0:
-                    # other blend modes are not supported for now
-                    last_frame['opacity'] = 0
                 picture_args = {
                     "picture_frames": picture_frames,
-                    "opacity": last_frame.get('opacity', 255)
+                    "opacity": last_frame.get('opacity', 255),
+                    "blend_mode": last_frame.get('blend_mode', 0)
                 }
 
                 first_frame_is_animation = isinstance(picture_frames[0]['image_name'], RpgmAnimation)
@@ -855,8 +859,14 @@ init python:
             return self.ysp_video_data
 
         def eval_fancypants_value_statement(self, script_string, return_remaining = False, event = None):
+            if script_string == '[]':
+                return []
+
             gre = Re()
-            if gre.match('\$gameActors\.actor\((\d+)\)\.name\(\)', script_string):
+
+            if gre.match('!(.*)', script_string):
+                return not self.eval_fancypants_value_statement(gre.last_match.groups()[0], return_remaining, event)
+            elif gre.match('\$gameActors\.actor\((\d+)\)\.name\(\)', script_string):
                 return self.actors.actor_name(int(gre.last_match.groups()[0]))
             elif gre.match('\$gameActors\.actor\((\d+)\)\.nickname\(\)', script_string):
                 return self.actors.by_index(int(gre.last_match.groups()[0])).get_property('nickname')
@@ -872,11 +882,13 @@ init python:
                 return distance <= desired_distance
             elif gre.match("\$gameParty.gold\(\)", script_string):
                 return self.party.gold
-            elif gre.match("\$gamePlayer\.isDashing", script_string):
+            elif gre.match("\$gamePlayer\.is(Moving|Dashing)", script_string):
                 # Farmer's Dreams
                 return False
 
             variables_regexp = r'\$gameVariables.value\((\d+)\)'
+            if rpgm_metadata.is_pre_mv_version:
+                variables_regexp = r'\$game_variables\[(\d+)\]'
             only_variables_regexp = r'^\s*%s;?\s*$' % variables_regexp
             def var_replace(m):
                 variable_value = self.variables.value(int(m.group(1)))
@@ -913,16 +925,21 @@ init python:
                 else:
                     break
 
-            while True:
-                still_has_ace_switches = re.search('\$game_switches\[(\d+)\]', script_string)
-                if still_has_ace_switches:
-                    script_string = re.sub(r'\$game_switches\[(\d+)\]', lambda m: str(self.switches.value(int(m.group(1)))), script_string)
-                else:
-                    break
+            if rpgm_metadata.is_pre_mv_version:
+                while True:
+                    still_has_ace_switches = re.search('\$game_switches\[(\d+)\]', script_string)
+                    if still_has_ace_switches:
+                        script_string = re.sub(r'\$game_switches\[(\d+)\]', lambda m: str(self.switches.value(int(m.group(1)))), script_string)
+                    else:
+                        break
 
-            handler_matched = False
             for handler in game_file_loader.game_specific_handlers():
                 result = handler.eval_fancypants_value_statement(script_string)
+                if result != None:
+                    return result
+
+            if DsiInventory.plugin_active():
+                result = DsiInventory.eval_fancypants_value_statement(script_string)
                 if result != None:
                     return result
 
@@ -942,7 +959,7 @@ init python:
                 return int(math.floor(self.eval_fancypants_value_statement(gre.last_match.groups()[0])))
 
             # eval the statement in python-land if it looks like it contains only arithmetic expressions
-            if re.match('^([\d\s.+\-*/<>=()\s,]|True|False|and|or)+$', script_string):
+            if re.match('^([\d\s.+\-*/<>=()\s,]|!=|True|False|and|or)+$', script_string):
                 # Hack statements like "3 / 4" into "3 / (4 * 1.0)" so division works like javascript
                 # remove this if ever using a version of RenPy on Python 3, I guess.
                 if "'" not in script_string and '"' not in script_string and re.search("\/\s*\d+", script_string):
@@ -950,26 +967,159 @@ init python:
                 return eval(script_string)
             elif return_remaining:
                 return script_string
+            elif rpgm_game_data.get('eval_javascript', False):
+                return self.eval_javascript(script_string)
             else:
                 print "Remaining non-evaluatable fancypants value statement:"
                 print "'%s'" % script_string
-                renpy.say(None, "Remaining non-evaluatable fancypants value statement: '%s'" % script_string)
+                self.say_debug("Remaining non-evaluatable fancypants value statement: '%s'" % script_string)
+                return 0
+
+        def eval_javascript(self, script_string):
+            full_string = """
+                $gameActors = {
+                    actor: function (index) {
+                        return {
+                            _nickname: ''
+                        }
+                    }
+                };
+                $gameScreen = {
+                    picture: function (id) {
+                        return {
+                            setAnim: function (sprArray,interval) {
+                                console.log(
+                                    "SETANIM",
+                                    JSON.stringify({
+                                        id: id,
+                                        sprArray: sprArray,
+                                        interval: interval
+                                    })
+                                )
+                            }
+                        }
+                    }
+                };
+                $gameVariables = {
+                    _variables: %s,
+                    value: function (id) {
+                        return this._variables[id];
+                    },
+                    setValue: function (id, new_value) {
+                        this._variables[id] = new_value;
+                        console.log("SETVARIABLE", id, ":", JSON.stringify(new_value));
+                    }
+                };
+                $gameSelfSwitches = {
+                    init: function () {
+                        this._values = {};
+                        %s
+                    },
+                    value: function (key) {
+                        return this._values[key] || false;
+                    },
+                    setValue: function (key, value) {
+                        this._values[key] = value;
+                        console.log("SETSELFSWITCH", JSON.stringify(key), ":", value ? "True" : "False");
+                    }
+                }
+                $gameSelfSwitches.init();
+
+                $dataItems = [];
+                for (var i = 0; i < %s; i++) {
+                    $dataItems.push(i);
+                }
+                $gameParty = {
+                    _numItems: %s,
+                    gainItem: function (itemId, amount) {
+                        console.log("GAINITEM", itemId, ":", amount);
+                    },
+                    numItems: function (itemId) {
+                        return this._numItems[itemId] || 0;
+                    }
+                };
+                $gamePlayer = {
+                    setWalkAnime: function (bool) {
+                    },
+                    setDirectionFix: function (bool) {
+                        console.log("SETPLAYERDIRECTIONFIX", bool);
+                    }
+                }
+
+                %s
+            """ % (
+                json.dumps(game_state.variables.variable_values),
+                "\n".join(["this._values[%s] = %s;" % (json.dumps(key), 'true' if value else 'false') for key, value in game_state.self_switches.switch_values.iteritems()]),
+                len(game_state.items.data()),
+                json.dumps(game_state.party.items),
+                script_string
+            )
+
+            try:
+                CREATE_NO_WINDOW = 0x08000000
+                print full_string
+                print "PROCESSING: %s" % script_string
+                output = subprocess.check_output(
+                    ['node', '-p', full_string],
+                    creationflags = CREATE_NO_WINDOW,
+                    stderr=subprocess.STDOUT
+                )
+                print "OUTPUT IS '%s'" % output
+                for line in output.splitlines():
+                    gre = Re()
+                    if gre.match("SETVARIABLE (.*)", line):
+                        id_string, value_string = gre.last_match.groups()[0].split(' : ')
+                        game_state.variables.set_value(eval(id_string), eval(value_string))
+                    elif gre.match("SETSELFSWITCH (.*)", line):
+                        key_string, value_string = gre.last_match.groups()[0].split(' : ')
+                        game_state.self_switches.set_value(tuple(eval(key_string)), eval(value_string))
+                    elif gre.match("SETPLAYERDIRECTIONFIX (.*)", line):
+                        value = gre.last_match.groups()[0].split(' ')[-1] == 'true'
+                        game_state.player_direction_fix = value
+                    elif gre.match("SETANIM (.*)", line):
+                        anim_details = json.loads(gre.last_match.groups()[0])
+                        # TODO: anims
+                        print "AN ANIM OCCUR!!"
+                        print anim_details
+                    elif gre.match("GAINITEM (.*)", line):
+                        item_id, amount = gre.last_match.groups()[0].split(' : ')
+                        self.party.gain_item(self.items.by_id(int(item_id)), int(amount))
+                last_line = output.splitlines()[-1]
+                if last_line == 'undefined':
+                    return
+                if last_line == 'false':
+                    return False
+                if last_line == 'true':
+                    return True
+                return eval(last_line)
+            except subprocess.CalledProcessError as e:
+                print "Unable to eval fancypants value statement:"
+                print "'%s'" % full_string
+                print "Error:"
+                print e.output
+                self.say_debug("Remaining non-evaluatable fancypants value statement: '%s'" % script_string)
                 return 0
 
         def common_events_keymap(self):
-            yepp_common_events = game_file_loader.plugin_data_exact('YEP_ButtonCommonEvents')
-            if not yepp_common_events:
-                return []
-
             result = []
-            for key_desc, event_str in yepp_common_events['parameters'].iteritems():
-                if event_str != "" and event_str != "0":
-                    match = re.match("Key (\w)", key_desc)
-                    if match:
-                        activation_key = match.groups()[0]
-                        result.append((activation_key.lower(), event_str))
-                        if activation_key.upper() != activation_key.lower():
-                            result.append((activation_key.upper(), event_str))
+            yepp_common_events = game_file_loader.plugin_data_exact('YEP_ButtonCommonEvents')
+            if yepp_common_events:
+                for key_desc, event_str in yepp_common_events['parameters'].iteritems():
+                    if event_str != "" and event_str != "0":
+                        match = re.match("Key (\w)", key_desc)
+                        if match:
+                            activation_key = match.groups()[0]
+                            result.append((activation_key.lower(), event_str))
+                            if activation_key.upper() != activation_key.lower():
+                                result.append((activation_key.upper(), event_str))
+
+            config_common_events = rpgm_game_data.get('common_events_keymap', {})
+            if config_common_events:
+                for key, event_id in config_common_events.iteritems():
+                    result.append((key.lower(), event_id))
+                    if key.lower() != key.upper():
+                        result.append((key.upper(), event_id))
+
             return result
 
         def function_calls_keymap(self):
@@ -1287,6 +1437,12 @@ init python:
         def say_text(self, speaker, spoken_text, face_name = None, face_index = None):
             self.show_map(True)
             gre = Re()
+            for handler in game_file_loader.game_specific_handlers():
+                if hasattr(handler, 'say_text'):
+                    result = handler.say_text(speaker, spoken_text, face_name, face_index)
+                    if result:
+                        return
+
             if game_file_loader.plugin_data_exact('GALV_MessageBusts'):
                 all_busty_text = []
                 busty_text = spoken_text
@@ -1311,6 +1467,10 @@ init python:
                 else:
                     self.last_said_text = spoken_text
                     renpy.say(speaker, spoken_text)
+
+        def say_debug(self, text):
+            escaped_text = game_state.escape_text_for_renpy(text)
+            renpy.say(None, escaped_text)
 
         def pause(self, show_map = True):
             if noisy_pauses:
@@ -1363,9 +1523,15 @@ init python:
                     self.move_routes = []
                 self.queue_common_and_parallel_events()
 
+        def top_event(self):
+            if len(self.triggered_common_events) > 0:
+                return self.triggered_common_events[-1]
+            elif len(self.events) > 0:
+                return self.events[-1]
+
         def queue_common_event(self, event_id):
             common_event = self.common_events_data()[event_id]
-            self.events.append(GameEvent(self, None, common_event, common_event))
+            self.triggered_common_events.append(GameEvent(self, None, common_event, common_event))
 
         def finish_active_timer(self):
             if self.timer.frames > 0:
@@ -1417,7 +1583,7 @@ init python:
 
         def unpaused_parallel_events(self):
             if hasattr(self, 'parallel_events') and len(self.parallel_events) > 0:
-                return [e for e in self.parallel_events if (not hasattr(e, 'paused') or e.paused == 0) and not hasattr(e, 'paused_for_key')]
+                return [e for e in self.parallel_events if (not hasattr(e, 'paused') or e.paused == 0) and not hasattr(e, 'paused_for_key') and not hasattr(e, 'paused_for_timer')]
             else:
                 return []
 
@@ -1465,6 +1631,12 @@ init python:
             self.ensure_initialized_attributes()
             self.skip_bad_events()
 
+            if len(self.scenes) > 0:
+                done = self.scenes[-1].do_next_thing()
+                if done:
+                    self.scenes.pop()
+                return True
+
             if len(self.additional_queued_picture_groups) > 0:
                 next_group = self.additional_queued_picture_groups[0]
                 del self.additional_queued_picture_groups[0]
@@ -1491,6 +1663,10 @@ init python:
                 if this_event.common() and hasattr(this_event, 'paused_for_key') and this_event.paused_for_key:
                     # Ignore common events that are waiting on keypress, for now.
                     self.triggered_common_events.pop()
+                for event in self.events:
+                    # Unpause any events that are paused for timer
+                    if hasattr(event, 'paused_for_timer') and event.paused_for_timer:
+                        event.paused_for_timer = False
                 return True
 
             if hasattr(self, 'parallel_events') and len(self.parallel_events) > 0:
@@ -1532,6 +1708,8 @@ init python:
                     self.previous_parallel_event_pages = []
 
                 this_event = self.events[-1]
+                if hasattr(this_event, 'paused_for_timer') and this_event.paused_for_timer:
+                    return False
                 new_event = this_event.do_next_thing()
                 if new_event:
                     self.add_triggered_common_event(new_event)
@@ -2051,7 +2229,7 @@ init python:
                     paused_events = []
 
             active_timer = None
-            if hasattr(self, 'timer') and self.timer.active and self.timer.frames > 0:
+            if self.timer_running():
                 active_timer = {
                     "text": "Finish %ss timer" % self.timer.seconds()
                 }

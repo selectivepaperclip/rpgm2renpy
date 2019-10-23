@@ -146,7 +146,9 @@ screen mapscreen(
 
     for (id, args) in game_state.pictures():
         if ('opacity' not in args) or (args['opacity'] != 0):
-            add args['image_name']
+            add args['image_name']:
+                additive args.get('blend_mode') == 3
+                alpha args.get('opacity', 255) / 255.0
 
     if not faded_out:
         for curated_clickable in curated_clickables:
@@ -188,8 +190,8 @@ screen mapscreen(
                             background "crosshair-small-red"
                             hover_background "crosshair-small-blue"
                         else:
-                            background Color(coord.map_color(), alpha = 0.5)
-                            hover_background Color("#00f", alpha = 0.5)
+                            background "square-small-red"
+                            hover_background "square-small-blue"
                         tooltip coord.tooltip()
                         hovered SetVariable("hover_coord", coord)
                         action SetVariable("mapdest", coord), Jump("game")
