@@ -110,9 +110,8 @@ init python:
             self.events = []
             self.parallel_events = []
             self.triggered_common_events = []
-            self.starting_map_id = self.system_data()['startMapId']
             self.map_registry = GameMapRegistry(self)
-            self.map = self.map_registry.get_map(self.starting_map_id)
+            self.map = self.map_registry.get_map(self.starting_map_id())
             self.player_x = self.system_data()['startX']
             self.player_y = self.system_data()['startY']
             self.player_direction_fix = False
@@ -131,6 +130,11 @@ init python:
             self.additional_queued_picture_groups = []
             self.everything_reachable = False
             self.focus_zoom_rect_on_next_map_render = True
+
+        def starting_map_id(self):
+            if HIME_PreTitleEvents.plugin_active():
+                return HIME_PreTitleEvents.pre_title_map_id()
+            return self.system_data()['startMapId']
 
         def ensure_initialized_attributes(self):
             if not hasattr(self, 'events'):
