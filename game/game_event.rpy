@@ -29,6 +29,7 @@ init python:
             self.new_map_id = None
             self.choices_to_hide = []
             self.choices_to_disable = []
+            self.choices_to_rename = {}
             self.branch = {}
 
             # SOME REFERENCE:
@@ -360,6 +361,11 @@ init python:
             if not hasattr(self, 'choices_to_hide'):
                 self.choices_to_hide = []
             self.choices_to_hide.append(choice_id)
+
+        def rename_choice(self, choice_id, string):
+            if not hasattr(self, 'choices_to_rename'):
+                self.choices_to_rename = {}
+            self.choices_to_rename[choice_id] = string
 
         def eval_maic_quests_script(self, script_string, line):
             gre = Re()
@@ -1057,6 +1063,9 @@ init python:
                     if not hasattr(self, 'choices_to_disable'):
                         self.choices_to_disable = []
 
+                    if not hasattr(self, 'choices_to_rename'):
+                        self.choices_to_rename = {}
+
                     if recently_rendered_animation_duration > 300:
                         renpy.pause()
 
@@ -1083,10 +1092,13 @@ init python:
                     else:
                         for choice_to_disable in self.choices_to_disable:
                             options[choice_to_disable - 1] = (options[choice_to_disable - 1][0], None)
+                        for (choice_id, new_name) in self.choices_to_rename.iteritems():
+                            options[choice_id - 1] = (new_name, options[choice_id - 1][1])
                         result = renpy.display_menu(options)
                     self.branch[command['indent']] = result
                     del self.choices_to_hide[:]
                     del self.choices_to_disable[:]
+                    self.choices_to_rename.clear()
 
                 # Input number
                 elif command['code'] == 103:
