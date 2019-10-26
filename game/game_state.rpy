@@ -1519,9 +1519,15 @@ init python:
                     self.move_routes = []
                 self.queue_common_and_parallel_events()
 
+        def top_event(self):
+            if len(self.triggered_common_events) > 0:
+                return self.triggered_common_events[-1]
+            elif len(self.events) > 0:
+                return self.events[-1]
+
         def queue_common_event(self, event_id):
             common_event = self.common_events_data()[event_id]
-            self.events.append(GameEvent(self, None, common_event, common_event))
+            self.triggered_common_events.append(GameEvent(self, None, common_event, common_event))
 
         def finish_active_timer(self):
             if self.timer.frames > 0:
