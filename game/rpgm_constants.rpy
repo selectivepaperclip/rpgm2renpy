@@ -114,6 +114,7 @@ init python:
             261: 'Play Movie',
             282: 'Change Tileset',
             284: 'Change Parallax',
+            285: 'Get Location Info',
             301: 'Battle',
             302: 'Shop',
             303: 'Name Input Processing',
