@@ -2213,7 +2213,7 @@ init python:
                     paused_events = []
 
             active_timer = None
-            if hasattr(self, 'timer') and self.timer.active and self.timer.frames > 0:
+            if self.timer_running():
                 active_timer = {
                     "text": "Finish %ss timer" % self.timer.seconds()
                 }
