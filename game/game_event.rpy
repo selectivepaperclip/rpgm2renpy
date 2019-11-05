@@ -1048,6 +1048,7 @@ init python:
 
                     choice_texts, cancel_type, background_type, position_type = command['parameters'][0:4]
                     if cancel_type >= len(choice_texts):
+                        # cancel_type is 'which of these options is shown if the menu is cancelled' so it isn't really used
                         cancel_type = -2
 
                     position_type = 0
