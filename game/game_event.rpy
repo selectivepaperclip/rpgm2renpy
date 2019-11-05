@@ -941,7 +941,7 @@ init python:
                     choice_offset = len(first_choice_command['parameters'][0])
                     first_choice_command['parameters'][0] += show_choice_command['parameters'][0]
                     if show_choice_command['parameters'][1] == 5:
-                        renpy.say(None, "merge_show_choice_commands does not support 'branch' option")
+                        game_state.say_debug("merge_show_choice_commands does not support 'branch' option")
 
                     i = command_index + 1
                     while self.page['list'][i] and ((self.page['list'][i]['code'] in [402, 403, 404]) or self.page['list'][i]['indent'] != first_choice_command['indent']):
