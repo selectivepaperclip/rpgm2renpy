@@ -1904,6 +1904,13 @@ init python:
             delta = GameDirection.delta_for_direction(direction)
             new_x = self.player_x + delta[0]
             new_y = self.player_y + delta[1]
+
+            map_event = self.map.find_event_for_location(new_x, new_y)
+            # TODO: is this the right set of triggers? should 1 + 2 fire after the player has moved?
+            if map_event and map_event.page['trigger'] in (0, 1):
+                self.events.append(map_event)
+                return
+
             if new_x >= 0 and new_y >= 0 and new_y < len(reachability_grid) and new_x < len(reachability_grid[new_y]) and reachability_grid[new_y][new_x] == 3:
                 self.player_x = new_x
                 self.player_y = new_y
