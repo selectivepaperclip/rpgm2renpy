@@ -1542,6 +1542,11 @@ init python:
                     e.press_count = press_count
                     e.paused_for_key = None
 
+        def tick_realtime_events(self):
+            if not in_interaction:
+                self.unpause_parallel_events()
+                renpy.jump("game")
+
         def unpause_parallel_events(self):
             all_paused_events = []
             if hasattr(self, 'parallel_events') and len(self.parallel_events) > 0:

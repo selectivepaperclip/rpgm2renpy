@@ -52,7 +52,7 @@ screen mapscreen(
 
     if has_realtime_events:
         timer paused_events_delay / 60.0:
-            action Function(game_state.unpause_parallel_events), Jump("game")
+            action Function(game_state.tick_realtime_events)
             repeat True
 
     if not in_interaction:
