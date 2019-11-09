@@ -451,8 +451,6 @@ init python:
                 return
             elif GameIdentifier().is_milfs_control() and GameSpecificCodeMilfsControl().eval_full_script(script_string):
                 return
-            elif AnimatedBusts.process_script(script_string):
-                return
 
             for line_index, line in enumerate(script_string.split("\n")):
                 mv_self_switch_set_command = re.match("\$gameSelfSwitches\.setValue\(\[(\d+),(\d+),'(.*?)'\], (\w+)\);?", line)
@@ -471,31 +469,18 @@ init python:
                     if result:
                         continue
 
-                if AnimatedBusts.process_script(line):
-                    continue
-
-                if GalvScreenButtons.process_script(script_string):
-                    continue
-
-                if GalvEventSpawnTimers.process_script(self, script_string):
-                    continue
-
-                if GalvMapProjectiles.process_script(self, script_string):
+                handler_matched = False
+                for handler in game_file_loader.plugin_handlers():
+                    if handler.process_script(self, line, script_string):
+                        handler_matched = True
+                        break
+                if handler_matched:
                     continue
 
                 if game_file_loader.plugin_data_exact('YEP_X_MessageSpeedOpt'):
                     if gre.search("ConfigManager\.messageSpeed", line):
                         continue
                     elif gre.search("Yanfly\.Param\.MsgSpeedOptDefault", line):
-                        continue
-
-                if game_file_loader.plugin_data_exact('YEP_X_ExtMesPack1'):
-                    if gre.match("\$gameSystem\.clearChoiceSettings", line):
-                        del self.choices_to_hide[:]
-                        continue
-                    elif gre.match("\$gameSystem\.hideChoice\((\d+)", line):
-                        choice_id = int(gre.last_match.groups()[0])
-                        self.hide_choice(choice_id)
                         continue
 
                 if game_file_loader.plugin_data_exact('YSP_VideoPlayer'):
@@ -2010,8 +1995,6 @@ init python:
                     elif plugin_command in ['MobileUI']:
                         pass
                     elif plugin_command in ['Flashlight']:
-                        pass
-                    elif YepXExtMesPack1.valid_command(plugin_command):
                         pass
                     elif plugin_command in ['MobileDirPad', 'BUST']:
                         pass

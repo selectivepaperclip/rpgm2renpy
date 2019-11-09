@@ -57,6 +57,21 @@ init -99 python:
             self.loose_plugin_cache[plugin_name] = next((plugin_data for plugin_data in self.plugins_json() if plugin_data['name'].startswith(plugin_name)), None)
             return self.loose_plugin_cache[plugin_name]
 
+        def plugin_handlers(self):
+            if not hasattr(self, '_plugin_handlers'):
+                possible_handlers = [
+                    AnimatedBusts,
+                    GalvEventSpawnTimers,
+                    GalvMapProjectiles,
+                    GalvScreenButtons,
+                    GalvScreenZoom,
+                    OrangeTimeSystem,
+                    YepXExtMesPack1,
+                ]
+                self._plugin_handlers = [handler for handler in possible_handlers if handler.plugin_active]
+
+            return self._plugin_handlers
+
         def game_specific_handlers(self):
             if not hasattr(self, '_game_specific_handlers'):
                 self._game_specific_handlers = [globals()[class_name]() for class_name in rpgm_game_data.get('handler_classes', [])]

@@ -5,7 +5,7 @@ init python:
             return game_file_loader.has_active_plugin('animatedbusts')
 
         @classmethod
-        def process_script(cls, script_string):
+        def process_script(cls, event, line, script_string):
             if not cls.plugin_active():
                 return False
 
