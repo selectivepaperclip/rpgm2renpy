@@ -1319,7 +1319,8 @@ init python:
 
         def overrides_for_event_page(self, event_id, page_index):
             if event_id not in self.event_page_overrides:
-                self.event_page_overrides[event_id] = {}
+                return {}
+
             existing_page_index = self.event_page_overrides[event_id].get('pageIndex', None)
             if existing_page_index != page_index:
                 carryover_direction = None
