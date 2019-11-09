@@ -614,6 +614,7 @@ init python:
             event = None
             event_page_index = None
             player_moving = event_id < 0
+            skip_collision = False
             if event_id == 0:
                 event_id = self.event_data['id']
             if event_id == self.event_data['id']:
@@ -796,40 +797,18 @@ init python:
                         event.override_page(self.state.map, GameEvent.PROPERTY_TILE_ID, 0)
                 elif route_part['code'] == 45: # Route Script
                     route_script = route_part['parameters'][0]
-                    gre = Re()
-                    if gre.match('\$game_switches\[(\d+)\] = (\w+)', route_script):
-                        groups = gre.last_match.groups()
-                        switch_id = int(groups[0])
-                        switch_value = groups[1] == 'true'
-                        self.state.self_switches.set_value(switch_id, switch_value)
-                    elif gre.match("\$game_self_switches\[\[(\d+)\s*,\s*(\d+)\s*,\s*'(.*?)'\]\] = (\w+)", route_script) or gre.match("\$gameSelfSwitches\.setValue\(\[(\d+),(\d+),'(.*?)'\], (\w+)\);?", route_script):
-                        groups = gre.last_match.groups()
-                        map_id, event_id, self_switch_name, self_switch_value = (int(groups[0]), int(groups[1]), groups[2], groups[3] == 'true')
-                        self.state.self_switches.set_value((map_id, event_id, self_switch_name), self_switch_value)
-                    elif gre.match('MOVE TO: (\d+), (\d+)', route_script):
-                        # Special commands from YEP_MoveRouteCore
-                        # Normmally these would do the proper pathfinding, but for expedience sake just jump to the destination
-                        if player_moving:
-                            x = game_state.player_x
-                            y = game_state.player_y
-                        else:
-                            x, y = self.state.map.event_location(event.event_data)
-                        groups = gre.last_match.groups()
-                        destination_x, destination_y = (int(groups[0]), int(groups[1]))
-                        direction_delta = (destination_x - x, destination_y - y)
-                    elif route_script.startswith('$game_player.no_dash'):
-                        pass
-                    elif gre.match('this.setBlendMode\(\d+\)', route_script):
-                        pass
-                    elif gre.match('end_anim_loop', route_script):
-                        pass
-                    elif GalvEventSpawnTimers.process_move_route(self, route_script):
-                        pass
+                    result = self.process_move_route_script(event, player_moving, route_script)
+                    if result != None:
+                        if 'direction_delta' in result:
+                            direction_delta = result['direction_delta']
+                        if 'new_direction' in result:
+                            new_direction = result['new_direction']
+                        if 'skip_collision' in result:
+                            skip_collision = True
                     else:
                         print "Script that could not be evaluated:\n"
                         print route_script
                         renpy.say(None, "Movement route Script commands not implemented\nSee console for full script.")
-
                 elif route_part['code'] == 0:
                     pass
 
@@ -857,7 +836,14 @@ init python:
 
                 delta_x, delta_y = direction_delta
                 if delta_x != 0 or delta_y != 0:
-                    keep_moving = self.move_route_move_object(delta_x, delta_y, player_moving = player_moving, event = event, skippable = route['skippable'])
+                    keep_moving = self.move_route_move_object(
+                        delta_x,
+                        delta_y,
+                        player_moving = player_moving,
+                        event = event,
+                        skippable = route['skippable'],
+                        skip_collision = skip_collision
+                    )
                     if not keep_moving:
                         self.move_route_index = len(route)
                         return
@@ -884,7 +870,7 @@ init python:
             elif not event.page_property(self.state.map, GameEvent.PROPERTY_DIRECTION_FIX):
                 event.override_page(self.state.map, GameEvent.PROPERTY_DIRECTION, new_direction)
 
-        def move_route_move_object(self, delta_x, delta_y, player_moving = False, event = None, skippable = False):
+        def move_route_move_object(self, delta_x, delta_y, player_moving = False, event = None, skippable = False, skip_collision = False):
             if player_moving:
                 current_x, current_y = game_state.player_x, game_state.player_y
             else:
@@ -897,7 +883,7 @@ init python:
             if new_x < 0 or new_y < 0 or new_x > self.state.map.width() - 1 or new_y > self.state.map.height() - 1:
                 return
 
-            moving_object_does_not_collide = (player_moving and game_state.everything_is_reachable()) or (event and event.page_property(self.state.map, GameEvent.PROPERTY_THROUGH))
+            moving_object_does_not_collide = (player_moving and game_state.everything_is_reachable()) or (event and event.page_property(self.state.map, GameEvent.PROPERTY_THROUGH)) or skip_collision
             if not moving_object_does_not_collide:
                 map_event = self.state.map.find_event_for_location(new_x, new_y)
                 if not map_event or (not map_event.page_property(self.state.map, GameEvent.PROPERTY_THROUGH)):
@@ -917,6 +903,45 @@ init python:
             else:
                 self.state.map.override_event_location(event.event_data, (new_x, new_y))
             return True
+
+        def process_move_route_script(self, event, player_moving, route_script):
+            gre = Re()
+            if gre.match('\$game_switches\[(\d+)\] = (\w+)', route_script):
+                groups = gre.last_match.groups()
+                switch_id = int(groups[0])
+                switch_value = groups[1] == 'true'
+                self.state.self_switches.set_value(switch_id, switch_value)
+                return {}
+            elif gre.match("\$game_self_switches\[\[(\d+)\s*,\s*(\d+)\s*,\s*'(.*?)'\]\] = (\w+)", route_script) or gre.match("\$gameSelfSwitches\.setValue\(\[(\d+),(\d+),'(.*?)'\], (\w+)\);?", route_script):
+                groups = gre.last_match.groups()
+                map_id, event_id, self_switch_name, self_switch_value = (int(groups[0]), int(groups[1]), groups[2], groups[3] == 'true')
+                self.state.self_switches.set_value((map_id, event_id, self_switch_name), self_switch_value)
+                return {}
+            elif gre.match('MOVE TO: (\d+), (\d+)', route_script):
+                # Special commands from YEP_MoveRouteCore
+                # Normally these would do the proper pathfinding, but for expedience sake just jump to the destination
+                if player_moving:
+                    x = game_state.player_x
+                    y = game_state.player_y
+                else:
+                    x, y = self.state.map.event_location(event.event_data)
+                groups = gre.last_match.groups()
+                destination_x, destination_y = (int(groups[0]), int(groups[1]))
+                return {'direction_delta': (destination_x - x, destination_y - y)}
+            elif route_script.startswith('$game_player.no_dash'):
+                return {}
+            elif gre.match('this.setBlendMode\(\d+\)', route_script):
+                return {}
+            elif gre.match('end_anim_loop', route_script):
+                return {}
+            elif GalvEventSpawnTimers.process_move_route(self, route_script):
+                return {}
+            else:
+                for handler in game_file_loader.game_specific_handlers():
+                    if hasattr(handler, 'process_move_route_script'):
+                        result = handler.process_move_route_script(event, player_moving, route_script)
+                        if result != None:
+                            return result
 
         def migrate_global_branch_data(self):
             if not hasattr(self, 'branch') and hasattr(game_state, 'branch'):
