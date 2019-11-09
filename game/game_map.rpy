@@ -1379,6 +1379,7 @@ init python:
                 'direction': overrides.get(GameEvent.PROPERTY_DIRECTION, page['image']['direction']),
                 'characterName': overrides.get(GameEvent.PROPERTY_CHARACTER_NAME, page['image']['characterName']),
                 'characterIndex': overrides.get(GameEvent.PROPERTY_CHARACTER_INDEX, page['image']['characterIndex']),
+                'tileId': overrides.get(GameEvent.PROPERTY_TILE_ID, page['image']['tileId']),
                 'transparent': overrides.get(GameEvent.PROPERTY_TRANSPARENT, False),
                 'stepAnime': page['stepAnime'],
                 'moveSpeed': page['moveSpeed'],

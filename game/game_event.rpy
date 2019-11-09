@@ -8,6 +8,7 @@ init python:
         PROPERTY_MOVE_SPEED = 'moveSpeed'
         PROPERTY_PATTERN = 'pattern'
         PROPERTY_STEP_ANIME = 'stepAnime'
+        PROPERTY_TILE_ID = 'tileId'
         PROPERTY_THROUGH = 'through'
         PROPERTY_TRANSPARENT = 'transparent'
 
@@ -792,6 +793,7 @@ init python:
                     else:
                         event.override_page(self.state.map, GameEvent.PROPERTY_CHARACTER_NAME, new_character_name)
                         event.override_page(self.state.map, GameEvent.PROPERTY_CHARACTER_INDEX, new_character_index)
+                        event.override_page(self.state.map, GameEvent.PROPERTY_TILE_ID, 0)
                 elif route_part['code'] == 45: # Route Script
                     route_script = route_part['parameters'][0]
                     gre = Re()
