@@ -90,3 +90,16 @@ if needed_parallaxes.length > 0
         end
     end
 end
+
+if Dir[File.join(game_dir, 'Graphics', 'System', "Balloon.png")].empty?
+    puts " === Needed system files: Balloon.png === "
+    src = File.join(sdk_path, 'Graphics', 'System', "Balloon.png")
+    if File.exist?(src)
+        dest = File.join(game_dir, 'Graphics', 'System')
+        FileUtils.mkdir_p(dest)
+        puts "Copying #{src} to #{dest}"
+        FileUtils.cp(src, dest)
+    else
+        puts "#{src} does not exist!"
+    end
+end
