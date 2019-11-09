@@ -10,7 +10,8 @@ module DEGICA
     LOGSCRIPTS = true # lists any damage formulae and event commands using scripts - you'll need to convert these manually
     LOGCOMMENTS = true # only turn this on if you have scripts that look for certain comments and want to re-implement them
 
-    def self.run(destination_folder:, map_files:)
+    def self.run(destination_folder:, map_files:, squish_tile_events: false)
+      @squish_tile_events = squish_tile_events
       @destination_folder = destination_folder
       DataManager.load_normal_database
 
@@ -931,6 +932,13 @@ module DEGICA
     end
 
     def self.is_tile_event?(evt)
+      unless @squish_tile_events
+        # selectivepaperclip EDIT: the code is trying to optimize by converting
+        # events to tiles, but this isn't helpful for games that reference those
+        # event-tiles in scripts (like to change the image from one to another)
+        return false
+      end
+
       return false if evt.pages.size > 1
       return false if evt.pages[0].list.size > 1
       return false if evt.pages[0].graphic.tile_id == 0
