@@ -1562,6 +1562,10 @@ init python:
                         # == 76
                         if noisy_events:
                             print "WAIT FOR BALLOON EVENT!! %s" % 76
+                        event_id, balloon_id, wait = command['parameters'][0:3]
+                        if event_id == 0:
+                            event_id = self.event_data['id']
+                        self.state.map.add_balloon(event_id, balloon_id, wait)
                         self.list_index += 1
                         self.has_ever_paused = True
                         self.paused = 76

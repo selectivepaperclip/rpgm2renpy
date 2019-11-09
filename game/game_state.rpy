@@ -1562,6 +1562,8 @@ init python:
                     else:
                         smallest_unpaused_delay = e.paused
                         e.paused = 0
+                if smallest_unpaused_delay:
+                    self.map.advance_time(smallest_unpaused_delay)
                 self.queue_parallel_events(keep_relevant_existing = True)
 
         def requeue_parallel_events_if_changed(self, always_run_conditionals = False):
@@ -2004,6 +2006,19 @@ init python:
                 })
             return result
 
+        def balloon_images_and_positions(self):
+            result = []
+            for balloon_data in self.map.balloon_sprites():
+                x, y, img = balloon_data[0:3]
+                screen_x = x * rpgm_metadata.tile_width
+                screen_y = y * rpgm_metadata.tile_height
+                result.append({
+                    'img': img,
+                    'x': int(screen_x),
+                    'y': int(screen_y)
+                })
+            return result
+
         def picture_common_events(self):
             plugin = game_file_loader.plugin_data_exact('YEP_PictureCommonEvents')
             if not plugin or not plugin['status']:
@@ -2257,6 +2272,7 @@ init python:
                 map_name=self.map.name(),
                 sprites=None,
                 sprite_images_and_positions=self.sprite_images_and_positions(),
+                balloon_images_and_positions=self.balloon_images_and_positions(),
                 impassible_tiles=impassible_tiles,
                 common_events_keymap=self.common_events_keymap(),
                 function_calls_keymap=self.function_calls_keymap(),

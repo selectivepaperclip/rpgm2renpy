@@ -9,6 +9,7 @@ screen mapscreen(
     player_position = None,
     map_name = None,
     sprite_images_and_positions = None,
+    balloon_images_and_positions = None,
     impassible_tiles = None,
     common_events_keymap = None,
     function_calls_keymap = [],
@@ -49,6 +50,9 @@ screen mapscreen(
 
     if not sprite_images_and_positions:
         $ sprite_images_and_positions = game_state.sprite_images_and_positions()
+
+    if not balloon_images_and_positions:
+        $ balloon_images_and_positions = []
 
     if has_realtime_events:
         timer paused_events_delay / 60.0:
@@ -138,6 +142,11 @@ screen mapscreen(
                         add sprite_image_and_position['img']:
                             xpos x_offset + sprite_image_and_position['x']
                             ypos y_offset + sprite_image_and_position['y']
+
+                    for balloon_image_and_position in balloon_images_and_positions:
+                        add balloon_image_and_position['img']:
+                            xpos x_offset + balloon_image_and_position['x']
+                            ypos y_offset + balloon_image_and_position['y']
 
                 if overlay_parallax_image:
                     add overlay_parallax_image:

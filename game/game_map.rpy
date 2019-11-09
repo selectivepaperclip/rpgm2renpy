@@ -100,6 +100,17 @@ init python:
             self.h = h
             self.set_number = set_number
 
+    class GameBalloon:
+        def __init__(self, event_id, balloon_id, wait):
+            self.event_id = event_id
+            self.balloon_id = balloon_id
+            self.wait = wait
+            # Balloon wait time _duration is Sprite_Balloon.prototype.setup:
+            # (8 * Sprite_Balloon.prototype.speed) + Sprite_Balloon.prototype.waitTime
+            # == (8 * 8) + 12
+            # == 76
+            self.frames_left = 76
+
     # Original GameMapBackground class for compatibility with earlier saves
     class GameMapBackground(renpy.Displayable):
         pass
@@ -989,11 +1000,48 @@ init python:
                         if event_sprite_data['characterName'] != '':
                             character_sprite_data = self.character_sprite(event_sprite_data)
                             result.append(loc + character_sprite_data)
-                        elif image_data['tileId'] != 0:
+                        elif event_sprite_data['tileId'] != 0:
                             tile_sprite_data = self.tile_sprite(image_data)
                             result.append(loc + tile_sprite_data)
                         break
             return result
+
+        def add_balloon(self, event_id, balloon_id, wait):
+            if not hasattr(self, 'balloons'):
+                self.balloons = []
+            self.balloons.append(GameBalloon(event_id, balloon_id, wait))
+
+        def balloon_sprites(self):
+            if not hasattr(self, 'balloons'):
+                self.balloons = []
+            result = []
+            for balloon in self.balloons:
+                loc = None
+                if balloon.event_id < 0:
+                    loc = (game_state.player_x, game_state.player_y)
+                else:
+                    loc = self.event_location(self.find_event_at_index(balloon.event_id).event_data)
+
+                img = im.Crop(
+                    rpgm_path("Graphics/System/Balloon.png"),
+                    4 * rpgm_metadata.tile_width, # TODO: animate instead of still
+                    rpgm_metadata.tile_height * (balloon.balloon_id - 1),
+                    rpgm_metadata.tile_width, rpgm_metadata.tile_height
+                )
+                result.append(loc + (img,))
+            return result
+
+        def advance_time(self, delta):
+            if hasattr(self, 'balloons'):
+                for balloon in self.balloons:
+                    balloon.frames_left -= delta
+
+                balloons_to_remove = []
+                for index, balloon in enumerate(self.balloons):
+                    if balloon.frames_left < 0:
+                        balloons_to_remove.append(index)
+                for i in sorted(balloons_to_remove, reverse=True):
+                    del self.balloons[i]
 
         def event_is_special(self, e):
             return bool(re.search('weightSwitch', e['note']))
