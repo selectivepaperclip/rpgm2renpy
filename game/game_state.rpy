@@ -936,7 +936,6 @@ init python:
                     else:
                         break
 
-            handler_matched = False
             for handler in game_file_loader.game_specific_handlers():
                 result = handler.eval_fancypants_value_statement(script_string)
                 if result != None:
