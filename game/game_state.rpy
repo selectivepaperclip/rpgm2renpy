@@ -538,6 +538,9 @@ init python:
             escaped_text = re.sub(r'\\C\[(\d+)\]', lambda m: "{color=%s}" % rpgm_colors.text_color(int(m.group(1))), escaped_text, flags=re.IGNORECASE)
             escaped_text = re.sub(r'\\C', "{/color}", escaped_text, flags=re.IGNORECASE)
 
+            for handler in game_file_loader.game_specific_text_handlers():
+                escaped_text = handler.escape_text_for_renpy(escaped_text)
+
             escaped_text = re.sub('\[', '[[', escaped_text)
 
             return escaped_text

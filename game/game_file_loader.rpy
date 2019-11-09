@@ -63,6 +63,13 @@ init -99 python:
 
             return self._game_specific_handlers
 
+        def game_specific_text_handlers(self):
+            if not hasattr(self, '_game_specific_text_handlers'):
+               possible_handlers = [globals()[class_name]() for class_name in rpgm_game_data.get('handler_classes', [])]
+               self._game_specific_text_handlers = [h for h in possible_handlers if hasattr(h, 'escape_text_for_renpy')]
+
+            return self._game_specific_text_handlers
+
         def full_path_for_picture(self, path):
             if not path in self.full_paths_for_pictures:
                 if os.path.exists(path):
