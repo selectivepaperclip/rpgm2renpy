@@ -1,5 +1,5 @@
 init python:
-    class AnimatedBusts:
+    class AnimatedBusts(RpgmPlugin):
         @classmethod
         def plugin_active(cls):
             return game_file_loader.has_active_plugin('animatedbusts')

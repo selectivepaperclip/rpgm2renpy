@@ -1,5 +1,5 @@
 init python:
-    class GalvScreenZoom:
+    class GalvScreenZoom(RpgmPlugin):
         @classmethod
         def plugin_active(cls):
             return game_file_loader.has_active_plugin('Galv_ScreenZoom')

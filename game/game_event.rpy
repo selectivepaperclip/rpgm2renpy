@@ -1988,8 +1988,6 @@ init python:
                         pass
                     elif plugin_command.upper() in ['HIDE_CHOICE', 'HIDECHOICE']:
                         self.hide_choice(int(plugin_command_args[0]))
-                    elif TerraxLighting.is_lighting_command(plugin_command):
-                        pass
                     elif plugin_command in ['SmartPath']:
                         pass
                     elif plugin_command in ['MobileUI']:
@@ -2041,7 +2039,13 @@ init python:
                         actor_index = int(plugin_command_args[0])
                         self.request_actor_name(actor_index)
                     else:
-                        renpy.say(None, "Plugin command not implemented: '%s'" % plugin_command)
+                        handler_matched = False
+                        for handler in game_file_loader.plugin_handlers():
+                            if handler.process_command(plugin_command, plugin_command_args):
+                                handler_matched = True
+                                break
+                        if not handler_matched:
+                            renpy.say(None, "Plugin command not implemented: '%s'" % plugin_command)
 
                 # When [**]
                 elif command['code'] == 402:

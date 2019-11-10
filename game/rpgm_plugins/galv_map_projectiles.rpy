@@ -1,5 +1,5 @@
 init python:
-    class GalvMapProjectiles:
+    class GalvMapProjectiles(RpgmPlugin):
         @classmethod
         def plugin_active(cls):
             return game_file_loader.has_active_plugin('GALV_MapProjectiles')

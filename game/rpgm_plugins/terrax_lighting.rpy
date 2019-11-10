@@ -1,5 +1,5 @@
 init python:
-    class TerraxLighting:
+    class TerraxLighting(RpgmPlugin):
         COMMANDS = [
             'Light',
             'Tint',
@@ -12,7 +12,11 @@ init python:
             return game_file_loader.has_active_plugin('TerraxLighting')
 
         @classmethod
-        def is_lighting_command(cls, plugin_command):
-            if cls.plugin_active() and plugin_command in TerraxLighting.COMMANDS:
+        def process_command(cls, command, command_args):
+            if not cls.plugin_active():
+                return False
+
+            if cls.plugin_active() and command in TerraxLighting.COMMANDS:
                 return True
+
             return False

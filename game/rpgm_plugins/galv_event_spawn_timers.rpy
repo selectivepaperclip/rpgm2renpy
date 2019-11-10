@@ -1,5 +1,5 @@
 init python:
-    class GalvEventSpawnTimers:
+    class GalvEventSpawnTimers(RpgmPlugin):
         DO_TIMER_REGEXP = 'this\.doTimer\("(\w+)",(true|false)\)'
 
         @classmethod

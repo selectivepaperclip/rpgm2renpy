@@ -65,7 +65,12 @@ init -99 python:
                     GalvMapProjectiles,
                     GalvScreenButtons,
                     GalvScreenZoom,
+                    KhasAdvancedLighting,
+                    MogChronoEngine,
+                    MogWeatherEx,
                     OrangeTimeSystem,
+                    QAudio,
+                    TerraxLighting,
                     YepXExtMesPack1,
                 ]
                 self._plugin_handlers = [handler for handler in possible_handlers if handler.plugin_active]

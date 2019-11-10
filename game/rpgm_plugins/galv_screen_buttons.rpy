@@ -1,5 +1,5 @@
 init python:
-    class GalvScreenButtons:
+    class GalvScreenButtons(RpgmPlugin):
         @classmethod
         def plugin_active(cls):
             return game_file_loader.has_active_plugin('Galv_ScreenButtons')
