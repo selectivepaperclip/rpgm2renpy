@@ -199,8 +199,8 @@ screen mapscreen(
                             background "crosshair-small-red"
                             hover_background "crosshair-small-blue"
                         else:
-                            background Color(coord.map_color(), alpha = 0.5)
-                            hover_background Color("#00f", alpha = 0.5)
+                            background "square-small-red"
+                            hover_background "square-small-blue"
                         tooltip coord.tooltip()
                         hovered SetVariable("hover_coord", coord)
                         action SetVariable("mapdest", coord), Jump("game")

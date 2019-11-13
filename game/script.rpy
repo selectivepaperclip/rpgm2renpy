@@ -188,6 +188,13 @@ init python:
         renpy.image('crosshair-small-red', im.MatrixColor('custom_gui/crosshair-small.png', im.matrix.colorize("#f00", "#000")))
         renpy.image('crosshair-small-blue', im.MatrixColor('custom_gui/crosshair-small.png', im.matrix.colorize("#00f", "#000")))
 
+    if rpgm_metadata.is_pre_mv_version:
+        renpy.image('square-small-red', im.MatrixColor('custom_gui/square-32.png', im.matrix.colorize("#f00", "#000")))
+        renpy.image('square-small-blue', im.MatrixColor('custom_gui/square-32.png', im.matrix.colorize("#00f", "#000")))
+    else:
+        renpy.image('square-small-red', im.MatrixColor('custom_gui/square-48.png', im.matrix.colorize("#f00", "#000")))
+        renpy.image('square-small-blue', im.MatrixColor('custom_gui/square-48.png', im.matrix.colorize("#00f", "#000")))
+
     system_data = game_file_loader.json_file(rpgm_data_path("System.json"))
     title_screen_file_path = rpgm_metadata.title_screen_file(system_data['title1Name'])
     if title_screen_file_path:
