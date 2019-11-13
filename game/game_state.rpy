@@ -955,6 +955,11 @@ init python:
                 if result != None:
                     return result
 
+            for handler in game_file_loader.plugin_eval_handlers():
+                result = handler.eval_fancypants_value_statement(script_string)
+                if result != None:
+                    return result
+
             script_string = re.sub(r'\btrue\b', 'True', script_string)
             script_string = re.sub(r'\bfalse\b', 'False', script_string)
             script_string = re.sub(r'===', '==', script_string)

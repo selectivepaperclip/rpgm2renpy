@@ -78,9 +78,19 @@ init -99 python:
                     TerraxLighting,
                     YepXExtMesPack1,
                 ]
+
+                for plugin_handler in [globals()[class_name]() for class_name in rpgm_game_data.get('additional_plugin_handlers', [])]:
+                    possible_handlers.append(plugin_handler)
+
                 self._plugin_handlers = [handler for handler in possible_handlers if handler.plugin_active]
 
             return self._plugin_handlers
+
+        def plugin_eval_handlers(self):
+            if not hasattr(self, '_plugin_eval_handlers'):
+                self._plugin_eval_handlers = [handler for handler in self.plugin_handlers() if hasattr(handler, 'eval_fancypants_value_statement')]
+
+            return self._plugin_eval_handlers
 
         def game_specific_handlers(self):
             if not hasattr(self, '_game_specific_handlers'):
