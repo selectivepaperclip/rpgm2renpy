@@ -33,6 +33,20 @@ init python:
                 raise(RuntimeError("Unknown direction! %s" % direction))
 
         @classmethod
+        def direction_for_delta(cls, delta_x, delta_y):
+            # what direction should be changed to when jumping
+            if abs(delta_x) > abs(delta_y):
+                if delta_x < 0:
+                    return GameDirection.LEFT
+                if delta_x > 0:
+                    return GameDirection.RIGHT
+            else:
+                if delta_y < 0:
+                    return GameDirection.UP
+                if delta_y > 0:
+                    return GameDirection.DOWN
+
+        @classmethod
         def direction_for_a_to_face_b(cls, a, b):
             sx = b[0] - a[0]
             sy = b[1] - a[1]
