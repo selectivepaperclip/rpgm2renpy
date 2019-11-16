@@ -1,4 +1,4 @@
-screen scrolling_textbox_screen(text_to_show):
+screen scrolling_textbox_screen(texts_to_show):
     modal True
     add Solid(Color("#000", alpha = 0.75))
     frame:
@@ -12,8 +12,7 @@ screen scrolling_textbox_screen(text_to_show):
                 scrollbars "vertical"
                 mousewheel True
                 vbox:
-                    frame:
-                        xpadding 10
+                    for text_to_show in texts_to_show:
                         text text_to_show
 
             textbutton "Done":

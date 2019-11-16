@@ -1173,11 +1173,11 @@ init python:
                 ("Show Variables", 'variables')
             ])
             if result == 'items':
-                renpy.call_screen("scrolling_textbox_screen", self.escape_text_for_renpy("\n".join(self.party.debug_items())))
+                renpy.call_screen("scrolling_textbox_screen", self.text_blocks(self.party.debug_items()))
             elif result == 'weapons':
-                renpy.call_screen("scrolling_textbox_screen", self.escape_text_for_renpy("\n".join(self.party.debug_weapons())))
+                renpy.call_screen("scrolling_textbox_screen", self.text_blocks(self.party.debug_weapons()))
             elif result == 'armors':
-                renpy.call_screen("scrolling_textbox_screen", self.escape_text_for_renpy("\n".join(self.party.debug_armors())))
+                renpy.call_screen("scrolling_textbox_screen", self.text_blocks(self.party.debug_armors()))
             elif result == 'switches':
                 self.show_switches()
             elif result == 'self_switches':
@@ -1188,13 +1188,17 @@ init python:
             return True
 
         def show_switches(self):
-            renpy.call_screen("scrolling_textbox_screen", self.escape_text_for_renpy("\n".join(self.switches.debug_values())))
+            renpy.call_screen("scrolling_textbox_screen", self.text_blocks(self.switches.debug_values()))
 
         def show_self_switches(self):
-            renpy.call_screen("scrolling_textbox_screen", self.escape_text_for_renpy("\n".join(self.self_switches.debug_values())))
+            renpy.call_screen("scrolling_textbox_screen", self.text_blocks(self.self_switches.debug_values()))
 
         def show_variables(self):
-            renpy.call_screen("scrolling_textbox_screen", self.escape_text_for_renpy("\n".join(self.variables.debug_values())))
+            renpy.call_screen("scrolling_textbox_screen", self.text_blocks(self.variables.debug_values()))
+
+        def text_blocks(self, text_to_show):
+            block_size = 250
+            return [ "\n".join(text_to_show[i:i+block_size]) for i in range(0, len(text_to_show), block_size) ]
 
         def queue_common_and_parallel_events(self):
             if len(self.common_events_data()) > 0:

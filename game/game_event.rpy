@@ -1171,7 +1171,7 @@ init python:
                         command = self.page['list'][self.list_index]
                         accumulated_text.append(command['parameters'][0])
                     self.list_index += 1
-                    renpy.call_screen("scrolling_textbox_screen", game_state.escape_text_for_renpy("\n".join(accumulated_text)))
+                    renpy.call_screen("scrolling_textbox_screen", [game_state.escape_text_for_renpy("\n".join(accumulated_text))])
 
                 # Comment
                 elif command['code'] == 108:
