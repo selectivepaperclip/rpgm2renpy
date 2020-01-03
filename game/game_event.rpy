@@ -2045,7 +2045,7 @@ init python:
                                 handler_matched = True
                                 break
                         if not handler_matched:
-                            renpy.say(None, "Plugin command not implemented: '%s'" % plugin_command)
+                            game_state.say_debug("Plugin command not implemented: '%s'" % plugin_command)
 
                 # When [**]
                 elif command['code'] == 402:
