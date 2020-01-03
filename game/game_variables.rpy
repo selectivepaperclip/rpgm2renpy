@@ -1,13 +1,24 @@
 init python:
     class GameVariables:
         def __init__(self, variable_names):
-            self.variable_names = variable_names
+            self._variable_names = variable_names
             self.variable_values = [0] * len(variable_names)
 
+        def reload_variable_names(self):
+            self._variable_names = game_state.system_data()['variables']
+            for i in xrange(len(self.variable_values), len(self._variable_names)):
+                self.variable_values.append(0)
+
+        def ensure_variable_names_loaded(self, variable_id):
+            if not hasattr(self, '_variable_names'):
+                self.reload_variable_names()
+
         def value(self, variable_id):
+            self.ensure_variable_names_loaded(variable_id)
             return self.variable_values[variable_id]
 
         def set_value(self, variable_id, value):
+            self.ensure_variable_names_loaded(variable_id)
             if isinstance(value, float):
                 value = int(value)
             self.variable_values[variable_id] = value
