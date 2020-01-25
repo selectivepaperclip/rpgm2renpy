@@ -171,19 +171,19 @@ init python:
                         return False
             # Enemy
             elif operation == 5:
-                renpy.say(None, "Conditional statements for Enemy not implemented")
+                enemy = self.state.scenes[0].battle_enemies[params[1]]
+                if enemy:
+                    if params[2] == 0: # Appeared / Alive?
+                        return True
+                    elif params[2] == 1: # Check state
+                        #    case 1:  // State
+                        #        result = enemy.isStateAffected(this._params[3]);
+                        #        break;
+                        #    }
+                        self.state.say_debug("State checks for Enemy not implemented")
+                        return False
                 return False
-                #var enemy = $gameTroop.members()[this._params[1]];
-                #if (enemy) {
-                #    switch (this._params[2]) {
-                #    case 0:  // Appeared
-                #        result = enemy.isAlive();
-                #        break;
-                #    case 1:  // State
-                #        result = enemy.isStateAffected(this._params[3]);
-                #        break;
-                #    }
-                #}
+
             # Character
             elif operation == 6:
                 character_id = params[1]
@@ -1786,12 +1786,7 @@ init python:
                     else:
                         troop_id = self.state.map.random_encounter_troop_id(self.state.player_x, self.state.player_y)
 
-                    result = self.state.fight_troop(troop_id)
-                    if result != None:
-                        if result == 0: # Winning
-                            self.state.gain_fight_rewards(troop_id)
-
-                        self.branch[command['indent']] = result
+                    self.state.fight_troop(troop_id, self, command)
 
                 # Shop
                 elif command['code'] == 302:

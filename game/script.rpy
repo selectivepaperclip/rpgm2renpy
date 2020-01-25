@@ -96,6 +96,9 @@ init -10 python:
                 self.characters_path = rpgm_path("Graphics/Characters/")
                 self.parallaxes_path = rpgm_path("Graphics/Parallaxes/")
                 self.faces_path = rpgm_path("Graphics/Faces/")
+                self.enemies_path = rpgm_path("Graphics/Enemies/")
+                self.battlebacks1_path = rpgm_path("Graphics/Battlebacks1/")
+                self.battlebacks2_path = rpgm_path("Graphics/Battlebacks2/")
                 self.window_png_path = rpgm_path("Graphics/System/Window.png")
                 self.tile_width = 32
                 self.tile_height = 32
@@ -113,6 +116,9 @@ init -10 python:
                 self.characters_path = rpgm_path("www/img/characters/")
                 self.parallaxes_path = rpgm_path("www/img/parallaxes/")
                 self.faces_path = rpgm_path("www/img/faces/")
+                self.enemies_path = rpgm_path("www/img/enemies/")
+                self.battlebacks1_path = rpgm_path("www/img/battlebacks1/")
+                self.battlebacks2_path = rpgm_path("www/img/battlebacks2/")
                 self.window_png_path = rpgm_path("www/img/system/Window.png")
                 self.tile_width = 48
                 self.tile_height = 48
