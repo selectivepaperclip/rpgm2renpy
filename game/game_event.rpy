@@ -1499,6 +1499,9 @@ init python:
                         event_data = self.event_data
                     else:
                         event_data = self.state.map.find_event_data_at_index(event_id)
+                        if not event_data:
+                            self.list_index += 1
+                            return
                     if operation == 0: # Direct Designation
                         self.state.map.override_event_location(event_data, (vx, vy))
                     elif operation == 1: # Designation with variables

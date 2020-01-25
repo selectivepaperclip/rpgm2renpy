@@ -1058,6 +1058,8 @@ init python:
             if event_index in self.erased_events:
                 return None
             e = self.data()['events'][event_index]
+            if not e:
+                return None
             if e['id'] in self.erased_events:
                 return None
             return e
