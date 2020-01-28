@@ -55,10 +55,10 @@ init python:
         def debug_values(self):
             result = []
 
-            longest_string = len(max(self.variable_names, key=len))
+            longest_string = len(max(self._variable_names, key=len))
 
-            for i in xrange(0, len(self.variable_names)):
-                result.append(("%3s: '%" + str(longest_string) + "s' = %s") % (i, self.variable_names[i], self.variable_values[i]))
+            for i in xrange(0, len(self._variable_names)):
+                result.append(("%3s: '%" + str(longest_string) + "s' = %s") % (i, self._variable_names[i], self._variable_names[i]))
 
             return result
 
