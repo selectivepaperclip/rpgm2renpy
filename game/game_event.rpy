@@ -1246,6 +1246,7 @@ init python:
                                 return
 
                             self.jump_to(index, current_indent = command['indent'])
+                            break
 
                 # Control Switches
                 elif command['code'] == 121:
