@@ -315,10 +315,20 @@ init python:
 
         def __init__(self):
             self.quest_activity = {}
+            self.known_quests = Set([])
+
+        def migrate_missing_properties(self):
+            if not hasattr(self, 'known_quests'):
+                self.known_quests = Set([id for id in self.quest_activity])
 
         def presented_quests(self):
+            self.migrate_missing_properties()
+
             result = []
             for quest_id in sorted(self.quest_activity.keys()):
+                if quest_id not in self.known_quests:
+                    continue
+
                 quest_data = game_file_loader.yep_quest_data()["Quest %s" % quest_id]
                 objective_data = quest_data['Objectives List']
                 reward_data = quest_data['Rewards List']
@@ -365,11 +375,14 @@ init python:
             return game_state.escape_text_for_renpy(game_state.replace_names(text))
 
         def process_command(self, args):
+            self.migrate_missing_properties()
+
             gre = Re()
             upcase_args = [arg.upper() for arg in args]
             if upcase_args[0] == 'ADD':
                 quest_id = int(upcase_args[1])
                 self.__create_quest(quest_id)
+                self.known_quests.add(quest_id)
                 return
             elif upcase_args[0:2] == ['SET', 'COMPLETED']:
                 self.set_quest_status(int(upcase_args[2]), 'completed')
@@ -423,7 +436,8 @@ init python:
 
         def set_quest_status(self, quest_id, status):
             self.__create_quest(quest_id)
-            self.quest_activity[quest_id]['status'] = 'completed'
+            self.known_quests.add(quest_id)
+            self.quest_activity[quest_id]['status'] = status
 
         def set_objective_status(self, quest_id, objective_id, status):
             objective_data = self.quest_activity[quest_id]['objectives']
