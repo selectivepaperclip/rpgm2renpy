@@ -1961,7 +1961,7 @@ init python:
             viewport_xadjustment.set_value(new_value if new_value > 0 else 0.0)
 
             existing_y_value = viewport_yadjustment.get_value()
-            new_range = (new_full_zoom * (self.map.image_height + y_offset)) - config.screen_height
+            new_range = (new_full_zoom * (self.map.image_height + y_offset)) - self.map_height()
             new_value = ((existing_y_value + y_zoom_offset) * map_zoom_ratio) - y_zoom_offset
             viewport_yadjustment.set_range(new_range if new_range > 0 else 0.0)
             viewport_yadjustment.set_value(new_value if new_value > 0 else 0.0)
@@ -1974,7 +1974,7 @@ init python:
             map_height = height
 
             screen_width_sans_scrollbar = config.screen_width - 12
-            screen_height_sans_scrollbar = config.screen_height - 12
+            screen_height_sans_scrollbar = self.map_height() - 12
 
             width_ratio = screen_width_sans_scrollbar / float(map_width)
             height_ratio = screen_height_sans_scrollbar / float(map_height)
@@ -1999,6 +1999,9 @@ init python:
                     else:
                         # Overflowing more on map_width
                         return float(screen_width_sans_scrollbar) / map_width
+
+        def map_height(self):
+            return config.screen_height - 50
 
         def calculate_map_x_y_offset(self, mapfactor):
             x_offset = 0
@@ -2152,7 +2155,7 @@ init python:
 
                 new_x_range = (mapfactor * width) - config.screen_width
                 viewport_xadjustment.set_range(new_x_range if new_x_range > 0 else 0.0)
-                new_y_range = (mapfactor * height) - config.screen_height
+                new_y_range = (mapfactor * height) - self.map_height()
                 viewport_yadjustment.set_range(new_y_range if new_y_range > 0 else 0.0)
 
                 if self.player_x > 19:
@@ -2180,7 +2183,7 @@ init python:
                     self.set_user_map_zoom(user_zoom)
 
                     centering_nudge_x = max(0, (config.screen_width - (rect_size[0] * rpgm_metadata.tile_width * mapfactor * user_zoom)) / 2)
-                    centering_nudge_y = max(0, (config.screen_height - (rect_size[1] * rpgm_metadata.tile_height * mapfactor * user_zoom)) / 2)
+                    centering_nudge_y = max(0, (self.map_height() - (rect_size[1] * rpgm_metadata.tile_height * mapfactor * user_zoom)) / 2)
 
                     viewport_xadjustment.set_value(max(0, (x_offset + (zoom_rect_ul[0] * rpgm_metadata.tile_width)) * mapfactor * user_zoom) - centering_nudge_x)
                     viewport_yadjustment.set_value(max(0, (y_offset + (zoom_rect_ul[1] * rpgm_metadata.tile_height)) * mapfactor * user_zoom) - centering_nudge_y)
