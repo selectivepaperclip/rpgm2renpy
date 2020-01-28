@@ -54,7 +54,7 @@ init python:
             return self.event_data.has_key('switchId')
 
         def parallel(self):
-            return self.page['trigger'] == 4 or (self.common() and self.page['trigger'] == 2)
+            return 'trigger' in self.page and self.page['trigger'] == 4 or (self.common() and self.page['trigger'] == 2)
 
         def get_map_id(self):
             if hasattr(self, 'map_id') and self.map_id:
