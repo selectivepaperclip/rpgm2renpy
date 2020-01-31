@@ -2031,9 +2031,6 @@ init python:
                             self.state.switches.set_value(int(correct_answer_switchID), correct_answer_switchID_status == 'true')
                         else:
                             game_state.say_text(None, incorrect_response_typed_without_quotes)
-                    elif plugin_command in ['enable_picture']:
-                        # MOG_PictureGallery
-                        pass
                     elif plugin_command.startswith('textInput'):
                         actor_index = int(plugin_command_args[0])
                         self.request_actor_name(actor_index)

@@ -72,6 +72,7 @@ init -99 python:
                     GalvScreenZoom,
                     KhasAdvancedLighting,
                     MogChronoEngine,
+                    MogPictureGallery,
                     MogWeatherEx,
                     OrangeTimeSystem,
                     QAudio,
