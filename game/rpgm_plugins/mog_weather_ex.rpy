@@ -10,7 +10,7 @@ init python:
             return game_file_loader.has_active_plugin('MOG_Weather_EX')
 
         @classmethod
-        def process_command(cls, command, command_args):
+        def process_command(cls, event, command, command_args):
             if cls.plugin_active() and command in MogWeatherEx.COMMANDS:
                 return True
             return False

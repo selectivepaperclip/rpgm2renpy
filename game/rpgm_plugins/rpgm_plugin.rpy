@@ -5,7 +5,7 @@ init -99 python:
             return False
 
         @classmethod
-        def process_command(cls, command, command_args):
+        def process_command(cls, event, command, command_args):
             return False
 
         @classmethod

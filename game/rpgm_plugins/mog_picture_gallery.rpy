@@ -28,7 +28,7 @@ init python:
             )
 
         @classmethod
-        def process_command(cls, command, command_args):
+        def process_command(cls, event, command, command_args):
             if not cls.plugin_active():
                 return False
 

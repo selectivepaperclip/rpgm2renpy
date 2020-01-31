@@ -2037,7 +2037,7 @@ init python:
                     else:
                         handler_matched = False
                         for handler in game_file_loader.plugin_handlers():
-                            if handler.process_command(plugin_command, plugin_command_args):
+                            if handler.process_command(self, plugin_command, plugin_command_args):
                                 handler_matched = True
                                 break
                         if not handler_matched:
