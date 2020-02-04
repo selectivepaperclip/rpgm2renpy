@@ -31,10 +31,7 @@ init python:
         screen_size = (1280, 720)
 
     if screen_size:
-        if screen_size == (1920, 1080) and not rpgm_game_data.get('resolution', None):
-            gui.init(1280, 720)
-        else:
-            gui.init(*screen_size)
+        gui.init(*screen_size)
 
         if screen_size[0] <= 1024:
             # If the screen is relatively small, set the cache size relatively high

@@ -151,7 +151,10 @@ init python:
         return im.Scale(path, config.screen_width, config.screen_height, bilinear=True)
 
     def scale_movie(path):
-        return Movie(play=path, size=(config.screen_width, config.screen_height))
+        size = None
+        if rpgm_game_data.get('movie_resolution', None):
+            size = tuple(rpgm_game_data['movie_resolution'])
+        return Movie(play=path, xalign=0.5, yalign=0.5, size=size)
 
     def rpgm_picture_name(base):
         return 'rpgmpicture-' + base.lower().replace('.', '_')
