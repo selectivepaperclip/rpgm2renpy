@@ -224,11 +224,18 @@ init python:
         renpy.image(pic_name, rpgm_metadata.pictures_path + filename)
 
     if os.path.exists(os.path.join(config.basedir, rpgm_metadata.movies_path)):
+        filenames_for_images = {}
         for filename in os.listdir(os.path.join(config.basedir, rpgm_metadata.movies_path)):
             image_name = rpgm_movie_name(os.path.splitext(os.path.basename(filename))[0])
+            if image_name not in filenames_for_images:
+                filenames_for_images[image_name] = []
+            filenames_for_images[image_name].append(filename)
+        for (image_name, filenames) in filenames_for_images.iteritems():
             if renpy.has_image(image_name, exact=True):
                 continue
 
+            # prefer webp if multiple formats exist
+            filename = sorted(filenames, key=lambda filename : filename.endswith('webp'))[-1]
             renpy.image(image_name, scale_movie(rpgm_metadata.movies_path + filename))
 
     for filename in os.listdir(os.path.join(config.basedir, rpgm_metadata.tilesets_path)):
