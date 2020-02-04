@@ -425,9 +425,15 @@ init python:
         def eval_galv_puz_script(self, script_string):
             gre = Re()
             if gre.match("Galv\.PUZ\.switch\('event','(\w+)','(\w+)',(\d+)\)", script_string):
+                # During transfers, Galv.PUZ events that take place after the transfer command need to apply
+                # to the map being transferred TO. Unknown if there are other places that don't do this right
+                # (particularly any other plugins that allow arbitrary event self-switches to be set by JS)
+
+                # Since the global map will have been updated to the new map at this point, it's correct
+                # to use self.state.map.map_id
                 groups = gre.last_match.groups()
-                map_id, self_switch_name, self_switch_value, event_id = (self.get_map_id(), groups[0], groups[1] == 'on', int(groups[2]))
-                self.state.self_switches.set_value((map_id, event_id, self_switch_name), self_switch_value)
+                self_switch_name, self_switch_value, event_id = (groups[0], groups[1] == 'on', int(groups[2]))
+                self.state.self_switches.set_value((self.state.map.map_id, event_id, self_switch_name), self_switch_value)
                 return True
 
         def eval_script(self, script_string):
