@@ -30,12 +30,26 @@ init python:
             self.battle_turn += 1
             self.process_troop_event(self.troop_data)
 
-            result = renpy.display_menu([
-                ("A battle with '%s'!" % game_state.escape_text_for_renpy(self.troop_data['name']), None),
-                ("You Win!", 0),
-                ("You Escape!", 1),
-                ("You Lose!", 2)
-            ])
+            while True:
+                skills_json = game_file_loader.json_file(rpgm_data_path("Skills.json"))
+                party_skills = [skills_json[i] for i in game_state.actors.by_index(game_state.party.members[0]).learned_skills()]
+                menu_options = [
+                    ("A battle with '%s'!" % game_state.escape_text_for_renpy(self.troop_data['name']), None),
+                    ("You Win!", 0),
+                    ("You Escape!", 1),
+                    ("You Lose!", 2)
+                ]
+
+                if len(party_skills) > 0:
+                    menu_options.insert(1, ("Use skill", 'skill'))
+
+                result = renpy.display_menu(menu_options)
+
+                if result in [0, 1, 2]:
+                    break
+
+                if result == 'skill':
+                    self.cast_skill(party_skills)
 
             if result == 0:
                 for enemy in self.battle_enemies:
@@ -55,6 +69,26 @@ init python:
                     self.event.branch[self.command['indent']] = result
 
             return True
+
+        def cast_skill(self, party_skills):
+            menu_options = [
+                ("Cast a skill", None)
+            ]
+            for skill in party_skills:
+                if skill['occasion'] in [0, 1]:
+                    menu_options.append((skill['name'], skill))
+
+            skill_result = renpy.display_menu(menu_options)
+            if skill_result['scope'] == 1:
+                menu_options = [
+                    ("Choose a target for %s" % skill_result['name'], None)
+                ]
+                for enemy in self.battle_enemies:
+                    menu_options.append((enemy.battlerName, enemy))
+
+                enemy_result = renpy.display_menu(menu_options)
+                if skill_result['effects'][0]['code'] == 21:
+                    enemy_result.add_state(skill_result['effects'][0]['dataId'])
 
         def process_troop_event(self, troop):
             troop_event = None

@@ -176,12 +176,7 @@ init python:
                     if params[2] == 0: # Appeared / Alive?
                         return True
                     elif params[2] == 1: # Check state
-                        #    case 1:  // State
-                        #        result = enemy.isStateAffected(this._params[3]);
-                        #        break;
-                        #    }
-                        self.state.say_debug("State checks for Enemy not implemented")
-                        return False
+                        return enemy.is_state_affected(params[3])
                 return False
 
             # Character

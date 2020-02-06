@@ -93,6 +93,10 @@ init python:
             learned_skills = self.overrides['learned_skills']
             return skill_id in learned_skills
 
+        def learned_skills(self):
+            self.populate_skills()
+            return self.overrides['learned_skills']
+
         def has_weapon(self, weapon_id):
             # TODO: respond to dual wield / alternate item slot setups. if merited.
             return self.get_property('equips')[0] == weapon_id
