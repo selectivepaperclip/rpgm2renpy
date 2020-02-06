@@ -653,6 +653,11 @@ init python:
                 if self.map_id == 43:
                     if (x, y) in [(58,23), (58, 29)]:
                         return True
+
+            forced_passables_for_map = rpgm_game_data.get('forced_passables', {}).get(str(self.map_id), [])
+            if [x, y] in forced_passables_for_map:
+                return True
+
             return False
 
         def tile_id(self, x, y, z):
