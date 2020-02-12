@@ -454,7 +454,7 @@ init python:
                 return
 
             for line_index, line in enumerate(script_string.split("\n")):
-                mv_self_switch_set_command = re.match("\$gameSelfSwitches\.setValue\(\[(\d+),(\d+),'(.*?)'\], (\w+)\);?", line)
+                mv_self_switch_set_command = re.match("\$gameSelfSwitches\.setValue\(\[(\d+),\s*(\d+),\s*'(.*?)'\],\s*(\w+)\);?", line)
                 ace_self_switch_set_command = re.match("\$game_self_switches\[\[(\d+)\s*,\s*(\d+)\s*,\s*'(.*?)'\]\] = (\w+)", line)
 
                 if gre.search("^\s*\/\/", line): # Comments, e.g. // Hello world
