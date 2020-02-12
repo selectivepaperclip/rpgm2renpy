@@ -1563,7 +1563,8 @@ init python:
 
                 # Erase Event
                 elif command['code'] == 214:
-                    self.state.map.erased_events[self.event_data['id']] = True
+                    if 'x' in self.event_data: # only erase map events
+                        self.state.map.erased_events[self.event_data['id']] = True
 
                 # Change Player Followers
                 elif command['code'] == 216:
