@@ -1234,6 +1234,13 @@ init python:
                 if command['code'] == 45:
                     if GalvEventSpawnTimers.has_timer(command):
                         return True
+                if command['code'] in [27, 28]:
+                    # Peasant's Quest has a move route marked as 'repeat' that flips some switches causing the page it's
+                    # on to be deactivated in favor of the next page (so it doesn't actually repeat, and moves the story forward).
+                    # To support this, all move routes will be run if they flip any switches.
+                    # This will inevitably cause some game to do an infinite loop, someday, at which time there will
+                    # need to be cycle detection on move route events. To the future!
+                    return True
                 if command['code'] not in [0]:
                     has_commands = True
                 elif command['code'] == 15:
