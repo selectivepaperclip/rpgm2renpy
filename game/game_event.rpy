@@ -133,8 +133,9 @@ init python:
 
             # Self Switches
             elif operation == 2:
-                if len(self.state.events) > 0:
-                    key = (self.get_map_id(), self.event_data['id'], params[1])
+                e = self.state.top_non_common_event()
+                if e:
+                    key = (e.get_map_id(), e.event_data['id'], params[1])
                     return self.state.self_switches.value(key) == (params[2] == 0)
             # Timer
             elif operation == 3:

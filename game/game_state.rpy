@@ -1550,6 +1550,9 @@ init python:
             elif len(self.events) > 0:
                 return self.events[-1]
 
+        def top_non_common_event(self):
+            return [e for e in self.events if not e.common()][-1]
+
         def queue_common_event(self, event_id):
             common_event = self.common_events_data()[event_id]
             self.triggered_common_events.append(GameEvent(self, None, common_event, common_event))
